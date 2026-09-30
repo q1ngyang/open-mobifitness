@@ -7,7 +7,7 @@
     <string name="settings">Optionen</string>
     <string name="ready_title">Zeit für Bewegung.</string>
     <string name="ready_body">Verbinde dein Gerät und finde deinen Rhythmus.</string>
-    <string name="local_only">Lokal. Ohne Konto.</string>
+    <string name="local_only">Offline</string>
     <string name="free_training">Freies Training</string>
     <string name="start">Training starten</string>
     <string name="finish">Beenden und speichern</string>

@@ -7,7 +7,7 @@
     <string name="settings">设置</string>
     <string name="ready_title">给运动，留一点时间。</string>
     <string name="ready_body">连接器材，找到你的运动节奏。</string>
-    <string name="local_only">本地运行，无需账号</string>
+    <string name="local_only">离线使用</string>
     <string name="free_training">自由运动</string>
     <string name="start">开始运动</string>
     <string name="finish">结束并保存</string>

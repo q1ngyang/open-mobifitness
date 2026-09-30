@@ -7,7 +7,7 @@
     <string name="settings">設定</string>
     <string name="ready_title">給運動，留一點時間。</string>
     <string name="ready_body">連接器材，找到你的運動節奏。</string>
-    <string name="local_only">本機運作，無需帳號</string>
+    <string name="local_only">離線使用</string>
     <string name="free_training">自由運動</string>
     <string name="start">開始運動</string>
     <string name="finish">結束並儲存</string>

@@ -7,7 +7,7 @@
     <string name="settings">Settings</string>
     <string name="ready_title">Make room for movement.</string>
     <string name="ready_body">Connect your equipment and find your rhythm.</string>
-    <string name="local_only">Always local. No account needed.</string>
+    <string name="local_only">Offline</string>
     <string name="free_training">Free training</string>
     <string name="start">Start training</string>
     <string name="finish">Finish &amp; save</string>

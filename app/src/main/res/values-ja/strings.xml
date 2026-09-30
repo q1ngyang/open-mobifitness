@@ -7,7 +7,7 @@
     <string name="settings">設定</string>
     <string name="ready_title">体を動かす時間を。</string>
     <string name="ready_body">器具を接続して、自分のペースで。</string>
-    <string name="local_only">ローカルで動作。アカウント不要。</string>
+    <string name="local_only">オフライン</string>
     <string name="free_training">フリートレーニング</string>
     <string name="start">開始</string>
     <string name="finish">終了して保存</string>

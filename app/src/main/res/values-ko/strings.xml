@@ -7,7 +7,7 @@
     <string name="settings">설정</string>
     <string name="ready_title">움직임을 위한 시간.</string>
     <string name="ready_body">기기를 연결하고 내 리듬을 찾아보세요.</string>
-    <string name="local_only">로컬 실행. 계정 불필요.</string>
+    <string name="local_only">오프라인</string>
     <string name="free_training">자유 운동</string>
     <string name="start">운동 시작</string>
     <string name="finish">종료 및 저장</string>
