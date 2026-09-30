@@ -41,6 +41,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     private var granted = false
     private var unlocked = false
     private var lastWrite = 0L
+    private var legacyProfile: String? = null
     private val cccd = uuid("2902")
     private fun log(value: String) { state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
     fun available() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
@@ -77,7 +78,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     fun disconnect() {
         connectionJob?.cancel(); pending?.complete(false); indication?.complete(false)
         val old=gatt; gatt=null; runCatching { old?.disconnect(); old?.close() }
-        template=null; magnets=null; ftmsFeature=false; granted=false; unlocked=false
+        template=null; magnets=null; ftmsFeature=false; granted=false; unlocked=false; legacyProfile=null
         state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),motionAt=0,resistanceAt=0,requested=null,busy=false,writable=false)
     }
     private fun fail(reason: String) { log(reason); disconnect() }
@@ -168,9 +169,9 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
         }
         if(g!==gatt) return
         val writable=when(protocol) {
-            Protocol.V2 -> characteristic("8800","880f")!=null && characteristic("8800","88ff")!=null
-            Protocol.V1 -> characteristic("ffe0","ffe3")!=null
-            Protocol.FTMS -> ftmsFeature && controlNotify && characteristic("1826","2ad9")!=null
+            Protocol.V2 -> state.value.range!=null && characteristic("8800","880f")!=null && characteristic("8800","88ff")!=null
+            Protocol.V1 -> state.value.range!=null && characteristic("ffe0","ffe3")!=null
+            Protocol.FTMS -> state.value.range!=null && ftmsFeature && controlNotify && characteristic("1826","2ad9")!=null
             else -> false
         }
         connectionJob?.cancel(); state.value=state.value.copy(phase="ready",writable=writable && state.value.machine in setOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER))
@@ -197,6 +198,16 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             }
             "8811" -> if(state.value.machine in listOf(Machine.ELLIPTICAL,Machine.BIKE)) { metrics=Metrics(cadence=magnets?.let { Protocols.intervalCadence(data,it) }); motion=true }
             "ffe1","ffe4" -> {
+                if(data.size>=11 && (data[0].toInt() and 255)==0xac && data[1].toInt()==4) {
+                    val kind=data[3].toInt() and 255
+                    val subtype=data[4].toInt() and 255
+                    val range=Protocols.v1Range(data)
+                    val profile="legacy_profile:kind=$kind subtype=$subtype range=${range?.let { "${it.min}..${it.max}" } ?: "unknown"}"
+                    if(profile!=legacyProfile) { legacyProfile=profile; log(profile) }
+                    val machine=when(kind) { 9 -> Machine.ROWER; 10 -> Machine.BIKE; 11 -> Machine.ELLIPTICAL; 12 -> Machine.TREADMILL; else -> state.value.machine }
+                    val writable=range!=null && machine in setOf(Machine.ELLIPTICAL,Machine.BIKE) && characteristic("ffe0","ffe3")!=null
+                    state.value=state.value.copy(machine=machine,range=range,writable=writable)
+                }
                 val parsed=Protocols.v1Metrics(data)
                 if(parsed!=null) { template=data.copyOf(); templateAt=now; metrics=parsed; motion=true; state.value=state.value.copy(range=Protocols.v1Range(data)) }
             }
