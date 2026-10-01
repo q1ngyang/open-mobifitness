@@ -18,8 +18,8 @@ class RepositoryTest {
     @Before fun setup() { repo=Repository(RuntimeEnvironment.getApplication()) }
     @After fun close() { repo.db.close() }
     @Test fun backupRoundTripAndRepeatedImportAreLossless() = runBlocking {
-        val s=Session(elapsedMs=2000,demo=true,status="completed")
-        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0))
+        val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0)
+        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0))
         repo.save(s,sample)
         val workout=Workout(title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
         repo.saveWorkout(workout)
@@ -46,4 +46,32 @@ class RepositoryTest {
         assertEquals(4000L,repo.sessions.value.single().elapsedMs)
         assertEquals(1,repo.archive().samples.size)
     }
+    @Test fun databaseUpgradeKeepsVersionOneHistoryAndSamples() = runBlocking {
+        repo.db.close()
+        val context=RuntimeEnvironment.getApplication()
+        context.deleteDatabase("openmobi.db")
+        val input=javaClass.classLoader!!.getResourceAsStream("org.openmobifitness.app.data.MobiDatabase/1.json")!!
+        val schema=org.json.JSONObject(input.bufferedReader().use { it.readText() }).getJSONObject("database")
+        val id=java.util.UUID.randomUUID().toString()
+        val db=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("openmobi.db"),null)
+        val entities=schema.getJSONArray("entities")
+        for(i in 0 until entities.length()) {
+            val e=entities.getJSONObject(i)
+            db.execSQL(e.getString("createSql").replace("\${TABLE_NAME}",e.getString("tableName")))
+            e.optJSONArray("indices")?.let { indices -> for(j in 0 until indices.length()) db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}",e.getString("tableName"))) }
+        }
+        val queries=schema.getJSONArray("setupQueries"); for(i in 0 until queries.length()) db.execSQL(queries.getString(i))
+        db.execSQL("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",arrayOf(id,"2026-09-30T10:00:00Z","","UTC","legacy","ELLIPTICAL","DEMO","stopped",9000,25.0,1))
+        db.execSQL("INSERT INTO samples (sessionId,elapsedMs,cadence) VALUES (?, ?, ?)",arrayOf(id,9000,62.0))
+        db.version=1; db.close()
+        repo=Repository(context)
+        val restored=repo.archive()
+        assertEquals(id,restored.sessions.single().id)
+        assertEquals(25.0,restored.sessions.single().distanceM!!,0.0)
+        assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
+        assertNull(restored.sessions.single().caloriesKcal)
+        assertFalse(restored.sessions.single().caloriesEstimated)
+        assertEquals(2,repo.db.openHelper.readableDatabase.version)
+    }
+
 }

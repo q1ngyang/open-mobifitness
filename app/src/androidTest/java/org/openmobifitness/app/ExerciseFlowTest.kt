@@ -32,24 +32,48 @@ class ExerciseFlowTest {
         compose.waitUntil(30_000) { controller.state.value.session!=null }
         val id=controller.state.value.session!!.id
         compose.waitUntil(30_000) { controller.state.value.session!!.elapsedMs>1000 }
-        compose.onNodeWithText("+").performScrollTo().performClick()
+        compose.onNodeWithText("+").assertIsDisplayed().performClick()
         compose.waitUntil(20_000) { !controller.state.value.automatic }
         screenshot("phone-live")
+        assertNotNull(controller.state.value.session!!.caloriesKcal)
+        assertNotNull(controller.state.value.session!!.distanceM)
+        compose.runOnUiThread { controller.pauseResume() }
+        compose.waitUntil(20_000) { controller.state.value.paused }
+        val paused=controller.state.value.session!!
+        val countdown=controller.state.value.remainingMs
+        // Wait through multiple real ticker updates, not virtual Compose time.
+        Thread.sleep(2200)
+        assertEquals(paused.elapsedMs,controller.state.value.session!!.elapsedMs)
+        assertEquals(paused.caloriesKcal,controller.state.value.session!!.caloriesKcal)
+        assertEquals(paused.distanceM,controller.state.value.session!!.distanceM)
+        assertEquals(countdown,controller.state.value.remainingMs)
         // Host grants SYSTEM_ALERT_WINDOW only to the test APK before running this test.
-        compose.onNodeWithText(compose.activity.getString(R.string.minimize)).performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.minimize)).assertIsDisplayed().performClick()
         val device=UiDevice.getInstance(instrumentation)
         Configurator.getInstance().waitForIdleTimeout=100
         val info=instrumentation.uiAutomation.serviceInfo
         info.flags=info.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         instrumentation.uiAutomation.serviceInfo=info
+        val compact=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.expand_panel))),30_000)
+        assertNotNull("Small info-only panel should be visible",compact)
+        assertFalse(device.hasObject(By.text(compose.activity.getString(R.string.open_app))))
+        screenshot("phone-overlay-small")
+        val center=compact.visibleCenter
+        device.swipe(center.x,center.y,center.x+25,center.y+90,20)
+        assertFalse("Dragging must not expand the panel",device.hasObject(By.text(compose.activity.getString(R.string.open_app))))
+        device.findObject(By.desc(compose.activity.getString(R.string.expand_panel))).click()
+        val shrink=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.collapse_panel))),30_000)
+        assertNotNull(shrink)
+        screenshot("phone-overlay-large")
+        shrink.click()
+        val smallAgain=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.expand_panel))),30_000)
+        assertNotNull(smallAgain); smallAgain.click()
         val open=device.wait(Until.findObject(By.text(compose.activity.getString(R.string.open_app))),30_000)
-        assertNotNull("Floating panel should be visible",open)
-        screenshot("phone-overlay")
+        assertNotNull("Expanded panel should offer return to training",open)
         open.click()
         compose.waitUntil(30_000) { compose.activity.hasWindowFocus() }
         assertEquals(id,controller.state.value.session!!.id)
-        compose.runOnUiThread { controller.pauseResume() }
-        compose.waitUntil(20_000) { controller.state.value.paused }
+        assertTrue(controller.state.value.paused)
         compose.runOnUiThread { controller.finish() }
         compose.waitUntil(30_000) { controller.state.value.session==null }
         assertTrue(controller.repo.sessions.value.any { it.id==id && it.demo && it.elapsedMs>0 })

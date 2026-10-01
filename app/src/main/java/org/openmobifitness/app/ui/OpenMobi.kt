@@ -56,14 +56,14 @@ private val Blue=Color(0xFF527CE8)
 private val Yellow=Color(0xFFF3C64E)
 private val Ink=Color(0xFF191A22)
 private val darkColors=darkColorScheme(
-    primary=Color(0xFFFF9FC7),onPrimary=Color(0xFF4D1730),primaryContainer=Color(0xFF492737),onPrimaryContainer=Color(0xFFFFDAE9),
+    primary=Color(0xFFAAC7FF),onPrimary=Color(0xFF002F65),primaryContainer=Color(0xFF234879),onPrimaryContainer=Color(0xFFD5E3FF),
     secondary=Color(0xFFADC3FF),secondaryContainer=Color(0xFF263956),onSecondaryContainer=Color(0xFFD9E4FF),
     tertiary=Yellow,tertiaryContainer=Color(0xFF483C1A),onTertiaryContainer=Color(0xFFFFEBAD),
     background=Color(0xFF111218),surface=Color(0xFF1C1D25),surfaceVariant=Color(0xFF2B2C32),onSurfaceVariant=Color(0xFFC7C7CE),
     onSurface=Color(0xFFF2F2F4),surfaceContainer=Color(0xFF23242B),surfaceContainerHigh=Color(0xFF2D2E35),surfaceContainerHighest=Color(0xFF35363D),
     surfaceContainerLow=Color(0xFF191A20),surfaceContainerLowest=Color(0xFF0E0F13),error=Color(0xFFFFADB4))
 private val lightColors=lightColorScheme(
-    primary=Color(0xFFA62D60),onPrimary=Color.White,primaryContainer=Color(0xFFFADCE7),onPrimaryContainer=Color(0xFF5A1631),
+    primary=Color(0xFF285DA8),onPrimary=Color.White,primaryContainer=Color(0xFFDCE8FA),onPrimaryContainer=Color(0xFF173655),
     secondary=Color(0xFF3059B6),secondaryContainer=Color(0xFFE4EBFF),onSecondaryContainer=Color(0xFF18366D),
     tertiary=Color(0xFF755A00),tertiaryContainer=Color(0xFFFFF0B3),onTertiaryContainer=Color(0xFF352B00),
     background=Color(0xFFF8F8FA),surface=Color.White,surfaceVariant=Color(0xFFF0F0F3),onSurfaceVariant=Color(0xFF565760),
@@ -75,11 +75,17 @@ private val lightColors=lightColorScheme(
     val state by controller.state.collectAsStateWithLifecycle()
     val link by controller.ble.state.collectAsStateWithLifecycle()
     val page by activity.page
+    val focused by activity.focusTraining
+    DisposableEffect(focused,state.session!=null) {
+        if(focused && state.session!=null) activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose { activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+    }
     val dark=theme=="dark" || (theme=="system" && isSystemInDarkTheme())
     SideEffect { WindowCompat.getInsetsController(activity.window,activity.window.decorView).apply { isAppearanceLightStatusBars=!dark; isAppearanceLightNavigationBars=!dark } }
     MaterialTheme(colorScheme=if(dark) darkColors else lightColors,typography=Typography()) {
         Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
             BoxWithConstraints(Modifier.safeDrawingPadding()) {
+                if(focused && state.session!=null) { TrainingScreen(activity,controller,state,link) } else {
                 val rail=maxWidth>=720.dp
                 val labels=listOf(R.string.train,R.string.history,R.string.devices,R.string.settings)
                 val icons=listOf(Icons.Default.PlayArrow,Icons.Default.List,Icons.Default.Search,Icons.Default.Settings)
@@ -87,7 +93,7 @@ private val lightColors=lightColorScheme(
                     if(rail) NavigationRail(containerColor=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxHeight().width(100.dp)) {
                         Image(painterResource(R.drawable.ic_mark),"OpenMobi",Modifier.size(76.dp))
                         Spacer(Modifier.height(32.dp))
-                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i },icon={ Icon(icons[i],null) },label={ Text(stringResource(id)) },modifier=Modifier.padding(vertical=8.dp)) }
+                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={ Text(stringResource(id)) },modifier=Modifier.padding(vertical=8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -102,22 +108,23 @@ private val lightColors=lightColorScheme(
                                 IconButton(onClick={ controller.error(null) }) { Icon(Icons.Default.Close,stringResource(R.string.close)) }
                             }
                         }
-                        if(state.session!=null && page!=0) TextButton(onClick={ activity.page.value=0 },modifier=Modifier.fillMaxWidth()) { Text("${stringResource(R.string.active)} · ${WorkoutService.elapsed(state.session!!.elapsedMs)}") }
+                        if(state.session!=null && page!=0) TextButton(onClick={ activity.page.value=0; activity.focusTraining.value=true },modifier=Modifier.fillMaxWidth()) { Text("${stringResource(R.string.active)} · ${WorkoutService.elapsed(state.session!!.elapsedMs)}") }
                         Box(Modifier.weight(1f).fillMaxWidth()) {
                             when(page) {
-                                0 -> if(state.session==null) Home(activity,controller,state,link) else Live(activity,controller,state,link)
+                                0 -> if(state.session==null) Home(activity,controller,state,link) else TrainingScreen(activity,controller,state,link)
                                 1 -> History(activity,controller)
                                 2 -> Devices(activity,controller,state,link)
                                 else -> SettingsPage(activity,controller)
                             }
                         }
                         if(!rail) NavigationBar(containerColor=MaterialTheme.colorScheme.surface) {
-                            labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i },icon={ Icon(icons[i],null) },label={
+                            labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={
                                 BasicText(stringResource(id),style=LocalTextStyle.current.copy(color=LocalContentColor.current,textAlign=TextAlign.Center,letterSpacing=0.sp),maxLines=2,
                                     autoSize=TextAutoSize.StepBased(minFontSize=10.sp,maxFontSize=12.sp,stepSize=1.sp))
                             }) }
                         }
                     }
+                }
                 }
             }
         }
@@ -151,9 +158,10 @@ private val lightColors=lightColorScheme(
                     Box {
                         OrbitArt(Modifier.align(Alignment.TopEnd).size(230.dp))
                         Column(Modifier.padding(28.dp).widthIn(max=640.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
+                            BrandSignature()
                             Text(stringResource(R.string.ready_title),color=Color.White,style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Bold)
                             Text(stringResource(R.string.ready_body),color=Color(0xFFCAC8D3),style=MaterialTheme.typography.bodyLarge)
-                            Button(onClick={ c.select(null); activity.startTraining() },colors=ButtonDefaults.buttonColors(containerColor=Color(0xFFFFACCD),contentColor=Ink),contentPadding=PaddingValues(horizontal=24.dp,vertical=16.dp)) {
+                            Button(onClick={ c.select(null); activity.startTraining() },colors=ButtonDefaults.buttonColors(containerColor=Color(0xFFDCE8FA),contentColor=Color(0xFF173655)),contentPadding=PaddingValues(horizontal=24.dp,vertical=16.dp)) {
                                 Icon(Icons.Default.PlayArrow,null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.free_training))
                             }
                         }
@@ -162,7 +170,7 @@ private val lightColors=lightColorScheme(
             }
             item { ConnectionCard(state,link) { activity.page.value=2 } }
             item { SectionTitle(stringResource(R.string.presets),stringResource(R.string.original_templates)) }
-            items(Presets.all.chunked(columns)) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+            items(Presets.all.sortedBy { listOf("warmup","light","moderate","vigorous","strength","weight","hiit","cooldown").indexOf(it.id).let { rank -> if(rank<0) 99 else rank } }.chunked(columns)) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                 group.forEachIndexed { i,workout -> PlanCard(workout,i,Modifier.weight(1f)) { detail=workout } }
                 repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
             } }
@@ -173,7 +181,7 @@ private val lightColors=lightColorScheme(
             items(workouts) { w -> PlanCard(w,0,Modifier.fillMaxWidth()) { detail=w } }
         }
     }
-    detail?.let { workout -> AlertDialog(onDismissRequest={ detail=null },title={ Text(workoutTitle(workout)) },text={ Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { Profile(workout); Text(stringResource(R.string.stages_format,workout.steps.size)); Text(workout.steps.joinToString(" → ") { "${it.resistancePercent ?: 0}%" },style=MaterialTheme.typography.bodySmall) } },
+    detail?.let { workout -> AlertDialog(onDismissRequest={ detail=null },title={ Text(workoutTitle(workout)) },text={ Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { Profile(workout); Text(stringResource(R.string.plan_help),style=MaterialTheme.typography.bodySmall); Text(stringResource(R.string.stages_format,workout.steps.size)); Text(workout.steps.joinToString(" → ") { "${it.resistancePercent ?: 0}%" },style=MaterialTheme.typography.bodySmall) } },
         confirmButton={ TextButton(onClick={ c.select(workout); detail=null; activity.startTraining() }) { Text(stringResource(R.string.start)) } },
         dismissButton={ TextButton(onClick={ editor=workout; detail=null }) { Text(stringResource(if(workout.builtin) R.string.duplicate else R.string.edit)) } }) }
     editor?.let { WorkoutEditor(it,onDismiss={ editor=null },onSave={ w -> c.scope.launch { runCatching { c.repo.saveWorkout(w) }.onFailure { c.error(R.string.storage_failed) } }; editor=null }) }
@@ -192,14 +200,14 @@ private val lightColors=lightColorScheme(
 }
 @Composable private fun OrbitArt(modifier: Modifier) { Canvas(modifier) {
     val center=androidx.compose.ui.geometry.Offset(size.width*.77f,size.height*.44f)
-    listOf(Pink,Blue,Yellow).forEachIndexed { i,color -> drawCircle(color.copy(alpha=.16f),size.width*(.2f+i*.14f),center,style=Stroke(12.dp.toPx())) }
+    brandColors.forEachIndexed { i,color -> drawCircle(color.copy(alpha=.16f),size.width*(.2f+i*.14f),center,style=Stroke(12.dp.toPx())) }
 } }
 @Composable private fun PlanCard(workout: Workout,index: Int,modifier: Modifier,onClick: ()->Unit) {
     Card(onClick=onClick,modifier=modifier,colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),shape=RoundedCornerShape(22.dp)) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment=Alignment.CenterVertically) {
                 Text(workoutTitle(workout),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                Icon(Icons.Default.PlayArrow,null,tint=listOf(Pink,Blue,MaterialTheme.colorScheme.primary)[index%3])
+                Icon(Icons.Default.PlayArrow,null,tint=MaterialTheme.colorScheme.primary)
             }
             Profile(workout)
             Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -216,122 +224,6 @@ private val lightColors=lightColorScheme(
         workout.steps.forEachIndexed { i,s ->
             val h=size.height*(.12f+(s.resistancePercent ?: 0)/100f*.88f)
             drawRoundRect(if(i==current) Yellow else color.copy(alpha=if(i<current) .25f else .6f),androidx.compose.ui.geometry.Offset(i*step+1,size.height-h),androidx.compose.ui.geometry.Size((step-3).coerceAtLeast(1f),h),androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
-        }
-    }
-}
-@Composable private fun Live(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
-    var finish by remember { mutableStateOf(false) }
-    val imperial by c.imperial.collectAsStateWithLifecycle()
-    val fold by produceState<FoldingFeature?>(null,activity) {
-        WindowInfoTracker.getOrCreate(activity).windowLayoutInfo(activity).collect { info ->
-            value=info.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull { it.isSeparating || it.state==FoldingFeature.State.HALF_OPENED }
-        }
-    }
-    var origin by remember { mutableStateOf(Offset.Zero) }
-    val density=LocalDensity.current
-    BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { origin=it.positionInWindow() }) {
-        val wide=maxWidth>=900.dp
-        val feature=fold
-        val left=with(density) { ((feature?.bounds?.left ?: 0)-origin.x).toDp() }
-        val top=with(density) { ((feature?.bounds?.top ?: 0)-origin.y).toDp() }
-        val gapX=with(density) { (feature?.bounds?.width() ?: 0).toDp() }
-        val gapY=with(density) { (feature?.bounds?.height() ?: 0).toDp() }
-        if(feature?.orientation==FoldingFeature.Orientation.VERTICAL && left>180.dp && maxWidth-left-gapX>180.dp) {
-            Row(Modifier.fillMaxSize()) {
-                Column(Modifier.width(left).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) { Dashboard(state,imperial); Stages(state) }
-                Spacer(Modifier.width(gapX))
-                Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) { Controls(c,state,link); LiveActions(activity,c,state) { finish=true } }
-            }
-        } else if(feature?.orientation==FoldingFeature.Orientation.HORIZONTAL && top>120.dp && maxHeight-top-gapY>180.dp) {
-            Column(Modifier.fillMaxSize()) {
-                Column(Modifier.height(top).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) { Dashboard(state,imperial) }
-                Spacer(Modifier.height(gapY))
-                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { Controls(c,state,link); LiveActions(activity,c,state) { finish=true }; Stages(state) }
-            }
-        } else if(wide) Row(Modifier.fillMaxSize().padding(24.dp),horizontalArrangement=Arrangement.spacedBy(24.dp)) {
-            Column(Modifier.weight(1.5f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(20.dp)) { Dashboard(state,imperial); Controls(c,state,link) }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(20.dp)) { LiveActions(activity,c,state) { finish=true }; Stages(state) }
-        } else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
-            Dashboard(state,imperial); Controls(c,state,link); LiveActions(activity,c,state) { finish=true }; Stages(state)
-        }
-    }
-    if(finish) AlertDialog(onDismissRequest={ finish=false },title={ Text(stringResource(R.string.finish)) },text={ Text(stringResource(R.string.finish_note)) },confirmButton={ TextButton(onClick={ c.finish(); finish=false }) { Text(stringResource(R.string.finish)) } },dismissButton={ TextButton(onClick={ finish=false }) { Text(stringResource(R.string.cancel)) } })
-}
-@Composable private fun Dashboard(state: ExerciseState,imperial: Boolean) {
-    Surface(color=Ink,shape=RoundedCornerShape(28.dp),modifier=Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
-            Row(verticalAlignment=Alignment.CenterVertically) {
-                Text(stringResource(if(state.paused) R.string.paused else R.string.active),Modifier.weight(1f),color=Color(0xFFFFA3CA),style=MaterialTheme.typography.labelLarge)
-                Text(if(state.demo) stringResource(R.string.demo) else state.session?.device.orEmpty(),color=Color(0xFFD0CED8),style=MaterialTheme.typography.labelMedium,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.widthIn(max=160.dp))
-            }
-            BasicText(WorkoutService.elapsed(state.session?.elapsedMs ?: 0),style=LocalTextStyle.current.copy(color=Color.White,fontWeight=FontWeight.Light,letterSpacing=1.sp),maxLines=1,
-                autoSize=TextAutoSize.StepBased(minFontSize=18.sp,maxFontSize=46.sp,stepSize=1.sp))
-            val m=state.metrics
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                Metric(stringResource(R.string.resistance),num(m.resistance),"",Modifier.weight(1f),true)
-                Metric(stringResource(R.string.cadence),num(m.cadence),"rpm",Modifier.weight(1f),true)
-            }
-            HorizontalDivider(color=Color.White.copy(alpha=.12f))
-            FlowRow(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(20.dp),maxItemsInEachRow=if(LocalDensity.current.fontScale>1.2f) 2 else 3) {
-                val distance=state.session?.distanceM
-                Metric(stringResource(R.string.distance),distance?.let { "%.2f".format(it/(if(imperial) 1609.344 else 1000.0)) } ?: "—",if(imperial) "mi" else "km",Modifier.weight(1f),true)
-                Metric(stringResource(R.string.heart_rate),m.heartBpm?.toString() ?: "—","bpm",Modifier.weight(1f),true)
-                Metric(stringResource(R.string.power),num(m.powerW),"W",Modifier.weight(1f),true)
-            }
-        }
-    }
-}
-@Composable private fun Metric(label: String,value: String,unit: String,modifier: Modifier=Modifier,onDark: Boolean=false) {
-    Column(modifier,verticalArrangement=Arrangement.spacedBy(7.dp)) {
-        Text(label,color=if(onDark) Color(0xFFBBB9C8) else MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelMedium)
-        BasicText(value,style=LocalTextStyle.current.copy(color=if(onDark) Color.White else MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.SemiBold),maxLines=1,
-            autoSize=TextAutoSize.StepBased(minFontSize=16.sp,maxFontSize=28.sp,stepSize=1.sp))
-        if(unit.isNotEmpty()) Text(unit,color=if(onDark) Color(0xFFBBB9C8) else MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelSmall)
-    }
-}
-@Composable private fun Controls(c: Controller,state: ExerciseState,link: LinkState) {
-    val can=state.demo || (link.writable && link.range!=null && link.metrics.resistance!=null && !link.busy && link.phase=="ready")
-    Card(shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                FilledTonalButton(onClick={ c.adjust(-1) },enabled=can,modifier=Modifier.size(56.dp),contentPadding=PaddingValues(0.dp)) { Text("−",fontSize=32.sp) }
-                Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally) { Text(stringResource(R.string.resistance),style=MaterialTheme.typography.labelLarge); Text(num(state.metrics.resistance),fontSize=36.sp,fontWeight=FontWeight.Bold) }
-                Button(onClick={ c.adjust(1) },enabled=can,modifier=Modifier.size(56.dp),contentPadding=PaddingValues(0.dp)) { Text("+",fontSize=32.sp) }
-            }
-            if(!can) Text(stringResource(R.string.control_unavailable),style=MaterialTheme.typography.bodySmall)
-            link.requested?.let { Text(stringResource(R.string.control_pending,num(it)),style=MaterialTheme.typography.bodySmall) }
-            if(state.selected!=null) Column {
-                Text(stringResource(if(state.automatic) R.string.auto else R.string.manual),style=MaterialTheme.typography.labelMedium)
-                if(!state.automatic) TextButton(onClick=c::resumeAutomatic,enabled=can,modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.restore_auto)) }
-            }
-        }
-    }
-}
-@Composable private fun LiveActions(activity: MainActivity,c: Controller,state: ExerciseState,finish: ()->Unit) {
-    Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        Button(onClick=c::pauseResume,modifier=Modifier.fillMaxWidth().heightIn(min=54.dp)) { Text(stringResource(if(state.paused) R.string.resume else R.string.pause)) }
-        OutlinedButton(onClick=activity::minimize,modifier=Modifier.fillMaxWidth().heightIn(min=54.dp)) { Text(stringResource(R.string.minimize)) }
-        TextButton(onClick=finish,modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish),color=MaterialTheme.colorScheme.error) }
-    }
-}
-@Composable private fun Stages(state: ExerciseState) {
-    state.selected?.let { workout ->
-        Column(verticalArrangement=Arrangement.spacedBy(16.dp)) {
-            Text(workoutTitle(workout),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
-            Profile(workout,state.stage)
-            if(state.done) Text(stringResource(R.string.workout_done)) else {
-                Text(stringResource(R.string.stage_format,state.stage+1,workout.steps.size))
-                LinearProgressIndicator(progress={ state.progress },modifier=Modifier.fillMaxWidth(),color=Pink)
-            }
-            workout.steps.forEachIndexed { i,step ->
-                Surface(color=if(i==state.stage) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,shape=RoundedCornerShape(14.dp),modifier=Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(16.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                        Text("${i+1}",fontWeight=FontWeight.Bold)
-                        Text("${num(step.target)} ${when(step.condition) { Condition.TIME -> "s"; Condition.DISTANCE -> "m"; Condition.STROKES -> stringResource(R.string.strokes) }}",Modifier.weight(1f))
-                        Text(step.resistancePercent?.let { "$it%" } ?: "—")
-                    }
-                }
-            }
         }
     }
 }
@@ -372,6 +264,11 @@ private val lightColors=lightColorScheme(
                 Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
                     Text(stringResource(R.string.demo),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                     Text(stringResource(R.string.demo_description))
+                    FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                        listOf(Machine.ELLIPTICAL to R.string.machine_elliptical,Machine.BIKE to R.string.machine_bike,Machine.ROWER to R.string.machine_rower,Machine.TREADMILL to R.string.machine_treadmill).forEach { (machine,label) ->
+                            FilterChip(state.demo && state.demoMachine==machine,{ c.setDemo(true,machine) },enabled=state.session==null,label={ Text(stringResource(label)) })
+                        }
+                    }
                     OutlinedButton(onClick={ c.setDemo(!state.demo); if(!state.demo) activity.page.value=0 },enabled=state.session==null) { Text(stringResource(if(state.demo) R.string.exit_demo else R.string.start_demo)) }
                 }
             }
@@ -392,6 +289,7 @@ private val lightColors=lightColorScheme(
             TextButton(onClick=activity::importFile) { Text(stringResource(R.string.import_file)) }
         } }
         if(sessions.isEmpty()) item { Text(stringResource(R.string.records_empty),Modifier.padding(vertical=60.dp),style=MaterialTheme.typography.headlineSmall) }
+        if(sessions.isNotEmpty()) item { Text(stringResource(R.string.estimated_values),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
         items(sessions,key={ it.id }) { session ->
             Card(onClick={ detail=session },colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),shape=RoundedCornerShape(22.dp),modifier=Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -400,10 +298,11 @@ private val lightColors=lightColorScheme(
                         if(session.demo) BadgeText(stringResource(R.string.demo),Yellow)
                     }
                     Text(session.device,style=MaterialTheme.typography.bodySmall)
-                    Row(horizontalArrangement=Arrangement.spacedBy(32.dp)) {
+                    FlowRow(horizontalArrangement=Arrangement.spacedBy(24.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         Text(WorkoutService.elapsed(session.elapsedMs),style=MaterialTheme.typography.headlineSmall)
-                        Text(session.distanceM?.let { "%.2f %s".format(it/(if(imperial) 1609.344 else 1000.0),if(imperial) "mi" else "km") } ?: "—",style=MaterialTheme.typography.headlineSmall)
+                        Text(session.distanceM?.let { (if(session.distanceEstimated) "≈" else "")+"%.2f %s".format(it/(if(imperial) 1609.344 else 1000.0),if(imperial) "mi" else "km") } ?: "—",style=MaterialTheme.typography.headlineSmall)
                     }
+                    session.caloriesKcal?.let { Text("${if(session.caloriesEstimated) "≈" else ""}${"%.1f".format(it)} kcal",style=MaterialTheme.typography.bodyMedium) }
                     Text(status(session.status),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -432,6 +331,8 @@ private val lightColors=lightColorScheme(
     val theme by c.theme.collectAsStateWithLifecycle(); val imperial by c.imperial.collectAsStateWithLifecycle()
     var checking by remember { mutableStateOf(false) }; var updateMessage by remember { mutableStateOf<Int?>(null) }; var release by remember { mutableStateOf<Release?>(null) }
     val scope=rememberCoroutineScope()
+    var picker by remember { mutableStateOf(false) }; var estimates by remember { mutableStateOf(false) }
+    val packets by c.display.packets.collectAsStateWithLifecycle()
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(28.dp)) {
         item { SectionTitle(stringResource(R.string.settings),stringResource(R.string.local_only)) }
         item { SettingGroup(stringResource(R.string.language)) {
@@ -455,6 +356,16 @@ private val lightColors=lightColorScheme(
                 TextButton(onClick=activity::importFile) { Text(stringResource(R.string.import_file)) }
             }
         } }
+        item { SettingGroup(stringResource(R.string.training_screen)) {
+            OutlinedButton(onClick={ picker=true }) { Text(stringResource(R.string.choose_metrics)) }
+            OutlinedButton(onClick={ estimates=true }) { Text(stringResource(R.string.estimation_settings)) }
+        } }
+        item { SettingGroup(stringResource(R.string.diagnostics)) {
+            Text(stringResource(R.string.diagnostic_help),style=MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment=Alignment.CenterVertically) { Text(stringResource(R.string.packet_logging),Modifier.weight(1f)); Switch(packets,c.display::packetLogs) }
+            Text(stringResource(R.string.packet_help),style=MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick={ activity.export("diagnostics") }) { Text(stringResource(R.string.export_diagnostics)) }
+        } }
         item { SettingGroup(stringResource(R.string.updates)) {
             Text("OpenMobi ${BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.bodyMedium)
             Button(enabled=!checking,onClick={ scope.launch {
@@ -469,6 +380,8 @@ private val lightColors=lightColorScheme(
         } }
         item { Text(stringResource(R.string.overlay_info),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     }
+    if(picker) MetricPicker(c) { picker=false }
+    if(estimates) EstimateDialog(c) { estimates=false }
 }
 @Composable private fun SettingGroup(title: String,content: @Composable ColumnScope.()->Unit) {
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold); content() }
@@ -508,8 +421,8 @@ private data class Draft(val condition: Condition,val target: String,val resista
         }
     }
 }
-@Composable private fun workoutTitle(workout: Workout): String {
-    val id=when(workout.id) { "warmup" -> R.string.warmup; "recovery" -> R.string.recovery; "steady20" -> R.string.steady20; "steady30" -> R.string.steady30; "endurance" -> R.string.endurance; "interval10" -> R.string.interval10; "interval20" -> R.string.interval20; "interval30" -> R.string.interval30; "pyramid20" -> R.string.pyramid20; "pyramid30" -> R.string.pyramid30; "progressive" -> R.string.progressive; "cooldown" -> R.string.cooldown; else -> null }
+@Composable internal fun workoutTitle(workout: Workout): String {
+    val id=when(workout.id) { "warmup" -> R.string.warmup; "recovery" -> R.string.recovery; "steady20" -> R.string.steady20; "steady30" -> R.string.steady30; "endurance" -> R.string.endurance; "interval10" -> R.string.interval10; "interval20" -> R.string.interval20; "interval30" -> R.string.interval30; "pyramid20" -> R.string.pyramid20; "pyramid30" -> R.string.pyramid30; "progressive" -> R.string.progressive; "cooldown" -> R.string.cooldown; "light" -> R.string.plan_light; "moderate" -> R.string.plan_moderate; "vigorous" -> R.string.plan_vigorous; "strength" -> R.string.plan_strength; "weight" -> R.string.plan_weight; "hiit" -> R.string.plan_hiit; else -> null }
     return if(workout.builtin && id!=null) stringResource(id) else workout.title
 }
 @Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; else -> R.string.disconnected })

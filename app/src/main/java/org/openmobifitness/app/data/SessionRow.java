@@ -9,4 +9,6 @@ public class SessionRow {
  public long elapsedMs;
  public Double distanceM;
  public boolean demo;
+ public Double caloriesKcal, weightKg, met;
+ @androidx.room.ColumnInfo(defaultValue="0") public boolean caloriesEstimated, distanceEstimated;
 }

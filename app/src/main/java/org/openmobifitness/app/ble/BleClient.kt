@@ -43,7 +43,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     private var lastWrite = 0L
     private var legacyProfile: String? = null
     private val cccd = uuid("2902")
-    private fun log(value: String) { state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
+    private fun log(value: String) { org.openmobifitness.app.data.AppLog.event("ble",value); state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
     fun available() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
     fun scan() {
         stopScan(); found.value=emptyList()
@@ -76,6 +76,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
         } catch(e: Exception) { fail("connection_failed") }
     }
     fun disconnect() {
+        if(gatt!=null) org.openmobifitness.app.data.AppLog.event("disconnect",state.value.protocol.name)
         connectionJob?.cancel(); pending?.complete(false); indication?.complete(false)
         val old=gatt; gatt=null; runCatching { old?.disconnect(); old?.close() }
         template=null; magnets=null; ftmsFeature=false; granted=false; unlocked=false; legacyProfile=null
@@ -132,6 +133,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     }
     private suspend fun write(service: String,which: String,bytes: ByteArray): Boolean {
         val c=characteristic(service,which) ?: return false
+        org.openmobifitness.app.data.AppLog.packet("tx",which,bytes)
         val type=if(c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT else BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         return operation("write:${c.uuid}") { g ->
             if(Build.VERSION.SDK_INT>=33) g.writeCharacteristic(c,bytes,type)==BluetoothStatusCodes.SUCCESS
@@ -179,6 +181,8 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     }
     private fun receive(id: UUID,data: ByteArray) {
         val short=id.short(); val now=SystemClock.elapsedRealtime()
+        if(short in setOf("ffe1","ffe4","8811","8812","8813","8802","8805","8806","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
+            org.openmobifitness.app.data.AppLog.packet("rx",short,data)
         // Diagnostics intentionally omit names, addresses, serial number and raw workout samples.
         if(short in setOf("8802","8805","8806","2acc","2ad6")) log("capability:$short:${data.joinToString("") { "%02x".format(it) }}")
         var metrics: Metrics?=null; var motion=false
@@ -193,7 +197,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             "8813" -> {
                 metrics=Protocols.v2Metrics(data)
                 // Legacy treadmill variants use different distance scales; withhold unverified values.
-                if(state.value.machine==Machine.TREADMILL) metrics=metrics?.copy(distanceM=null,powerW=null,strokes=null)
+                if(state.value.machine==Machine.TREADMILL) metrics=metrics?.copy(distanceM=null,caloriesKcal=null,powerW=null,strokes=null,stepRate=metrics?.cadence,strideM=metrics?.cadence?.takeIf { it>0 }?.let { rate -> metrics?.speedMps?.times(60)?.div(rate) })
                 motion=true
             }
             "8811" -> if(state.value.machine in listOf(Machine.ELLIPTICAL,Machine.BIKE)) { metrics=Metrics(cadence=magnets?.let { Protocols.intervalCadence(data,it) }); motion=true }

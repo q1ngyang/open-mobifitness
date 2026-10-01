@@ -60,7 +60,8 @@ object Protocols {
         require(data.size in listOf(9,11,13))
         fun be(i: Int) = data[i].u() * 256 + data[i+1].u()
         Metrics(cadence=data[2].u().toDouble(), speedMps=data[0].u() / 36.0, distanceM=be(5).toDouble(),
-            powerW=if(data.size >= 11) be(9).toDouble() else null, strokes=if(data.size >= 13) be(11) else null)
+            powerW=if(data.size >= 11) be(9).toDouble() else null, strokes=if(data.size >= 13) be(11) else null,
+            caloriesKcal=be(7)/10.0)
     }.getOrNull()
     fun intervalCadence(data: ByteArray, magnets: Int): Double? {
         if(data.size < 2 || magnets !in 1..255) return null
@@ -77,6 +78,8 @@ object Protocols {
         fun flag(bit: Int) = f and (1 shl bit) != 0
         var speed: Double?=null; var cadence: Double?=null; var distance: Double?=null
         var resistance: Double?=null; var power: Double?=null; var heart: Int?=null; var strokes: Int?=null
+        var calories: Double?=null; var incline: Double?=null; var force: Double?=null; var steps: Double?=null
+        fun energy() { val total=p.u16(); calories=total.takeIf { it!=65535 }?.toDouble(); p.skip(3) }
         when(characteristic) {
             "2ad2" -> {
                 if(!flag(0)) speed=p.u16()/360.0
@@ -87,7 +90,7 @@ object Protocols {
                 if(flag(5)) resistance=p.s16()/10.0
                 if(flag(6)) power=p.s16().toDouble()
                 if(flag(7)) p.skip(2)
-                if(flag(8)) p.skip(5)
+                if(flag(8)) energy()
                 if(flag(9)) heart=p.u8()
                 if(flag(10)) p.skip(1)
                 if(flag(11)) p.skip(2)
@@ -97,14 +100,14 @@ object Protocols {
                 if(!flag(0)) speed=p.u16()/360.0
                 if(flag(1)) p.skip(2)
                 if(flag(2)) distance=p.u24().toDouble()
-                if(flag(3)) { cadence=p.u16().toDouble(); p.skip(2) }
+                if(flag(3)) { steps=p.u16().toDouble(); p.skip(2) }
                 if(flag(4)) p.skip(2)
                 if(flag(5)) p.skip(4)
-                if(flag(6)) p.skip(4)
+                if(flag(6)) { incline=p.s16()/10.0; p.skip(2) }
                 if(flag(7)) resistance=p.s16()/10.0
                 if(flag(8)) power=p.s16().toDouble()
                 if(flag(9)) p.skip(2)
-                if(flag(10)) p.skip(5)
+                if(flag(10)) energy()
                 if(flag(11)) heart=p.u8()
                 if(flag(12)) p.skip(1)
                 if(flag(13)) p.skip(2)
@@ -119,7 +122,7 @@ object Protocols {
                 if(flag(5)) power=p.s16().toDouble()
                 if(flag(6)) p.skip(2)
                 if(flag(7)) resistance=p.s16()/10.0
-                if(flag(8)) p.skip(5)
+                if(flag(8)) energy()
                 if(flag(9)) heart=p.u8()
                 if(flag(10)) p.skip(1)
                 if(flag(11)) p.skip(2)
@@ -129,19 +132,19 @@ object Protocols {
                 if(!flag(0)) speed=p.u16()/360.0
                 if(flag(1)) p.skip(2)
                 if(flag(2)) distance=p.u24().toDouble()
-                if(flag(3)) p.skip(4)
+                if(flag(3)) { incline=p.s16()/10.0; p.skip(2) }
                 if(flag(4)) p.skip(4)
                 if(flag(5)) p.skip(1)
                 if(flag(6)) p.skip(1)
-                if(flag(7)) p.skip(5)
+                if(flag(7)) energy()
                 if(flag(8)) heart=p.u8()
                 if(flag(9)) p.skip(1)
                 if(flag(10)) p.skip(2)
                 if(flag(11)) p.skip(2)
-                if(flag(12)) p.skip(4)
+                if(flag(12)) { force=p.s16().toDouble(); power=p.s16().toDouble() }
             }
             else -> error("unknown_characteristic")
         }
-        Metrics(cadence,resistance,speed,distance,heart,power,strokes)
+        Metrics(cadence,resistance,speed,distance,heart,power,strokes,calories,incline,forceN=force,stepRate=steps)
     }.getOrNull()
 }

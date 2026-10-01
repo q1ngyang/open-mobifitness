@@ -25,7 +25,7 @@ object Files {
                 val entry=zip.nextEntry ?: break
                 require(!entry.isDirectory && entry.name in setOf("sessions.csv","samples.csv","workouts.csv","manifest.txt") && seen.add(entry.name))
                 val part=zip.bounded(LIMIT-size); size+=part.size
-                if(entry.name=="manifest.txt") require(decode(part)=="OpenMobi backup 1\n")
+                if(entry.name=="manifest.txt") require(decode(part) in setOf("OpenMobi backup 1\n","OpenMobi backup 2\n"))
                 else {
                     val text=decode(part)
                     val prefix=when(entry.name) { "sessions.csv" -> "schema,session_id,start_utc,"; "samples.csv" -> "schema,session_id,elapsed_ms,"; else -> "schema,workout_id,title," }
@@ -39,7 +39,7 @@ object Files {
     }
     fun backup(output: OutputStream,archive: Archive) {
         ZipOutputStream(output).use { zip ->
-            val entries=linkedMapOf("manifest.txt" to "OpenMobi backup 1\n","sessions.csv" to Exchange.sessions(archive.sessions),"samples.csv" to Exchange.samples(archive.samples),"workouts.csv" to Exchange.workouts(archive.workouts))
+            val entries=linkedMapOf("manifest.txt" to "OpenMobi backup 2\n","sessions.csv" to Exchange.sessions(archive.sessions),"samples.csv" to Exchange.samples(archive.samples),"workouts.csv" to Exchange.workouts(archive.workouts))
             entries.forEach { (name,text) -> zip.putNextEntry(ZipEntry(name)); zip.write(text.toByteArray(Charsets.UTF_8)); zip.closeEntry() }
         }
     }

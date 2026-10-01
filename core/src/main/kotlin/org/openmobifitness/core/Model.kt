@@ -13,19 +13,26 @@ data class ResistanceRange(val min: Double, val max: Double, val increment: Doub
         kotlin.math.abs((value - min) / increment - ((value - min) / increment).roundToInt()) < 0.001
     fun percent(percent: Int): Double = (min + ((max - min) * percent.coerceIn(0, 100) / 100 / increment).roundToInt() * increment).coerceIn(min, max)
     fun next(value: Double, delta: Int) = (min + (((value - min) / increment).roundToInt() + delta) * increment).coerceIn(min, max)
+    fun percentage(value: Double): Int = if(max==min) 0 else ((value-min)/(max-min)*100).roundToInt().coerceIn(0,100)
 }
 data class Metrics(
     val cadence: Double? = null, val resistance: Double? = null, val speedMps: Double? = null,
-    val distanceM: Double? = null, val heartBpm: Int? = null, val powerW: Double? = null, val strokes: Int? = null
+    val distanceM: Double? = null, val heartBpm: Int? = null, val powerW: Double? = null, val strokes: Int? = null,
+    val caloriesKcal: Double? = null, val inclinePercent: Double? = null, val strideM: Double? = null,
+    val forceN: Double? = null, val stepRate: Double? = null, val stepCount: Int? = null, val targetCadence: Double? = null
 ) {
     fun merge(new: Metrics) = Metrics(new.cadence ?: cadence, new.resistance ?: resistance, new.speedMps ?: speedMps,
-        new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, new.powerW ?: powerW, new.strokes ?: strokes)
+        new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, new.powerW ?: powerW, new.strokes ?: strokes,
+        new.caloriesKcal ?: caloriesKcal,new.inclinePercent ?: inclinePercent,new.strideM ?: strideM,
+        new.forceN ?: forceN,new.stepRate ?: stepRate,new.stepCount ?: stepCount,new.targetCadence ?: targetCadence)
 }
 data class Session(
     val id: String = UUID.randomUUID().toString(), val start: String = Instant.now().toString(),
     val end: String = "", val zone: String = ZoneId.systemDefault().id, val device: String = "",
     val machine: Machine = Machine.UNKNOWN, val protocol: Protocol = Protocol.UNKNOWN,
-    val elapsedMs: Long = 0, val distanceM: Double? = null, val demo: Boolean = false, val status: String = "active"
+    val elapsedMs: Long = 0, val distanceM: Double? = null, val demo: Boolean = false, val status: String = "active",
+    val caloriesKcal: Double? = null, val caloriesEstimated: Boolean = false, val distanceEstimated: Boolean = false,
+    val weightKg: Double? = null, val met: Double? = null
 )
 data class Sample(val sessionId: String, val elapsedMs: Long, val metrics: Metrics)
 enum class Condition { TIME, DISTANCE, STROKES }
@@ -41,7 +48,7 @@ object Presets {
     val all = listOf(
         plan("warmup", 2 to 5, 2 to 10, 2 to 15, 2 to 20),
         plan("recovery", 2 to 5, 6 to 15, 2 to 5),
-        plan("steady20", 3 to 10, 14 to 30, 3 to 10),
+        plan("steady20", 5 to 10, 10 to 30, 5 to 10),
         plan("steady30", 5 to 10, 20 to 30, 5 to 10),
         plan("endurance", 5 to 10, 35 to 25, 5 to 10),
         plan("interval10", 2 to 10, 1 to 35, 1 to 10, 1 to 35, 1 to 10, 1 to 35, 1 to 10, 2 to 5),
@@ -50,7 +57,13 @@ object Presets {
         plan("pyramid20", 3 to 10, 3 to 20, 3 to 30, 2 to 40, 3 to 30, 3 to 20, 3 to 5),
         plan("pyramid30", 5 to 10, 4 to 20, 4 to 30, 4 to 40, 4 to 30, 4 to 20, 5 to 5),
         plan("progressive", 5 to 10, 5 to 20, 5 to 30, 5 to 40, 5 to 10),
-        plan("cooldown", 2 to 20, 2 to 15, 2 to 10, 2 to 5)
+        plan("cooldown", 2 to 20, 2 to 15, 2 to 10, 2 to 5),
+        plan("light", 5 to 5, 10 to 15, 5 to 5),
+        plan("moderate", 5 to 10, 20 to 30, 5 to 5),
+        plan("vigorous", 5 to 10, 5 to 35, 10 to 50, 5 to 30, 5 to 5),
+        plan("strength", 5 to 10, 2 to 50, 2 to 15, 2 to 50, 2 to 15, 2 to 50, 2 to 15, 5 to 5),
+        plan("weight", 5 to 10, 30 to 25, 5 to 5),
+        plan("hiit", 5 to 10, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 5 to 5)
     )
 }
 
@@ -61,6 +74,11 @@ class TrainingEngine(val workout: Workout) {
     private var startDistance: Double? = null
     private var startStrokes: Int? = null
     var done = false; private set
+    fun remainingMs(elapsedMs: Long): Long? = when {
+        done -> 0L
+        workout.steps[index].condition!=Condition.TIME -> null
+        else -> (startMs+(workout.steps[index].target*1000).toLong()-elapsedMs).coerceAtLeast(0)
+    }
     fun resetBaseline(elapsedMs: Long, distance: Double?, strokes: Int?) {
         startMs = elapsedMs; startDistance = distance; startStrokes = strokes
     }

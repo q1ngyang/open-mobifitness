@@ -8,26 +8,31 @@ OpenMobi 是为莫比健身器材重新实现的离线 Android 控制与训练�
 
 ## 当前版本
 
-`0.1.0-alpha.1`，包名 **`org.openmobifitness.app`**。调试包为 `org.openmobifitness.app.debug`。两者都可以与官方 App 共存。
+`0.1.0-alpha.2`，包名 **`org.openmobifitness.app`**。调试包为 `org.openmobifitness.app.debug`。两者都可以与官方 App 共存。
 
-这是供实机验证的首个版本。**器材协议实现不等于已通过器材实测。**当前没有真实器材抓包或写入验证；各协议能力和限制见 [兼容性](docs/COMPATIBILITY.md)。
+这是经过模拟器初步验证、仍需实机验证的测试版。**器材协议实现不等于已通过器材实测。**当前没有真实器材抓包或写入验证；各协议能力和限制见 [兼容性](docs/COMPATIBILITY.md)。
 
 - 本地 BLE 发现、连接、能力读取与受支持的阻力控制。
 - 独立训练状态、分段调度、手动优先、断连暂停；不会自动重连后重放控制命令。
-- 自由运动、12 套原创离线模板、自定义时间／距离／桨数阶段。
+- 自由运动、18 套原创离线模板、自定义时间／距离／桨数阶段。
 - Room 本地记录、逐秒采样、异常中断记录恢复。
 - CSV 摘要／采样／训练方案与 ZIP 备份，导入预览、内容去重、冲突事务回滚。
-- 手机与平板按窗口宽度布局，浅色／深色、公制／英制。
-- **悬浮控制面板**：时间、阻力、踏频、阻力加减、暂停计时、返回运动页。不是系统视频 PiP。
+- 独立全屏运动页，手机指标分页、平板分栏，浅色／深色、公制／英制。
+- 17 个可选运动指标，主页面／大小悬浮窗分别选择与排序；热量估算、距离、阶段分秒倒计时、档位百分比。
+- **两级悬浮控制面板**：小窗显示自选指标，点击展开阻力／暂停／返回运动页，拖动移动。
 - 完整资源键集合：简体中文、繁体中文、英语、日语、韩语、德语。
-- 手动检查本仓库 GitHub 的稳定版 Release；核心训练不依赖网络。
-- 明确标注的演示模式与可导出的匿名设备诊断。
+- 手动检查本仓库 GitHub Release（alpha 版包含后续预发布，稳定版仅检查稳定更新）；核心训练不依赖网络。
+- 明确标注的演示模式与可导出的本地诊断日志与按需启用的蓝牙协议报文。
+
+训练、指标来源与估算说明见 [训练说明](docs/TRAINING.md)。
 
 原服务器的完整官方训练目录不在提供的 APK 中。内置模板是 OpenMobi 原创，不宣称还原了这些丢失的课程。
 
+![OpenMobi 手机运动界面（演示数据）](docs/images/phone-training.png)
+
 ![OpenMobi 平板运动界面（演示数据）](docs/images/tablet-training.png)
 
-上图为 Android 14 模拟器中的真实界面，显示的是明确标注的演示数据。
+上图为 Android 14 模拟器中的真实界面，显示的是明确标注的演示数据；平板截图使用 130% 字体。
 
 ## 安装与首次验证
 
@@ -78,7 +83,7 @@ python3 tools/check_resources.py
 
 OpenMobi is an independent, offline Android companion for Mobi fitness equipment. It replaces account/server dependencies with local BLE control, workout scheduling, local history, CSV exchange and an interactive floating control panel.
 
-This first alpha is **awaiting physical equipment validation**. Implemented protocol paths are not a guarantee of compatibility with every model. Device capabilities gate commands; treadmill motor commands and firmware updates are deliberately excluded from this build. Original online course catalogs cannot be recovered from the APKs alone.
+This alpha is **awaiting physical equipment validation**. Implemented protocol paths are not a guarantee of compatibility with every model. Device capabilities gate commands; treadmill motor commands and firmware updates are deliberately excluded from this build. Original online course catalogs cannot be recovered from the APKs alone.
 
 The application supports English, Simplified Chinese, Traditional Chinese, Japanese, Korean and German. New source code is licensed under Apache-2.0. It contains no official APKs or commercial course content.
 

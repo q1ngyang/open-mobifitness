@@ -61,9 +61,9 @@ class CoreTest {
         assertTrue(engine.tick(22000,520.0,null)); assertTrue(engine.done)
     }
     @Test fun allPresetDurationsAndTargetsAreBounded() {
-        assertEquals(12,Presets.all.size)
+        assertEquals(18,Presets.all.size)
         assertEquals(20*60.0,Presets.all.first { it.id=="interval20" }.steps.sumOf { it.target },0.0)
-        assertTrue(Presets.all.all { w -> w.steps.all { it.resistancePercent!! in 0..40 } })
+        assertTrue(Presets.all.all { w -> w.steps.all { it.resistancePercent!! in 0..55 } })
     }
     @Test fun delayedTicksDoNotStretchTimedIntervals() {
         val engine=TrainingEngine(Workout(title="intervals",steps=List(3) { Step(target=2.0) }))

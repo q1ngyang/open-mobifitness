@@ -9,7 +9,17 @@ import org.openmobifitness.core.*
 import java.time.Instant
 
 class Repository(context: Context) {
-    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").build()
+    companion object {
+        val MIGRATION_1_2=object: androidx.room.migration.Migration(1,2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                listOf("caloriesKcal","weightKg","met").forEach { db.execSQL("ALTER TABLE sessions ADD COLUMN $it REAL") }
+                listOf("caloriesEstimated","distanceEstimated").forEach { db.execSQL("ALTER TABLE sessions ADD COLUMN $it INTEGER NOT NULL DEFAULT 0") }
+                listOf("caloriesKcal","inclinePercent","strideM","forceN","stepRate","targetCadence").forEach { db.execSQL("ALTER TABLE samples ADD COLUMN $it REAL") }
+                db.execSQL("ALTER TABLE samples ADD COLUMN stepCount INTEGER")
+            }
+        }
+    }
+    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2).build()
     private val dao get() = db.records()
     val sessions = MutableStateFlow<List<Session>>(emptyList())
     val workouts = MutableStateFlow<List<Workout>>(emptyList())
@@ -76,10 +86,12 @@ class Repository(context: Context) {
 private fun Session.row() = SessionRow().also {
     it.id=id; it.start=start; it.end=end; it.zone=zone; it.device=device; it.machine=machine.name; it.protocol=protocol.name
     it.elapsedMs=elapsedMs; it.distanceM=distanceM; it.demo=demo; it.status=status
+    it.caloriesKcal=caloriesKcal; it.caloriesEstimated=caloriesEstimated; it.distanceEstimated=distanceEstimated; it.weightKg=weightKg; it.met=met
 }
-private fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status)
+private fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met)
 private fun Sample.row() = SampleRow().also { s ->
     s.sessionId=sessionId; s.elapsedMs=elapsedMs
-    metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes }
+    metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes
+        s.caloriesKcal=it.caloriesKcal; s.inclinePercent=it.inclinePercent; s.strideM=it.strideM; s.forceN=it.forceN; s.stepRate=it.stepRate; s.stepCount=it.stepCount; s.targetCadence=it.targetCadence }
 }
-private fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes))
+private fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes,caloriesKcal,inclinePercent,strideM,forceN,stepRate,stepCount,targetCadence))

@@ -36,3 +36,13 @@ UTF-8（导出含 BOM），逗号分隔，双引号按 RFC 4180 规则转义；�
 导入先预览，再事务提交。相同 ID、相同内容跳过；冲突取消整次导入。采样必须引用已有或同次导入的会话，时间不能超出会话长度。错误提示尽可能提供 CSV 行号。
 
 当前解析器限制单文件／解压后总内容 32 MiB、单 CSV 200,000 数据行、单字段 4,096 字符，防止异常输入耗尽手机内存。单次运动详情中可以单独导出该次采样或完整备份，适合分批归档。首个 alpha 的超大归档仍需进一步实现流式分页；不要删除原始备份。官方旧 App 的私有缓存和已关闭云端记录不在此格式承诺内。
+
+## Schema 2（alpha.2）
+
+导出的 sessions.csv 和 samples.csv 使用 schema=2；仍接受 schema=1 的原有列头。workouts.csv 继续使用 schema=1。ZIP manifest version=2，读取器同时接受 version=1 和 2。
+
+`sessions.csv` 在旧字段后增加：`calories_kcal,calories_estimated,distance_estimated,weight_kg,met`。布尔值为 true／false；空读数仍为空单元格，不等于零。热量与距离估算标记指本次累计中含有估算部分。
+
+`samples.csv` 增加：`calories_kcal,incline_percent,stride_m,force_n,step_rate,step_count,target_cadence`。距离、热量和桨数均为本次有效训练的相对累计值。沿用的 cadence_rpm 字段在划船机上表示桨频，在相应跑步机协议中表示步频；请结合 session.machine 解读，不能跨器材直接比较。force_n 与 power_w 允许设备协议中的有符号值。
+
+本地 Room 数据库从版本 1 无损迁移到 2，旧记录的新读数为 null、估算标记为 false，不回填虚构热量。升级与双版本导入均有自动化测试。旧版 OpenMobi 无法读取 schema=2 导出；请用 alpha.2 或更新版。

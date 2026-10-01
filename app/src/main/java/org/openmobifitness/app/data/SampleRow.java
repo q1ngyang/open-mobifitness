@@ -9,4 +9,6 @@ public class SampleRow {
  public long elapsedMs;
  public Double cadence, resistance, speedMps, distanceM, powerW;
  public Integer heartBpm, strokes;
+ public Double caloriesKcal, inclinePercent, strideM, forceN, stepRate, targetCadence;
+ public Integer stepCount;
 }

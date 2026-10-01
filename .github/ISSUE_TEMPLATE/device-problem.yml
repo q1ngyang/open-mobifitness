@@ -1,0 +1,34 @@
+name: Device compatibility / 器材问题
+description: Report equipment behavior with an exported OpenMobi diagnostic log.
+title: "[Device] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请在 OpenMobi「设置 → 设备诊断」开启协议报文记录，复现问题后导出日志，再关闭报文记录。分享前可以检查文件内容。
+        Enable Bluetooth protocol logging under Settings → Device diagnostics, reproduce once, export the log, then disable packet logging. Review the file before attaching it here.
+  - type: input
+    id: equipment
+    attributes:
+      label: Equipment model / 器材型号
+      description: Product or label model; do not include a Bluetooth address or serial number.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: App version, phone/tablet model, Android version / 测试环境
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Steps, expected behavior, actual behavior / 复现与结果
+      description: Include whether it occurs in full-screen or floating mode; note last working app version if known.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Exported log and optional screenshots / 日志与截图
+      description: Drag OpenMobi-diagnostics.txt here. Do not post keys, official APKs, or private workout backups.

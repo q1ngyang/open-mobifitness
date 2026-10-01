@@ -25,6 +25,7 @@ import org.openmobifitness.core.*
 class MainActivity : ComponentActivity() {
     private val controller get()=(application as OpenMobiApp).controller
     val page=mutableStateOf(0)
+    val focusTraining=mutableStateOf(false)
     private var pendingPermission: (() -> Unit)?=null
     private var exportKind="sessions"
     private var exportSessionId: String?=null
@@ -50,7 +51,8 @@ class MainActivity : ComponentActivity() {
             val kind=exportKind
             val sessionId=exportSessionId
             try {
-                val archive=controller.repo.archive(sessionId)
+                val diagnostic=if(kind=="diagnostics") org.openmobifitness.app.data.AppLog.report(controller) else null
+                val archive=if(kind=="diagnostics") Archive() else controller.repo.archive(sessionId)
                 withContext(Dispatchers.IO) {
                     contentResolver.openOutputStream(uri,"wt")!!.use { output ->
                         when(kind) {
@@ -59,7 +61,7 @@ class MainActivity : ComponentActivity() {
                                 val text=when(kind) {
                                     "samples" -> Exchange.samples(archive.samples)
                                     "workouts" -> Exchange.workouts(archive.workouts)
-                                    "diagnostics" -> "OpenMobi ${BuildConfig.VERSION_NAME}\nAndroid ${Build.VERSION.SDK_INT}\n${controller.ble.state.value.protocol}\n"+controller.ble.state.value.diagnostic.joinToString("\n")
+                                    "diagnostics" -> diagnostic.orEmpty()
                                     else -> Exchange.sessions(archive.sessions)
                                 }
                                 output.write(text.toByteArray(Charsets.UTF_8))
@@ -78,11 +80,12 @@ class MainActivity : ComponentActivity() {
         exportSessionId=savedInstanceState?.getString("exportSessionId")
         awaitingOverlay=savedInstanceState?.getBoolean("overlay") ?: false
         page.value=savedInstanceState?.getInt("page") ?: 0
-        if(intent.getBooleanExtra("training",false)) page.value=0
+        focusTraining.value=savedInstanceState?.getBoolean("focusTraining") ?: false
+        if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }
         setContent { OpenMobi(this,controller) }
     }
-    override fun onSaveInstanceState(outState: Bundle) { outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); super.onSaveInstanceState(outState) }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) page.value=0 }
+    override fun onSaveInstanceState(outState: Bundle) { outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); super.onSaveInstanceState(outState) }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } }
     override fun onResume() {
         super.onResume()
         if(awaitingOverlay && Settings.canDrawOverlays(this)) { awaitingOverlay=false; minimize(); return }
@@ -112,7 +115,7 @@ class MainActivity : ComponentActivity() {
             }
         } catch(e: Exception) { controller.error(R.string.permission_help) }
     }
-    fun startTraining() { if(!controller.canStart()) { controller.error(R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0 } }
+    fun startTraining() { if(!controller.canStart()) { controller.error(R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
     fun minimize() {
         if(controller.state.value.session==null) return
         if(!Settings.canDrawOverlays(this)) {

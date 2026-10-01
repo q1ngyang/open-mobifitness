@@ -9,8 +9,8 @@ android {
         applicationId = "org.openmobifitness.app"
         minSdk = 29
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0-alpha.1"
+        versionCode = 2
+        versionName = "0.1.0-alpha.2"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         javaCompileOptions { annotationProcessorOptions { arguments["room.schemaLocation"] = "$projectDir/schemas" } }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -33,6 +33,7 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     bundle { language { enableSplit = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    sourceSets.getByName("test").resources.srcDir("schemas")
     testOptions { unitTests.isIncludeAndroidResources = true }
     lint { abortOnError = true }
 }
