@@ -37,10 +37,17 @@ class ExerciseFlowTest {
         compose.waitUntil(30_000) { controller.state.value.session!=null }
         val id=controller.state.value.session!!.id
         compose.waitUntil(30_000) { controller.state.value.session!!.elapsedMs>1000 }
+        val automatic=compose.activity.getString(R.string.auto)
+        compose.onNodeWithContentDescription(automatic).performScrollTo().assertIsOn().performClick()
+        val heldResistance=controller.state.value.metrics.resistance
+        assertFalse(controller.state.value.automatic)
+        Thread.sleep(2200)
+        assertEquals(heldResistance,controller.state.value.metrics.resistance)
+        compose.onNodeWithContentDescription(automatic).performClick().assertIsOn()
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.resistance_slider))
-            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(6f) }
+            .performScrollTo().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(6f) }
         compose.waitUntil(20_000) { controller.state.value.metrics.resistance==6.0 && !controller.state.value.automatic }
-        compose.onNodeWithText("+").assertIsDisplayed().performClick()
+        compose.onNodeWithText("+").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(20_000) { !controller.state.value.automatic }
         screenshot("phone-live")
         assertNotNull(controller.state.value.session!!.caloriesKcal)
@@ -56,7 +63,7 @@ class ExerciseFlowTest {
         assertEquals(paused.distanceM,controller.state.value.session!!.distanceM)
         assertEquals(countdown,controller.state.value.remainingMs)
         // Host grants SYSTEM_ALERT_WINDOW only to the test APK before running this test.
-        compose.onNodeWithText(compose.activity.getString(R.string.minimize)).assertIsDisplayed().performClick()
+        compose.onNodeWithTag("float").assertIsDisplayed().performClick()
         val device=UiDevice.getInstance(instrumentation)
         Configurator.getInstance().waitForIdleTimeout=100
         val info=instrumentation.uiAutomation.serviceInfo

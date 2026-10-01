@@ -28,7 +28,7 @@ fun Context.localized(): Context {
 data class ExerciseState(
     val session: Session? = null, val paused: Boolean = false, val selected: Workout? = null,
     val stage: Int = 0, val progress: Float = 0f, val automatic: Boolean = true, val done: Boolean = false,
-    val strokeCount: Int? = null, val remainingMs: Long? = null, val demoMachine: Machine = Machine.ELLIPTICAL,
+    val pendingResistance: Double? = null, val strokeCount: Int? = null, val remainingMs: Long? = null, val demoMachine: Machine = Machine.ELLIPTICAL,
     val demo: Boolean = false, val metrics: Metrics = Metrics(), val error: Int? = null, val errorRow: Int? = null, val ready: Boolean = false
 )
 class Controller(val app: Application) {
@@ -69,7 +69,7 @@ class Controller(val app: Application) {
         if(device.heart) { heart.connect(device); return }
         if(state.value.session!=null && state.value.demo) return
         manualControl?.cancel()
-        state.value=state.value.copy(demo=false,paused=state.value.session!=null)
+        state.value=state.value.copy(demo=false,paused=state.value.session!=null,pendingResistance=null)
         totals.rebase()
         prefs.edit().putString("last_address",device.address).putString("last_name",device.name).apply()
         ble.connect(device)
@@ -81,7 +81,7 @@ class Controller(val app: Application) {
         if(state.value.selected?.steps?.any { (it.condition==Condition.DISTANCE && state.value.metrics.distanceM==null) || (it.condition==Condition.STROKES && state.value.metrics.strokes==null) }==true) {
             error(R.string.sensor_required); return@withLock
         }
-        val s=Session(device=if(state.value.demo) "OpenMobi Demo" else ble.state.value.name,
+        val s=Session(device=if(state.value.demo) "OpenMOBI Demo" else ble.state.value.name,
             machine=if(state.value.demo) state.value.demoMachine else ble.state.value.machine,
             protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=display.weight.value,met=display.met.value)
         try { repo.save(s) } catch(e: Exception) { error(R.string.storage_failed); return@withLock }
@@ -90,7 +90,7 @@ class Controller(val app: Application) {
         totals=TelemetryTotals(state.value.metrics)
         org.openmobifitness.app.data.AppLog.event("session_start","${s.machine} ${s.protocol} demo=${s.demo}")
         engine?.resetBaseline(0,0.0,0)
-        state.value=state.value.copy(session=s,strokeCount=null,paused=false,stage=0,progress=0f,remainingMs=engine?.remainingMs(0),automatic=state.value.demo || (ble.state.value.writable && ble.state.value.range!=null),done=false,error=null)
+        state.value=state.value.copy(session=s,pendingResistance=null,strokeCount=null,paused=false,stage=0,progress=0f,remainingMs=engine?.remainingMs(0),automatic=state.value.demo || (ble.state.value.writable && ble.state.value.range!=null),done=false,error=null)
     } } }
     fun pauseResume() { scope.launch { sessionLock.withLock {
         if(state.value.session==null) return@withLock
@@ -111,12 +111,18 @@ class Controller(val app: Application) {
         try { repo.save(s.copy(end=Instant.now().toString(),status=if(state.value.done) "completed" else "stopped")) }
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); return@withLock }
         org.openmobifitness.app.data.AppLog.event("session_finish","duration_ms=${s.elapsedMs}")
-        state.value=state.value.copy(session=null,paused=false,done=false,stage=0,progress=0f,remainingMs=null); engine=null
+        state.value=state.value.copy(session=null,pendingResistance=null,paused=false,done=false,stage=0,progress=0f,remainingMs=null); engine=null
     } } }
-    fun resumeAutomatic() { manualControl?.cancel(); state.value=state.value.copy(automatic=true); lastAuto=0 }
+    fun automaticControl(enabled: Boolean) {
+        if(state.value.session==null || (enabled && (state.value.selected==null || state.value.done))) return
+        manualControl?.cancel()
+        state.value=state.value.copy(automatic=enabled,pendingResistance=null)
+        lastAuto=0
+    }
+    fun resumeAutomatic() = automaticControl(true)
     fun adjust(delta: Int) {
         val range=range() ?: return
-        val current=if(state.value.demo) demoResistance else ble.state.value.requested ?: ble.state.value.metrics.resistance ?: return
+        val current=state.value.pendingResistance ?: if(state.value.demo) demoResistance else ble.state.value.requested ?: ble.state.value.metrics.resistance ?: return
         adjustTo(range.next(current,delta))
     }
     fun adjustTo(value: Double) {
@@ -125,13 +131,14 @@ class Controller(val app: Application) {
         if(!state.value.demo && (ble.state.value.phase!="ready" || ble.state.value.busy)) return
         val target=range.next(value,0)
         val connection=ble.connectionId; val session=state.value.session?.id; val demo=state.value.demo
-        state.value=state.value.copy(automatic=false)
         manualControl?.cancel()
+        state.value=state.value.copy(automatic=false,pendingResistance=target)
         manualControl=scope.launch {
             if(!demo) delay(ble.resistanceDelayMs())
             // A pending slider release must never outlive its connection or workout.
-            if(connection!=ble.connectionId || session!=state.value.session?.id || demo!=state.value.demo) return@launch
-            setResistance(target)
+            if(connection!=ble.connectionId || session!=state.value.session?.id || demo!=state.value.demo) { state.value=state.value.copy(pendingResistance=null); return@launch }
+            try { setResistance(target) }
+            finally { if(state.value.pendingResistance==target) state.value=state.value.copy(pendingResistance=null) }
         }
     }
     private suspend fun setResistance(value: Double) {

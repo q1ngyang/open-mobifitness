@@ -7,6 +7,19 @@ enum class MetricId {
 }
 
 object Estimates {
+    /** International 2.1.14's type-0 model, with the 0B11 elliptical correction.
+     * Cadence and resistance MUST be device feedback, never the requested target.
+     * This is a legacy model estimate, not measured mechanical power.
+     */
+    fun legacyPower(cadence: Double?, resistance: Double?, range: ResistanceRange?, magneticElliptical: Boolean): Double? {
+        if(cadence==null || !cadence.isFinite() || cadence !in 0.0..300.0 || resistance==null || range==null || !range.contains(resistance)) return null
+        if(cadence==0.0) return 0.0
+        val x=kotlin.math.exp(cadence/100)
+        val y=kotlin.math.exp(resistance*32/range.max.coerceAtLeast(1.0)/10)
+        val watts=(39.94501450202982-67.52588516*x-39.15593086*y+27.55487038*x*x+38.79652081*x*y-0.30231185*y*y).coerceAtLeast(0.0)
+        // The original display truncates to integer watts after the subtype multiplier.
+        return (watts*if(magneticElliptical) 1.5 else 1.0).toInt().toDouble()
+    }
     // Legacy apps use this virtual speed conversion; it is not physical travel distance.
     fun legacySpeed(cadence: Double?, machine: Machine): Double? {
         if(cadence==null || !cadence.isFinite() || cadence !in 0.0..300.0) return null

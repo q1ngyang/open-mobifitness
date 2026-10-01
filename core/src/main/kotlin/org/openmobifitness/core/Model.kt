@@ -19,12 +19,14 @@ data class Metrics(
     val cadence: Double? = null, val resistance: Double? = null, val speedMps: Double? = null,
     val distanceM: Double? = null, val heartBpm: Int? = null, val powerW: Double? = null, val strokes: Int? = null,
     val caloriesKcal: Double? = null, val inclinePercent: Double? = null, val strideM: Double? = null,
-    val forceN: Double? = null, val stepRate: Double? = null, val stepCount: Int? = null, val targetCadence: Double? = null
+    val forceN: Double? = null, val stepRate: Double? = null, val stepCount: Int? = null, val targetCadence: Double? = null,
+    val powerEstimated: Boolean = false
 ) {
     fun merge(new: Metrics) = Metrics(new.cadence ?: cadence, new.resistance ?: resistance, new.speedMps ?: speedMps,
-        new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, new.powerW ?: powerW, new.strokes ?: strokes,
+        new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, if(new.powerEstimated) new.powerW else new.powerW ?: powerW, new.strokes ?: strokes,
         new.caloriesKcal ?: caloriesKcal,new.inclinePercent ?: inclinePercent,new.strideM ?: strideM,
-        new.forceN ?: forceN,new.stepRate ?: stepRate,new.stepCount ?: stepCount,new.targetCadence ?: targetCadence)
+        new.forceN ?: forceN,new.stepRate ?: stepRate,new.stepCount ?: stepCount,new.targetCadence ?: targetCadence,
+        if(new.powerW!=null || new.powerEstimated) new.powerEstimated else powerEstimated)
 }
 data class Session(
     val id: String = UUID.randomUUID().toString(), val start: String = Instant.now().toString(),

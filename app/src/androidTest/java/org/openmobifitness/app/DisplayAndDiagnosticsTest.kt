@@ -63,6 +63,7 @@ class DisplayAndDiagnosticsTest {
         for(machine in listOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.TREADMILL)) {
             compose.runOnUiThread { c.setDemo(true,machine) }
             val cadence=compose.activity.reading(MetricId.CADENCE,c)
+            assertEquals(compose.activity.getString(R.string.cadence),cadence.label)
             assertEquals(if(machine in listOf(Machine.ROWER,Machine.TREADMILL)) "spm" else "rpm",cadence.unit)
         }
         compose.runOnUiThread { c.setDemo(true,Machine.ELLIPTICAL) }

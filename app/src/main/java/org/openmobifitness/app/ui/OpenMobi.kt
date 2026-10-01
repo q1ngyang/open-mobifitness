@@ -20,12 +20,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,7 +57,7 @@ import java.util.UUID
 private val Pink=Color(0xFFD64C86)
 private val Blue=Color(0xFF527CE8)
 private val Yellow=Color(0xFFF3C64E)
-private val Ink=Color(0xFF191A22)
+private val Ink=Color(0xFF192538)
 private val darkColors=darkColorScheme(
     primary=Color(0xFFAAC7FF),onPrimary=Color(0xFF002F65),primaryContainer=Color(0xFF234879),onPrimaryContainer=Color(0xFFD5E3FF),
     secondary=Color(0xFFADC3FF),secondaryContainer=Color(0xFF263956),onSecondaryContainer=Color(0xFFD9E4FF),
@@ -63,12 +66,12 @@ private val darkColors=darkColorScheme(
     onSurface=Color(0xFFF2F2F4),surfaceContainer=Color(0xFF23242B),surfaceContainerHigh=Color(0xFF2D2E35),surfaceContainerHighest=Color(0xFF35363D),
     surfaceContainerLow=Color(0xFF191A20),surfaceContainerLowest=Color(0xFF0E0F13),error=Color(0xFFFFADB4))
 private val lightColors=lightColorScheme(
-    primary=Color(0xFF285DA8),onPrimary=Color.White,primaryContainer=Color(0xFFDCE8FA),onPrimaryContainer=Color(0xFF173655),
+    primary=Color(0xFF0073E6),onPrimary=Color.White,primaryContainer=Color(0xFFF0F7FF),onPrimaryContainer=Color(0xFF173655),
     secondary=Color(0xFF3059B6),secondaryContainer=Color(0xFFE4EBFF),onSecondaryContainer=Color(0xFF18366D),
     tertiary=Color(0xFF755A00),tertiaryContainer=Color(0xFFFFF0B3),onTertiaryContainer=Color(0xFF352B00),
-    background=Color(0xFFF8F8FA),surface=Color.White,surfaceVariant=Color(0xFFF0F0F3),onSurfaceVariant=Color(0xFF565760),
+    background=Color(0xFFF8F9FB),surface=Color.White,surfaceVariant=Color(0xFFE1E6ED),onSurfaceVariant=Color(0xFF4D5B70),outline=Color(0xFFB8C2CF),outlineVariant=Color(0xFFDFE4EB),
     onSurface=Ink,surfaceContainer=Color(0xFFF0F0F3),surfaceContainerHigh=Color(0xFFE9E9ED),surfaceContainerHighest=Color(0xFFE3E3E8),
-    surfaceContainerLow=Color(0xFFF5F5F7),surfaceContainerLowest=Color.White,error=Color(0xFFBA263F))
+    surfaceContainerLow=Color(0xFFF5F5F7),surfaceContainerLowest=Color.White,error=Color(0xFFE5003A))
 
 @Composable fun OpenMobi(activity: MainActivity,controller: Controller) {
     val theme by controller.theme.collectAsStateWithLifecycle()
@@ -76,10 +79,6 @@ private val lightColors=lightColorScheme(
     val link by controller.ble.state.collectAsStateWithLifecycle()
     val page by activity.page
     val focused by activity.focusTraining
-    DisposableEffect(focused,state.session!=null) {
-        if(focused && state.session!=null) activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        onDispose { activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
-    }
     val dark=theme=="dark" || (theme=="system" && isSystemInDarkTheme())
     SideEffect { WindowCompat.getInsetsController(activity.window,activity.window.decorView).apply { isAppearanceLightStatusBars=!dark; isAppearanceLightNavigationBars=!dark } }
     MaterialTheme(colorScheme=if(dark) darkColors else lightColors,typography=Typography()) {
@@ -98,7 +97,7 @@ private val lightColors=lightColorScheme(
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {
                             if(!rail) { BrandMark(dark,Modifier.size(48.dp)); Spacer(Modifier.width(10.dp)) }
-                            Text("OpenMobi",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
+                            Text("OpenMOBI",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
                             Spacer(Modifier.weight(1f))
                             BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
                         }
@@ -136,7 +135,7 @@ private val lightColors=lightColorScheme(
     }
 }
 @Composable private fun BrandMark(dark: Boolean,modifier: Modifier=Modifier) {
-    Image(painterResource(if(dark) R.drawable.brand_dark else R.drawable.brand_light),"OpenMobi",modifier.clip(RoundedCornerShape(12.dp)))
+    Image(painterResource(if(dark) R.drawable.brand_dark else R.drawable.brand_light),"OpenMOBI",modifier.clip(RoundedCornerShape(12.dp)))
 }
 @Composable private fun BadgeText(text: String,color: Color) {
     Surface(color=color.copy(alpha=.13f),shape=RoundedCornerShape(30.dp)) {
@@ -208,7 +207,7 @@ private val lightColors=lightColorScheme(
         Row(Modifier.padding(20.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
             Icon(Icons.Default.Settings,null,tint=MaterialTheme.colorScheme.secondary)
             Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                Text(if(state.demo) "OpenMobi Demo" else link.name.ifEmpty { stringResource(R.string.devices) },fontWeight=FontWeight.Bold)
+                Text(if(state.demo) "OpenMOBI Demo" else link.name.ifEmpty { stringResource(R.string.devices) },fontWeight=FontWeight.Bold)
                 Text(if(state.demo) stringResource(R.string.demo) else phase(link.phase),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Default.KeyboardArrowRight,stringResource(R.string.devices))
@@ -352,7 +351,10 @@ private val lightColors=lightColorScheme(
     val scope=rememberCoroutineScope()
     var estimates by remember { mutableStateOf(false) }
     val packets by c.display.packets.collectAsStateWithLifecycle()
-    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(28.dp)) {
+    val floating by c.display.floatingEnabled.collectAsStateWithLifecycle()
+    val autoFloating by c.display.autoFloating.collectAsStateWithLifecycle()
+    val overlayAllowed by activity.overlayAllowed
+    LazyColumn(Modifier.fillMaxSize().testTag("settings-list"),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(28.dp)) {
         item { SectionTitle(stringResource(R.string.settings),stringResource(R.string.local_only)) }
         item { SettingGroup(stringResource(R.string.language)) {
             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -368,6 +370,12 @@ private val lightColors=lightColorScheme(
             FilterChip(selected=!imperial,onClick={ c.setImperial(false) },label={ Text(stringResource(R.string.metric)) })
             FilterChip(selected=imperial,onClick={ c.setImperial(true) },label={ Text(stringResource(R.string.imperial)) })
         } } }
+        item { SettingGroup(stringResource(R.string.floating_settings)) {
+            Row(verticalAlignment=Alignment.CenterVertically) { Text(stringResource(R.string.floating_enabled),Modifier.weight(1f)); Switch(floating,c.display::floating,modifier=Modifier.semantics { contentDescription=activity.getString(R.string.floating_enabled) }) }
+            Row(verticalAlignment=Alignment.CenterVertically) { Text(stringResource(R.string.auto_floating),Modifier.weight(1f)); Switch(autoFloating,c.display::automaticFloating,enabled=floating,modifier=Modifier.semantics { contentDescription=activity.getString(R.string.auto_floating) }) }
+            Text(stringResource(R.string.auto_floating_help),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            if(floating && !overlayAllowed) OutlinedButton(onClick=activity::requestOverlayPermission) { Text(stringResource(R.string.allow_overlay)) }
+        } }
         item { SettingGroup(stringResource(R.string.history)) {
             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick={ activity.export("backup") }) { Text(stringResource(R.string.export_backup)) }
@@ -389,9 +397,15 @@ private val lightColors=lightColorScheme(
             Row(verticalAlignment=Alignment.CenterVertically) { Text(stringResource(R.string.packet_logging),Modifier.weight(1f)); Switch(packets,c.display::packetLogs) }
             Text(stringResource(R.string.packet_help),style=MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick={ activity.export("diagnostics") }) { Text(stringResource(R.string.export_diagnostics)) }
+            Text(stringResource(R.string.log_retention),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick={ scope.launch {
+                runCatching { org.openmobifitness.app.data.AppLog.clear() }
+                    .onSuccess { android.widget.Toast.makeText(activity,R.string.logs_cleared,android.widget.Toast.LENGTH_SHORT).show() }
+                    .onFailure { c.error(R.string.io_failed) }
+            } }) { Text(stringResource(R.string.clear_logs)) }
         } }
         item { SettingGroup(stringResource(R.string.updates)) {
-            Text("OpenMobi ${BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.bodyMedium)
+            Text("OpenMOBI ${BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.bodyMedium)
             Button(enabled=!checking,onClick={ scope.launch {
                 checking=true; updateMessage=null
                 try { release=Updates.check(BuildConfig.VERSION_NAME); if(release==null) updateMessage=R.string.up_to_date }

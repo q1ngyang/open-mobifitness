@@ -1,6 +1,6 @@
-# OpenMobi 品牌素材
+# OpenMOBI 品牌素材
 
-alpha.3 按用户要求使用提供的 MOBI FITNESS 官方字标，在上方添加较小的 Open 胶囊，并用粉、红、黄、蓝四段细线作为装饰。它表示独立 OpenMobi 项目，不表示原公司的官方发行或背书。Apache-2.0 适用于本项目新增代码，不授予原字标的商标权。
+alpha.3 按用户要求使用提供的 MOBI FITNESS 官方字标，在上方添加较小的 Open 胶囊，并用粉、红、黄、蓝四段细线作为装饰。它表示独立 OpenMOBI 项目，不表示原公司的官方发行或背书。Apache-2.0 适用于本项目新增代码，不授予原字标的商标权。
 
 ## 已落地素材
 
@@ -9,7 +9,7 @@ alpha.3 按用户要求使用提供的 MOBI FITNESS 官方字标，在上方添�
 - `drawable/ic_launcher_foreground.xml` / `drawable-night/ic_launcher_foreground.xml`：适应 Android 图标遮罩的安全留白。
 - `drawable/ic_mark.xml`：通知和 Android 单色主题图标使用的简化矢量标记。
 
-应用内品牌随 OpenMobi 的浅色／深色设置变化；桌面图标由启动器和系统夜间资源选择决定，不保证所有厂商启动器会立即刷新，也不更换组件或创建第二个桌面入口。
+应用内品牌随 OpenMOBI 的浅色／深色设置变化；桌面图标由启动器和系统夜间资源选择决定，不保证所有厂商启动器会立即刷新，也不更换组件或创建第二个桌面入口。
 
 ## 生成与选择记录
 

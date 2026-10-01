@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">运动，由你掌控</string>
     <string name="train">训练</string>
     <string name="history">记录</string>
@@ -39,7 +39,7 @@
     <string name="stages_format">%1$d 个阶段</string>
     <string name="stage_format">第 %1$d / %2$d 阶段</string>
     <string name="resistance">阻力</string>
-    <string name="cadence">踏频／桨频</string>
+    <string name="cadence">频率</string>
     <string name="speed">速度</string>
     <string name="distance">距离</string>
     <string name="power">功率</string>
@@ -79,7 +79,7 @@
     <string name="open_app">打开运动界面</string>
     <string name="overlay_permission">请允许“显示在其他应用上层”，然后返回即可使用悬浮控制面板。</string>
     <string name="overlay_info">小悬浮窗点击展开、拖动移动；大悬浮窗提供简单控制，可一键返回运动界面。</string>
-    <string name="notification_title">OpenMobi 运动服务</string>
+    <string name="notification_title">OpenMOBI 运动服务</string>
     <string name="notification_channel">器材连接与训练</string>
     <string name="records_empty">下一次运动，就是新的记录。</string>
     <string name="export_sessions">导出摘要 CSV</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT 长间歇 · 40 分钟</string>
     <string name="plan_range">阻力范围 %1$d–%2$d%%</string>
     <string name="plan_energy_reference">参考消耗：按 %1$s kg、整场平均 6–8 MET 假设，40 分钟约 %2$d–%3$d kcal。档位不代表实测强度，运动记录按器材读数或你的估算设置计算。</string>
+    <string name="stage_remaining">本阶段剩余</string>
+    <string name="stage_number">第 %1$d 阶段</string>
+    <string name="stage_level">%1$s 档 · %2$d%%</string>
+    <string name="free_training_help">按自己的节奏运动，随时调整阻力。</string>
+    <string name="resistance_feedback_help">档位数字来自器材确认；等待反馈时，滑块显示请求的目标档位。</string>
+    <string name="floating_enabled">启用悬浮窗</string>
+    <string name="auto_floating">自动悬浮窗</string>
+    <string name="auto_floating_help">运动期间返回桌面或切换应用时，自动显示小窗。需授予「显示在其他应用上层」权限。</string>
+    <string name="allow_overlay">授予悬浮窗权限</string>
+    <string name="log_retention">事件保留 48 小时（最多 64 KiB），协议报文保留 30 分钟（最多 32 KiB）。导出仅含最近 24 小时事件，总计不超过 128 KiB。</string>
+    <string name="clear_logs">清除诊断日志</string>
+    <string name="logs_cleared">诊断日志已清除</string>
+    <string name="stage_progress">本阶段进度</string>
+    <string name="workout_progress">运动进度</string>
+    <string name="workout_metrics">运动指标</string>
+    <string name="current_target">当前目标</string>
+    <string name="stage_label">阶段</string>
+    <string name="stage_previous">上一阶段</string>
+    <string name="stage_now">当前阶段</string>
+    <string name="stage_next">下一阶段</string>
+    <string name="view_all_stages">查看全部 %1$d 个阶段</string>
+    <string name="resistance_control">阻力控制</string>
+    <string name="resistance_level">%1$s 档</string>
+    <string name="automatic_mode">自动调阻</string>
+    <string name="follows_plan">跟随训练方案</string>
+    <string name="previous_metrics">上一页指标</string>
+    <string name="next_metrics">下一页指标</string>
+    <string name="pause_short">暂停</string>
+    <string name="float_short">悬浮窗</string>
+    <string name="floating_settings">悬浮窗</string>
 </resources>

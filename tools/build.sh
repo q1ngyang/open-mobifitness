@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Java does not honor TMPDIR by itself; include Gradle workers and test JVMs.
+if [[ -n "${TMPDIR:-}" && "${JAVA_TOOL_OPTIONS:-}" != *java.io.tmpdir=* ]]; then
+  export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Djava.io.tmpdir=\"$TMPDIR\""
+fi
 if [[ -n "${DEV_TEMP_BASE:-}" ]]; then
   root="$DEV_TEMP_BASE/build/projects/open-mobifitness"
   mkdir -p "$root/project-cache" "$root/kotlin"

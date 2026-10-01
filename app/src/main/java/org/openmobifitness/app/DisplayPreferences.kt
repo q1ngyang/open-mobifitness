@@ -17,6 +17,10 @@ class DisplayPreferences(private val prefs: SharedPreferences) {
     val met=MutableStateFlow(prefs.getFloat("estimate_met",5f).toDouble().coerceIn(1.0,20.0))
     val targetCadence=MutableStateFlow(prefs.getInt("target_cadence",24).coerceIn(1,300))
     val packets=MutableStateFlow(prefs.getBoolean("packet_logs",false))
+    val floatingEnabled=MutableStateFlow(prefs.getBoolean("floating_enabled",true))
+    val autoFloating=MutableStateFlow(prefs.getBoolean("auto_floating",true))
+    fun floating(enabled: Boolean) { floatingEnabled.value=enabled; prefs.edit().putBoolean("floating_enabled",enabled).apply() }
+    fun automaticFloating(enabled: Boolean) { autoFloating.value=enabled; prefs.edit().putBoolean("auto_floating",enabled).apply() }
     fun save(scope: DisplayScope,items: List<MetricId>) {
         require(items.isNotEmpty() && items.distinct().size==items.size && items.size<=scope.limit)
         prefs.edit().putString(scope.key,items.joinToString(",")).apply()

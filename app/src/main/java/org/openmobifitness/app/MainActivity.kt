@@ -32,6 +32,8 @@ class MainActivity : ComponentActivity() {
     private var exportSessionId: String?=null
     val preview=mutableStateOf<Archive?>(null)
     private var awaitingOverlay=false
+    private var externalNavigation=false
+    val overlayAllowed=mutableStateOf(false)
     private val permissionLauncher=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val action=pendingPermission; pendingPermission=null
         if(bluetoothAllowed()) action?.invoke() else controller.error(R.string.permission_help)
@@ -90,8 +92,23 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }; metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
-        if(awaitingOverlay && Settings.canDrawOverlays(this)) { awaitingOverlay=false; minimize(); return }
+        externalNavigation=false
+        overlayAllowed.value=Settings.canDrawOverlays(this)
+        val minimizeOnReturn=awaitingOverlay; awaitingOverlay=false
+        if(minimizeOnReturn && overlayAllowed.value) { minimize(); return }
         if(controller.serviceStarted) startService(Intent(this,WorkoutService::class.java).setAction(WorkoutService.HIDE))
+    }
+    override fun onStop() {
+        super.onStop()
+        // Do not draw over our own permission/file flows, rotations, or the lock screen.
+        if(!isChangingConfigurations && !externalNavigation && controller.state.value.session!=null &&
+            controller.display.floatingEnabled.value && controller.display.autoFloating.value &&
+            Settings.canDrawOverlays(this) && controller.serviceStarted &&
+            getSystemService(android.os.PowerManager::class.java).isInteractive &&
+            !getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked) {
+            runCatching { startService(Intent(this,WorkoutService::class.java).setAction(WorkoutService.SHOW)) }
+                .onFailure { org.openmobifitness.app.data.AppLog.exception("automatic_overlay",it) }
+        }
     }
     private fun requiredBluetooth() = if(Build.VERSION.SDK_INT>=31) arrayOf(Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.BLUETOOTH_CONNECT) else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private fun bluetoothAllowed()=requiredBluetooth().all { ContextCompat.checkSelfPermission(this,it)==PackageManager.PERMISSION_GRANTED }
@@ -119,15 +136,20 @@ class MainActivity : ComponentActivity() {
     }
     fun startTraining() { if(!controller.canStart()) { controller.error(if(controller.ble.state.value.phase=="awaiting_data") R.string.waiting_data_help else R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
     fun minimize() {
-        if(controller.state.value.session==null) return
+        if(controller.state.value.session==null || !controller.display.floatingEnabled.value) return
         if(!Settings.canDrawOverlays(this)) {
             awaitingOverlay=true
             Toast.makeText(this,R.string.overlay_permission,Toast.LENGTH_LONG).show()
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:$packageName"))); return
+            requestOverlayPermission(); return
         }
         ensureService()
         startService(Intent(this,WorkoutService::class.java).setAction(WorkoutService.SHOW))
         moveTaskToBack(true)
+    }
+    fun requestOverlayPermission() {
+        externalNavigation=true
+        runCatching { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:$packageName"))) }
+            .onFailure { externalNavigation=false; awaitingOverlay=false; controller.error(R.string.overlay_permission) }
     }
     fun currentLanguage(): String = if(Build.VERSION.SDK_INT>=33) getSystemService(android.app.LocaleManager::class.java).applicationLocales.toLanguageTags() else controller.prefs.getString("language","") ?: ""
     fun setLanguage(tag: String) {
@@ -135,8 +157,8 @@ class MainActivity : ComponentActivity() {
         if(Build.VERSION.SDK_INT>=33) getSystemService(android.app.LocaleManager::class.java).applicationLocales=android.os.LocaleList.forLanguageTags(tag)
         else recreate()
     }
-    fun export(kind: String,sessionId: String?=null) { exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMobi-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
-    fun importFile() { importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
+    fun export(kind: String,sessionId: String?=null) { externalNavigation=true; exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
+    fun importFile() { externalNavigation=true; importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
     fun confirmImport() {
         val archive=preview.value ?: return; preview.value=null
         controller.scope.launch { try { controller.repo.importArchive(archive); Toast.makeText(applicationContext.localized(),R.string.import_done,Toast.LENGTH_SHORT).show() } catch(e: Exception) { controller.error(R.string.import_failed) } }

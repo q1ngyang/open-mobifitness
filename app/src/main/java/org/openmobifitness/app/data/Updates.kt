@@ -15,7 +15,7 @@ object Updates {
         try {
             connection.connectTimeout=8000; connection.readTimeout=8000
             connection.setRequestProperty("Accept","application/vnd.github+json")
-            connection.setRequestProperty("User-Agent","OpenMobi/$current")
+            connection.setRequestProperty("User-Agent","OpenMOBI/$current")
             if(connection.responseCode==404) return@withContext null
             check(connection.responseCode==200)
             val bytes=connection.inputStream.use { input ->

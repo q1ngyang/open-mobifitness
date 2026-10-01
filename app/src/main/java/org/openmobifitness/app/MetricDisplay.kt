@@ -27,17 +27,17 @@ fun Context.reading(id: MetricId,c: Controller): MetricReading {
     fun n(value: Double?,digits: Int=1)=value?.takeIf { it.isFinite() }?.let { String.format(locale,"%.${digits}f",it) } ?: "—"
     val legacy=if(protocol in setOf(Protocol.V1,Protocol.V2)) Estimates.legacySpeed(m.cadence,machine) else null
     val speed=m.speedMps ?: legacy
-    var estimated=false; var label=metricLabel(id)
+    var estimated=false; val label=metricLabel(id)
     val (value,unit)=when(id) {
         MetricId.TIME -> WorkoutService.elapsed(session?.elapsedMs ?: 0) to ""
         MetricId.DISTANCE -> { estimated=session?.distanceEstimated==true; n(session?.distanceM?.div(if(imperial) 1609.344 else 1000.0),2) to if(imperial) "mi" else "km" }
         MetricId.CALORIES -> { estimated=session?.caloriesEstimated==true; n(session?.caloriesKcal,1) to "kcal" }
         MetricId.HEART -> (m.heartBpm?.toString() ?: "—") to "bpm"
         MetricId.SPEED -> { estimated=m.speedMps==null && legacy!=null; n(speed?.times(if(imperial) 2.236936 else 3.6)) to if(imperial) "mph" else "km/h" }
-        MetricId.RESISTANCE -> n(m.resistance) to (m.resistance?.let { c.range()?.percentage(it)?.let { p -> "$p%" } } ?: "")
+        MetricId.RESISTANCE -> n(m.resistance,if(m.resistance?.rem(1.0)==0.0) 0 else 1) to (m.resistance?.let { c.range()?.percentage(it)?.let { p -> "$p%" } } ?: "")
         MetricId.CADENCE -> when {
-            machine==Machine.ROWER -> { label=R.string.stroke_rate; n(m.cadence) to "spm" }
-            machine==Machine.TREADMILL || (m.cadence==null && m.stepRate!=null) -> { label=R.string.step_rate; n(m.stepRate ?: m.cadence) to "spm" }
+            machine==Machine.ROWER -> { n(m.cadence) to "spm" }
+            machine==Machine.TREADMILL || (m.cadence==null && m.stepRate!=null) -> { n(m.stepRate ?: m.cadence) to "spm" }
             else -> n(m.cadence) to "rpm"
         }
         MetricId.STROKE_RATE -> n(m.cadence.takeIf { machine==Machine.ROWER }) to "spm"
@@ -47,10 +47,10 @@ fun Context.reading(id: MetricId,c: Controller): MetricReading {
         MetricId.STEP_RATE -> n(m.stepRate) to "spm"
         MetricId.STRIDE -> { estimated=protocol==Protocol.V2 && m.strideM!=null; n(m.strideM?.times(100),0) to "cm" }
         MetricId.TARGET_CADENCE -> (if(machine==Machine.ROWER) c.display.targetCadence.value.toString() else "—") to "spm"
-        MetricId.POWER -> n(m.powerW,0) to "W"
+        MetricId.POWER -> { estimated=m.powerEstimated; n(m.powerW,0) to "W" }
         MetricId.PACE -> (speed?.takeIf { it>0 }?.let { minutesSeconds((500/it*1000).toLong()) } ?: "—") to "/500 m"
         MetricId.AVERAGE_SPEED -> { estimated=session?.distanceEstimated==true
             n(session?.takeIf { it.elapsedMs>0 }?.let { it.distanceM?.div(it.elapsedMs/1000.0) }?.times(if(imperial) 2.236936 else 3.6)) to if(imperial) "mph" else "km/h" }
     }
-    return MetricReading(getString(label),(if(estimated && value!="—") "≈" else "")+value,unit,estimated)
+    return MetricReading(getString(label),value,unit,estimated && value!="—")
 }

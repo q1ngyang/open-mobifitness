@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">내 운동, 내 기기.</string>
     <string name="train">운동</string>
     <string name="history">기록</string>
@@ -39,7 +39,7 @@
     <string name="stages_format">%1$d단계</string>
     <string name="stage_format">%1$d / %2$d단계</string>
     <string name="resistance">저항</string>
-    <string name="cadence">케이던스</string>
+    <string name="cadence">빈도</string>
     <string name="speed">속도</string>
     <string name="distance">거리</string>
     <string name="power">파워</string>
@@ -79,7 +79,7 @@
     <string name="open_app">운동 화면 열기</string>
     <string name="overlay_permission">다른 앱 위에 표시를 허용한 후 돌아오세요.</string>
     <string name="overlay_info">작은 패널은 탭하면 펼쳐지고 드래그하면 이동합니다. 큰 패널에서 간단히 조작하고 운동 화면으로 돌아가세요.</string>
-    <string name="notification_title">OpenMobi 운동</string>
+    <string name="notification_title">OpenMOBI 운동</string>
     <string name="notification_channel">기기 연결 및 운동</string>
     <string name="records_empty">다음 운동이 첫 기록이 됩니다.</string>
     <string name="export_sessions">요약 CSV 내보내기</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT 긴 인터벌 · 40분</string>
     <string name="plan_range">저항 범위 %1$d–%2$d%%</string>
     <string name="plan_energy_reference">참고: 체중 %1$s kg, 40분 평균 6–8 MET를 가정하면 약 %2$d–%3$d kcal입니다. 저항은 실제 강도 측정값이 아닙니다. 기록에는 기기 데이터 또는 추정 설정을 사용합니다.</string>
+    <string name="stage_remaining">단계 남은 시간</string>
+    <string name="stage_number">%1$d 단계</string>
+    <string name="stage_level">레벨 %1$s · %2$d%%</string>
+    <string name="free_training_help">자신의 속도로 운동하며 언제든지 저항을 조절하세요.</string>
+    <string name="resistance_feedback_help">숫자는 기기에서 확인한 저항입니다. 응답을 기다리는 동안 슬라이더는 요청한 저항을 표시합니다.</string>
+    <string name="floating_enabled">플로팅 패널 사용</string>
+    <string name="auto_floating">자동 플로팅 패널</string>
+    <string name="auto_floating_help">운동 중 홈으로 돌아가거나 앱을 전환하면 작은 패널을 표시합니다. 다른 앱 위에 표시 권한이 필요합니다.</string>
+    <string name="allow_overlay">플로팅 표시 허용</string>
+    <string name="log_retention">이벤트는 48시간(최대 64 KiB), 통신 기록은 30분(최대 32 KiB) 보관합니다. 내보내기는 최근 24시간의 이벤트만 포함하며 전체 크기는 128 KiB 미만입니다.</string>
+    <string name="clear_logs">진단 기록 지우기</string>
+    <string name="logs_cleared">진단 기록을 지웠습니다</string>
+    <string name="stage_progress">단계 진행률</string>
+    <string name="workout_progress">운동 진행</string>
+    <string name="workout_metrics">운동 지표</string>
+    <string name="current_target">현재 목표</string>
+    <string name="stage_label">단계</string>
+    <string name="stage_previous">이전</string>
+    <string name="stage_now">현재</string>
+    <string name="stage_next">다음</string>
+    <string name="view_all_stages">전체 %1$d단계 보기</string>
+    <string name="resistance_control">저항 조절</string>
+    <string name="resistance_level">레벨 %1$s</string>
+    <string name="automatic_mode">자동 조절</string>
+    <string name="follows_plan">운동 계획에 따름</string>
+    <string name="previous_metrics">이전 지표</string>
+    <string name="next_metrics">다음 지표</string>
+    <string name="pause_short">일시정지</string>
+    <string name="float_short">작은 창</string>
+    <string name="floating_settings">플로팅 패널</string>
 </resources>

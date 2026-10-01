@@ -42,6 +42,7 @@ object Exchange {
     private val samplesHeader = "schema,session_id,elapsed_ms,cadence_rpm,resistance,speed_mps,distance_m,heart_bpm,power_w,strokes".split(',')
     private val sessionsV2 = sessionsHeader + listOf("calories_kcal","calories_estimated","distance_estimated","weight_kg","met")
     private val samplesV2 = samplesHeader + listOf("calories_kcal","incline_percent","stride_m","force_n","step_rate","step_count","target_cadence")
+    private val samplesV3 = samplesV2 + "power_estimated"
     private val workoutsHeader = "schema,workout_id,title,step_index,condition,target,resistance_percent".split(',')
     private fun text(v: String) = "'$v" // Always escape text, including an original leading apostrophe; reversible.
     private fun untext(v: String) = v.removePrefix("'")
@@ -49,8 +50,8 @@ object Exchange {
     fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV2) + items.map {
         listOf("2",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell())
     })
-    fun samples(items: List<Sample>) = Csv.write(listOf(samplesV2) + items.map { s -> s.metrics.let {
-        listOf("2",s.sessionId,s.elapsedMs.toString(),it.cadence.cell(),it.resistance.cell(),it.speedMps.cell(),it.distanceM.cell(),it.heartBpm.cell(),it.powerW.cell(),it.strokes.cell(),it.caloriesKcal.cell(),it.inclinePercent.cell(),it.strideM.cell(),it.forceN.cell(),it.stepRate.cell(),it.stepCount.cell(),it.targetCadence.cell())
+    fun samples(items: List<Sample>) = Csv.write(listOf(samplesV3) + items.map { s -> s.metrics.let {
+        listOf("3",s.sessionId,s.elapsedMs.toString(),it.cadence.cell(),it.resistance.cell(),it.speedMps.cell(),it.distanceM.cell(),it.heartBpm.cell(),it.powerW.cell(),it.strokes.cell(),it.caloriesKcal.cell(),it.inclinePercent.cell(),it.strideM.cell(),it.forceN.cell(),it.stepRate.cell(),it.stepCount.cell(),it.targetCadence.cell(),it.powerEstimated.toString())
     } })
     fun workouts(items: List<Workout>) = Csv.write(listOf(workoutsHeader) + items.flatMap { w -> w.steps.mapIndexed { i,s ->
         listOf("1",w.id,text(w.title),i.toString(),s.condition.name,s.target.toString(),s.resistancePercent.cell())
@@ -58,13 +59,13 @@ object Exchange {
     fun parse(content: String): Archive {
         val rows=Csv.read(content); if(rows.isEmpty()) throw ImportProblem(1,"header")
         val header=rows.first()
-        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,samplesV2,workoutsHeader)) throw ImportProblem(1,"header")
+        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,samplesV2,samplesV3,workoutsHeader)) throw ImportProblem(1,"header")
         val sessions=mutableListOf<Session>(); val samples=mutableListOf<Sample>()
         val sessionIds=HashSet<String>()
         val steps=linkedMapOf<String,Pair<String,MutableList<Step>>>()
         rows.drop(1).forEachIndexed { index,r ->
             try {
-                require(r.size==header.size && r[0]==if(header==sessionsV2 || header==samplesV2) "2" else "1")
+                require(r.size==header.size && r[0]==when(header) { samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
                 fun number(i: Int,max: Double,min: Double=0.0): Double? = r[i].takeIf { it.isNotEmpty() }?.toDouble()?.also { require(it.isFinite() && it in min..max) }
                 fun integer(i: Int,max: Int): Int? = r[i].takeIf { it.isNotEmpty() }?.toInt()?.also { require(it in 0..max) }
                 fun bool(i: Int): Boolean { require(r[i] in listOf("true","false")); return r[i].toBoolean() }
@@ -78,13 +79,17 @@ object Exchange {
                             if(header==sessionsV2) number(15,300.0,20.0) else null,if(header==sessionsV2) number(16,20.0,1.0) else null)
                         require(s.device.length<=120 && sessionIds.add(s.id)); sessions.add(s)
                     }
-                    samplesHeader,samplesV2 -> {
+                    samplesHeader,samplesV2,samplesV3 -> {
                         UUID.fromString(r[1]); val time=ms(2)
-                        samples.add(Sample(r[1],time,Metrics(number(3,1000.0),number(4,3276.7),number(5,100.0),number(6,10_000_000.0),integer(7,255),number(8,32767.0,-32768.0),integer(9,10_000_000),
-                            if(header==samplesV2) number(10,100000.0) else null,if(header==samplesV2) number(11,100.0,-100.0) else null,
-                            if(header==samplesV2) number(12,10.0) else null,if(header==samplesV2) number(13,32767.0,-32768.0) else null,
-                            if(header==samplesV2) number(14,1000.0) else null,if(header==samplesV2) integer(15,10_000_000) else null,
-                            if(header==samplesV2) number(16,300.0) else null)))
+                        val estimatedPower=header==samplesV3 && bool(17)
+                        // The legacy model can exceed SINT16 near its upper cadence bound.
+                        // Keep our own v3 exports round-trippable without relaxing measured FTMS values.
+                        val power=number(8,if(estimatedPower) 50000.0 else 32767.0,if(estimatedPower) 0.0 else -32768.0)
+                        samples.add(Sample(r[1],time,Metrics(number(3,1000.0),number(4,3276.7),number(5,100.0),number(6,10_000_000.0),integer(7,255),power,integer(9,10_000_000),
+                            if(header==samplesV2 || header==samplesV3) number(10,100000.0) else null,if(header==samplesV2 || header==samplesV3) number(11,100.0,-100.0) else null,
+                            if(header==samplesV2 || header==samplesV3) number(12,10.0) else null,if(header==samplesV2 || header==samplesV3) number(13,32767.0,-32768.0) else null,
+                            if(header==samplesV2 || header==samplesV3) number(14,1000.0) else null,if(header==samplesV2 || header==samplesV3) integer(15,10_000_000) else null,
+                            if(header==samplesV2 || header==samplesV3) number(16,300.0) else null,estimatedPower)))
                     }
                     workoutsHeader -> {
                         require(r[1].matches(Regex("[A-Za-z0-9_-]{1,80}")))

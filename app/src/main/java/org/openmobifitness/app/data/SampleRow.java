@@ -11,4 +11,5 @@ public class SampleRow {
  public Integer heartBpm, strokes;
  public Double caloriesKcal, inclinePercent, strideM, forceN, stepRate, targetCadence;
  public Integer stepCount;
+ @ColumnInfo(defaultValue="0") public boolean powerEstimated;
 }

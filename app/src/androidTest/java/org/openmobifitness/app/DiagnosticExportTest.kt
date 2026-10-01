@@ -13,7 +13,7 @@ class DiagnosticExportTest {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val device=UiDevice.getInstance(instrumentation)
         Configurator.getInstance().waitForIdleTimeout=100
-        val name="OpenMobi-log-test-${System.currentTimeMillis()}.txt"
+        val name="OpenMOBI-log-test-${System.currentTimeMillis()}.txt"
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.export("diagnostics") }
             val editor=device.wait(Until.findObject(By.clazz("android.widget.EditText")),30_000)
@@ -39,9 +39,10 @@ class DiagnosticExportTest {
             do {
                 val fd=instrumentation.uiAutomation.executeShellCommand("cat /sdcard/Download/$name")
                 text=android.os.ParcelFileDescriptor.AutoCloseInputStream(fd).bufferedReader().use { it.readText() }
-                if(!text.startsWith("OpenMobi diagnostic report 3")) Thread.sleep(200)
-            } while(!text.startsWith("OpenMobi diagnostic report 3") && android.os.SystemClock.elapsedRealtime()<deadline)
-            assertTrue("The exported file must contain the diagnostic report",text.startsWith("OpenMobi diagnostic report 3"))
+                if(!text.startsWith("OpenMOBI diagnostic report 4")) Thread.sleep(200)
+            } while(!text.startsWith("OpenMOBI diagnostic report 4") && android.os.SystemClock.elapsedRealtime()<deadline)
+            assertTrue("The exported file must contain the diagnostic report",text.startsWith("OpenMOBI diagnostic report 4"))
+            assertTrue("The exported diagnostic report is bounded",text.toByteArray(Charsets.UTF_8).size<128*1024)
             assertTrue(text.contains("Version: ${BuildConfig.VERSION_NAME}")); assertFalse(text.contains("session_id,start_utc"))
             instrumentation.uiAutomation.executeShellCommand("rm /sdcard/Download/$name").close()
         }

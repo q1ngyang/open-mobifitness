@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">Your movement. Your device.</string>
     <string name="train">Train</string>
     <string name="history">History</string>
@@ -39,7 +39,7 @@
     <string name="stages_format">%1$d stages</string>
     <string name="stage_format">Stage %1$d / %2$d</string>
     <string name="resistance">Resistance</string>
-    <string name="cadence">Cadence</string>
+    <string name="cadence">Rate</string>
     <string name="speed">Speed</string>
     <string name="distance">Distance</string>
     <string name="power">Power</string>
@@ -79,7 +79,7 @@
     <string name="open_app">Open training screen</string>
     <string name="overlay_permission">Allow display over other apps to use the floating controls. Return here afterward.</string>
     <string name="overlay_info">Small panel: tap to expand, drag to move. The large panel offers controls and a return to training.</string>
-    <string name="notification_title">OpenMobi training</string>
+    <string name="notification_title">OpenMOBI training</string>
     <string name="notification_channel">Equipment connection</string>
     <string name="records_empty">Your next workout starts a new story.</string>
     <string name="export_sessions">Export summary CSV</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT long intervals · 40 min</string>
     <string name="plan_range">Resistance %1$d–%2$d%%</string>
     <string name="plan_energy_reference">Reference only: about %2$d–%3$d kcal at %1$s kg, assuming an average 6–8 MET over 40 minutes. Resistance does not measure effort. Recorded calories use device data or your estimation settings.</string>
+    <string name="stage_remaining">Remaining in stage</string>
+    <string name="stage_number">Stage %1$d</string>
+    <string name="stage_level">Level %1$s · %2$d%%</string>
+    <string name="free_training_help">Set your resistance and move at your own pace.</string>
+    <string name="resistance_feedback_help">The number is confirmed by the equipment. The slider shows your requested level while waiting for feedback.</string>
+    <string name="floating_enabled">Enable floating panel</string>
+    <string name="auto_floating">Float automatically</string>
+    <string name="auto_floating_help">Show the small panel when you go home or switch apps during a workout. Requires display-over-other-apps permission.</string>
+    <string name="allow_overlay">Allow floating panel</string>
+    <string name="log_retention">Events are kept for 48 hours (64 KiB); protocol traces for 30 minutes (32 KiB). Exports include only the latest 24 hours of events and stay below 128 KiB.</string>
+    <string name="clear_logs">Clear diagnostic logs</string>
+    <string name="logs_cleared">Diagnostic logs cleared</string>
+    <string name="stage_progress">Stage progress</string>
+    <string name="workout_progress">Workout progress</string>
+    <string name="workout_metrics">Workout metrics</string>
+    <string name="current_target">Current target</string>
+    <string name="stage_label">Stage</string>
+    <string name="stage_previous">Previous</string>
+    <string name="stage_now">Now</string>
+    <string name="stage_next">Next</string>
+    <string name="view_all_stages">View all %1$d stages</string>
+    <string name="resistance_control">Resistance control</string>
+    <string name="resistance_level">Level %1$s</string>
+    <string name="automatic_mode">Automatic mode</string>
+    <string name="follows_plan">Follows workout profile</string>
+    <string name="previous_metrics">Previous metrics</string>
+    <string name="next_metrics">Next metrics</string>
+    <string name="pause_short">Pause</string>
+    <string name="float_short">Float</string>
+    <string name="floating_settings">Floating panel</string>
 </resources>

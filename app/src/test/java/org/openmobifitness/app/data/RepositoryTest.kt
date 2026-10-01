@@ -19,7 +19,7 @@ class RepositoryTest {
     @After fun close() { repo.db.close() }
     @Test fun backupRoundTripAndRepeatedImportAreLossless() = runBlocking {
         val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0)
-        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0))
+        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0,powerW=148.0,powerEstimated=true))
         repo.save(s,sample)
         val workout=Workout(title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
         repo.saveWorkout(workout)
@@ -29,6 +29,17 @@ class RepositoryTest {
         assertEquals(original,restored)
         assertEquals(0,repo.importArchive(restored))
         assertEquals(original,repo.archive())
+    }
+    @Test fun oldBrandBackupManifestStillImports() {
+        for(version in 1..2) {
+            val out=ByteArrayOutputStream()
+            java.util.zip.ZipOutputStream(out).use { zip ->
+                mapOf("manifest.txt" to "OpenMobi backup $version\n","sessions.csv" to Exchange.sessions(emptyList()),"samples.csv" to Exchange.samples(emptyList()),"workouts.csv" to Exchange.workouts(emptyList())).forEach { (name,text) ->
+                    zip.putNextEntry(java.util.zip.ZipEntry(name)); zip.write(text.toByteArray()); zip.closeEntry()
+                }
+            }
+            assertEquals(Archive(),Files.read(out.toByteArray().inputStream()))
+        }
     }
     @Test fun conflictingImportRollsBackEarlierInserts() = runBlocking {
         val existing=Session(elapsedMs=1000,status="stopped")
@@ -46,11 +57,12 @@ class RepositoryTest {
         assertEquals(4000L,repo.sessions.value.single().elapsedMs)
         assertEquals(1,repo.archive().samples.size)
     }
-    @Test fun databaseUpgradeKeepsVersionOneHistoryAndSamples() = runBlocking {
+    @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking {
+        for(version in 1..2) {
         repo.db.close()
         val context=RuntimeEnvironment.getApplication()
         context.deleteDatabase("openmobi.db")
-        val input=javaClass.classLoader!!.getResourceAsStream("org.openmobifitness.app.data.MobiDatabase/1.json")!!
+        val input=javaClass.classLoader!!.getResourceAsStream("org.openmobifitness.app.data.MobiDatabase/$version.json")!!
         val schema=org.json.JSONObject(input.bufferedReader().use { it.readText() }).getJSONObject("database")
         val id=java.util.UUID.randomUUID().toString()
         val db=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("openmobi.db"),null)
@@ -61,9 +73,9 @@ class RepositoryTest {
             e.optJSONArray("indices")?.let { indices -> for(j in 0 until indices.length()) db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}",e.getString("tableName"))) }
         }
         val queries=schema.getJSONArray("setupQueries"); for(i in 0 until queries.length()) db.execSQL(queries.getString(i))
-        db.execSQL("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",arrayOf(id,"2026-09-30T10:00:00Z","","UTC","legacy","ELLIPTICAL","DEMO","stopped",9000,25.0,1))
-        db.execSQL("INSERT INTO samples (sessionId,elapsedMs,cadence) VALUES (?, ?, ?)",arrayOf(id,9000,62.0))
-        db.version=1; db.close()
+        db.execSQL("INSERT INTO sessions (id,start,end,zone,device,machine,protocol,status,elapsedMs,distanceM,demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",arrayOf<Any>(id,"2026-09-30T10:00:00Z","","UTC","legacy","ELLIPTICAL","DEMO","stopped",9000,25.0,1))
+        db.execSQL("INSERT INTO samples (sessionId,elapsedMs,cadence) VALUES (?, ?, ?)",arrayOf<Any>(id,9000,62.0))
+        db.version=version; db.close()
         repo=Repository(context)
         val restored=repo.archive()
         assertEquals(id,restored.sessions.single().id)
@@ -71,7 +83,9 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(2,repo.db.openHelper.readableDatabase.version)
+        assertEquals(3,repo.db.openHelper.readableDatabase.version)
+        assertFalse(restored.samples.single().metrics.powerEstimated)
+        }
     }
 
 }

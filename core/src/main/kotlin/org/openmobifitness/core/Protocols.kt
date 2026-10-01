@@ -56,8 +56,11 @@ object Protocols {
         val interval = (7..10).fold(0L) { acc,i -> (acc shl 8) or data[i].u().toLong() }
         val magneticElliptical=data[3].u()==11 && data[4].u()==17
         val rpm = if(interval == 0L) 0.0 else 60000.0 / interval / if(magneticElliptical) 2 else 1
-        Metrics(cadence = rpm.takeIf { it <= 300 },resistance = if(data.size > 13) data[13].u().toDouble() else null,
-            heartBpm=if(magneticElliptical && data.size>14) data[14].u().takeIf { it>0 } else null)
+        val range=v1Range(data)
+        val resistance=if(data.size>13) data[13].u().toDouble().takeIf { range==null || range.contains(it) } else null
+        Metrics(cadence = rpm.takeIf { it <= 300 },resistance = resistance,
+            heartBpm=if(magneticElliptical && data.size>14) data[14].u().takeIf { it>0 } else null,
+            powerW=Estimates.legacyPower(rpm,resistance,range,magneticElliptical),powerEstimated=range!=null)
     }.getOrNull()
     fun v2Metrics(data: ByteArray): Metrics? = runCatching {
         require(data.size in listOf(9,11,13))

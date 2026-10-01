@@ -271,7 +271,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             "2a24","2a26" -> log("$short:${data.toString(Charsets.UTF_8).filter { !it.isISOControl() }.take(80)}")
         }
         metrics?.let { next ->
-            val valid=next!=Metrics()
+            val valid=next.copy(powerEstimated=false)!=Metrics()
             val confirmed=next.resistance?.let { measured -> state.value.requested?.let { kotlin.math.abs(it-measured)<0.05 } }==true
             if(confirmed) { feedbackJob?.cancel(); log("control_feedback:${next.resistance}") }
             state.value=state.value.copy(metrics=state.value.metrics.merge(next),motionAt=if(motion && valid) now else state.value.motionAt,

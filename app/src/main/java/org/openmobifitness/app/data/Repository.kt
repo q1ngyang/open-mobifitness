@@ -10,6 +10,11 @@ import java.time.Instant
 
 class Repository(context: Context) {
     companion object {
+        val MIGRATION_2_3=object: androidx.room.migration.Migration(2,3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE samples ADD COLUMN powerEstimated INTEGER NOT NULL DEFAULT 0")
+            }
+        }
         val MIGRATION_1_2=object: androidx.room.migration.Migration(1,2) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 listOf("caloriesKcal","weightKg","met").forEach { db.execSQL("ALTER TABLE sessions ADD COLUMN $it REAL") }
@@ -19,7 +24,7 @@ class Repository(context: Context) {
             }
         }
     }
-    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2).build()
+    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3).build()
     private val dao get() = db.records()
     val sessions = MutableStateFlow<List<Session>>(emptyList())
     val workouts = MutableStateFlow<List<Workout>>(emptyList())
@@ -92,6 +97,6 @@ private fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueO
 private fun Sample.row() = SampleRow().also { s ->
     s.sessionId=sessionId; s.elapsedMs=elapsedMs
     metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes
-        s.caloriesKcal=it.caloriesKcal; s.inclinePercent=it.inclinePercent; s.strideM=it.strideM; s.forceN=it.forceN; s.stepRate=it.stepRate; s.stepCount=it.stepCount; s.targetCadence=it.targetCadence }
+        s.caloriesKcal=it.caloriesKcal; s.inclinePercent=it.inclinePercent; s.strideM=it.strideM; s.forceN=it.forceN; s.stepRate=it.stepRate; s.stepCount=it.stepCount; s.targetCadence=it.targetCadence; s.powerEstimated=it.powerEstimated }
 }
-private fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes,caloriesKcal,inclinePercent,strideM,forceN,stepRate,stepCount,targetCadence))
+private fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes,caloriesKcal,inclinePercent,strideM,forceN,stepRate,stepCount,targetCadence,powerEstimated))

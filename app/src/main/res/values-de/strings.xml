@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">Dein Training. Dein Gerät.</string>
     <string name="train">Training</string>
     <string name="history">Verlauf</string>
@@ -79,7 +79,7 @@
     <string name="open_app">Trainingsansicht öffnen</string>
     <string name="overlay_permission">Anzeige über anderen Apps erlauben und anschließend hierher zurückkehren.</string>
     <string name="overlay_info">Kleines Fenster: zum Vergrößern tippen, zum Bewegen ziehen. Im großen Fenster steuern oder zum Training zurückkehren.</string>
-    <string name="notification_title">OpenMobi Training</string>
+    <string name="notification_title">OpenMOBI Training</string>
     <string name="notification_channel">Geräteverbindung und Training</string>
     <string name="records_empty">Dein nächstes Training schreibt Geschichte.</string>
     <string name="export_sessions">Übersicht als CSV</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT lange Intervalle · 40 Min</string>
     <string name="plan_range">Widerstand %1$d–%2$d%%</string>
     <string name="plan_energy_reference">Richtwert: ca. %2$d–%3$d kcal bei %1$s kg, angenommen durchschnittlich 6–8 MET über 40 Minuten. Widerstand misst keine Anstrengung. Aufgezeichnete Kalorien nutzen Gerätedaten oder deine Schätzeinstellungen.</string>
+    <string name="stage_remaining">Restzeit</string>
+    <string name="stage_number">Phase %1$d</string>
+    <string name="stage_level">Stufe %1$s · %2$d%%</string>
+    <string name="free_training_help">Bewege dich in deinem Tempo und passe den Widerstand jederzeit an.</string>
+    <string name="resistance_feedback_help">Die Zahl zeigt die vom Gerät bestätigte Stufe. Bis zur Rückmeldung zeigt der Regler die angeforderte Stufe.</string>
+    <string name="floating_enabled">Schwebendes Panel aktivieren</string>
+    <string name="auto_floating">Automatisch einblenden</string>
+    <string name="auto_floating_help">Zeigt beim Wechsel zum Startbildschirm oder zu einer anderen App das kleine Trainingspanel. Die Berechtigung für Einblendungen ist erforderlich.</string>
+    <string name="allow_overlay">Einblendungen erlauben</string>
+    <string name="log_retention">Ereignisse: 48 Stunden, max. 64 KiB. Protokollpakete: 30 Minuten, max. 32 KiB. Exporte enthalten Ereignisse der letzten 24 Stunden und bleiben unter 128 KiB.</string>
+    <string name="clear_logs">Diagnoseprotokolle löschen</string>
+    <string name="logs_cleared">Diagnoseprotokolle gelöscht</string>
+    <string name="stage_progress">Phasenfortschritt</string>
+    <string name="workout_progress">Trainingsfortschritt</string>
+    <string name="workout_metrics">Trainingsdaten</string>
+    <string name="current_target">Aktuelles Ziel</string>
+    <string name="stage_label">Phase</string>
+    <string name="stage_previous">Vorher</string>
+    <string name="stage_now">Jetzt</string>
+    <string name="stage_next">Danach</string>
+    <string name="view_all_stages">Alle %1$d Phasen anzeigen</string>
+    <string name="resistance_control">Widerstand</string>
+    <string name="resistance_level">Stufe %1$s</string>
+    <string name="automatic_mode">Automatisch</string>
+    <string name="follows_plan">Folgt dem Trainingsplan</string>
+    <string name="previous_metrics">Vorherige Daten</string>
+    <string name="next_metrics">Nächste Daten</string>
+    <string name="pause_short">Pause</string>
+    <string name="float_short">Minimieren</string>
+    <string name="floating_settings">Schwebendes Bedienfeld</string>
 </resources>

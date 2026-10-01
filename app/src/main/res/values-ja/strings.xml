@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">運動を、あなたの手に。</string>
     <string name="train">トレーニング</string>
     <string name="history">履歴</string>
@@ -39,7 +39,7 @@
     <string name="stages_format">%1$d ステップ</string>
     <string name="stage_format">ステップ %1$d / %2$d</string>
     <string name="resistance">負荷</string>
-    <string name="cadence">ケイデンス</string>
+    <string name="cadence">頻度</string>
     <string name="speed">速度</string>
     <string name="distance">距離</string>
     <string name="power">パワー</string>
@@ -79,7 +79,7 @@
     <string name="open_app">トレーニング画面へ</string>
     <string name="overlay_permission">他のアプリの上に表示を許可し、この画面に戻ってください。</string>
     <string name="overlay_info">小パネルはタップで展開、ドラッグで移動。大パネルで操作し、運動画面に戻れます。</string>
-    <string name="notification_title">OpenMobi トレーニング</string>
+    <string name="notification_title">OpenMOBI トレーニング</string>
     <string name="notification_channel">器具の接続とトレーニング</string>
     <string name="records_empty">次の運動を最初の記録に。</string>
     <string name="export_sessions">概要 CSV を出力</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT ロングインターバル · 40分</string>
     <string name="plan_range">負荷範囲 %1$d–%2$d%%</string>
     <string name="plan_energy_reference">参考値：体重 %1$s kg、40分間の平均を6–8 METと仮定すると約 %2$d–%3$d kcal。負荷は実際の運動強度ではありません。記録には機器の測定値または設定した推定値を使用します。</string>
+    <string name="stage_remaining">ステージ残り時間</string>
+    <string name="stage_number">ステージ %1$d</string>
+    <string name="stage_level">レベル %1$s · %2$d%%</string>
+    <string name="free_training_help">自分のペースで運動し、いつでも負荷を調整できます。</string>
+    <string name="resistance_feedback_help">数値は機器が確認した負荷です。応答待ちの間、スライダーは要求した負荷を示します。</string>
+    <string name="floating_enabled">フローティングパネルを有効にする</string>
+    <string name="auto_floating">自動でフローティング表示</string>
+    <string name="auto_floating_help">運動中にホームに戻るかアプリを切り替えると小型パネルを表示します。他のアプリの上に表示する権限が必要です。</string>
+    <string name="allow_overlay">フローティング表示を許可</string>
+    <string name="log_retention">イベントは48時間（最大64 KiB）、通信ログは30分（最大32 KiB）保存します。書き出すイベントは直近24時間分で、ファイル全体は128 KiB未満です。</string>
+    <string name="clear_logs">診断ログを消去</string>
+    <string name="logs_cleared">診断ログを消去しました</string>
+    <string name="stage_progress">ステージの進捗</string>
+    <string name="workout_progress">運動の進捗</string>
+    <string name="workout_metrics">運動データ</string>
+    <string name="current_target">現在の目標</string>
+    <string name="stage_label">ステージ</string>
+    <string name="stage_previous">前</string>
+    <string name="stage_now">現在</string>
+    <string name="stage_next">次</string>
+    <string name="view_all_stages">全 %1$d ステージを表示</string>
+    <string name="resistance_control">負荷調整</string>
+    <string name="resistance_level">レベル %1$s</string>
+    <string name="automatic_mode">自動調整</string>
+    <string name="follows_plan">プランに従って調整</string>
+    <string name="previous_metrics">前のデータ</string>
+    <string name="next_metrics">次のデータ</string>
+    <string name="pause_short">一時停止</string>
+    <string name="float_short">小窓</string>
+    <string name="floating_settings">フローティングパネル</string>
 </resources>

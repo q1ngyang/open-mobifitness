@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OpenMobi</string>
+    <string name="app_name">OpenMOBI</string>
     <string name="tagline">運動，由你掌控</string>
     <string name="train">訓練</string>
     <string name="history">紀錄</string>
@@ -39,7 +39,7 @@
     <string name="stages_format">%1$d 個階段</string>
     <string name="stage_format">第 %1$d / %2$d 階段</string>
     <string name="resistance">阻力</string>
-    <string name="cadence">踏頻／槳頻</string>
+    <string name="cadence">頻率</string>
     <string name="speed">速度</string>
     <string name="distance">距離</string>
     <string name="power">功率</string>
@@ -79,7 +79,7 @@
     <string name="open_app">開啟運動畫面</string>
     <string name="overlay_permission">請允許「顯示在其他應用程式上層」，然後返回即可使用懸浮控制面板。</string>
     <string name="overlay_info">小浮動視窗點擊展開、拖動移動；大浮動視窗提供簡單控制，可一鍵返回運動畫面。</string>
-    <string name="notification_title">OpenMobi 運動服務</string>
+    <string name="notification_title">OpenMOBI 運動服務</string>
     <string name="notification_channel">器材連接與訓練</string>
     <string name="records_empty">下一次運動，就是新的紀錄。</string>
     <string name="export_sessions">匯出摘要 CSV</string>
@@ -191,4 +191,34 @@
     <string name="plan_hiit40">HIIT 長間歇 · 40 分鐘</string>
     <string name="plan_range">阻力範圍 %1$d–%2$d%%</string>
     <string name="plan_energy_reference">參考消耗：按 %1$s kg、整場平均 6–8 MET 假設，40 分鐘約 %2$d–%3$d kcal。檔位不代表實測強度，運動記錄按器材讀數或你的估算設定計算。</string>
+    <string name="stage_remaining">本階段剩餘</string>
+    <string name="stage_number">第 %1$d 階段</string>
+    <string name="stage_level">%1$s 檔 · %2$d%%</string>
+    <string name="free_training_help">按自己的節奏運動，隨時調整阻力。</string>
+    <string name="resistance_feedback_help">檔位數字來自器材確認；等待回饋時，滑桿顯示請求的目標檔位。</string>
+    <string name="floating_enabled">啟用懸浮視窗</string>
+    <string name="auto_floating">自動懸浮視窗</string>
+    <string name="auto_floating_help">運動期間返回主畫面或切換應用程式時，自動顯示小視窗。需授予「顯示於其他應用程式上層」權限。</string>
+    <string name="allow_overlay">授予懸浮視窗權限</string>
+    <string name="log_retention">事件保留 48 小時（最多 64 KiB），協議封包保留 30 分鐘（最多 32 KiB）。匯出僅含最近 24 小時事件，總計不超過 128 KiB。</string>
+    <string name="clear_logs">清除診斷記錄</string>
+    <string name="logs_cleared">診斷記錄已清除</string>
+    <string name="stage_progress">本階段進度</string>
+    <string name="workout_progress">運動進度</string>
+    <string name="workout_metrics">運動指標</string>
+    <string name="current_target">目前目標</string>
+    <string name="stage_label">階段</string>
+    <string name="stage_previous">上一階段</string>
+    <string name="stage_now">目前階段</string>
+    <string name="stage_next">下一階段</string>
+    <string name="view_all_stages">查看全部 %1$d 個階段</string>
+    <string name="resistance_control">阻力控制</string>
+    <string name="resistance_level">%1$s 檔</string>
+    <string name="automatic_mode">自動調阻</string>
+    <string name="follows_plan">跟隨訓練方案</string>
+    <string name="previous_metrics">上一頁指標</string>
+    <string name="next_metrics">下一頁指標</string>
+    <string name="pause_short">暫停</string>
+    <string name="float_short">懸浮視窗</string>
+    <string name="floating_settings">懸浮視窗</string>
 </resources>
