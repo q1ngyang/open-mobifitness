@@ -221,4 +221,11 @@
     <string name="pause_short">Pause</string>
     <string name="float_short">Minimieren</string>
     <string name="floating_settings">Schwebendes Bedienfeld</string>
+    <string name="overlay_remaining">Noch %1$s</string>
+    <string name="overlay_free_pace">Eigenes Tempo</string>
+    <string name="overlay_pending">Warte auf Gerät</string>
+    <string name="overlay_monitor">Nur Anzeige</string>
+    <string name="overlay_auto">Auto</string>
+    <string name="overlay_manual">Manuell</string>
+    <string name="overlay_open">Training öffnen</string>
 </resources>

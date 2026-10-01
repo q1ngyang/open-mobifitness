@@ -221,4 +221,11 @@
     <string name="pause_short">暂停</string>
     <string name="float_short">悬浮窗</string>
     <string name="floating_settings">悬浮窗</string>
+    <string name="overlay_remaining">剩余 %1$s</string>
+    <string name="overlay_free_pace">自由节奏</string>
+    <string name="overlay_pending">等待反馈</string>
+    <string name="overlay_monitor">仅监测</string>
+    <string name="overlay_auto">自动</string>
+    <string name="overlay_manual">手动</string>
+    <string name="overlay_open">运动界面</string>
 </resources>

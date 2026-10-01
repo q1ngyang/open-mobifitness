@@ -221,4 +221,11 @@
     <string name="pause_short">Pause</string>
     <string name="float_short">Float</string>
     <string name="floating_settings">Floating panel</string>
+    <string name="overlay_remaining">%1$s left</string>
+    <string name="overlay_free_pace">Your own pace</string>
+    <string name="overlay_pending">Awaiting feedback</string>
+    <string name="overlay_monitor">Monitor only</string>
+    <string name="overlay_auto">Auto</string>
+    <string name="overlay_manual">Manual</string>
+    <string name="overlay_open">Open workout</string>
 </resources>

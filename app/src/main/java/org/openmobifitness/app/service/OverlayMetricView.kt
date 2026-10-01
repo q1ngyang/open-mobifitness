@@ -12,15 +12,15 @@ import android.widget.TextView
 import org.openmobifitness.app.MetricReading
 
 /** A fixed-size cell: changing digits can only resize text, never the window or neighboring cells. */
-internal class OverlayMetricView(context: Context,private val ink: Int,private val muted: Int,expanded: Boolean): LinearLayout(context) {
+internal class OverlayMetricView(context: Context,private val ink: Int,private val muted: Int,expanded: Boolean,numberSize: Int=if(expanded) 25 else 30): LinearLayout(context) {
     private fun dp(value: Int)=(value*resources.displayMetrics.density).toInt()
     val label=TextView(context).apply {
         setTextColor(muted); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
         setAutoSizeTextTypeUniformWithConfiguration(8,(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
     }
     val value=TextView(context).apply {
-        setTextColor(ink); typeface=Typeface.MONOSPACE; maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration(8,((if(expanded) 25 else 20)*resources.configuration.fontScale).toInt().coerceAtLeast(20),1,TypedValue.COMPLEX_UNIT_DIP)
+        setTextColor(ink); typeface=Typeface.create(Typeface.MONOSPACE,Typeface.BOLD); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
+        setAutoSizeTextTypeUniformWithConfiguration(8,(numberSize*resources.configuration.fontScale).toInt().coerceAtLeast(numberSize),1,TypedValue.COMPLEX_UNIT_DIP)
     }
     val unit=TextView(context).apply {
         setTextColor(muted); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
@@ -31,9 +31,10 @@ internal class OverlayMetricView(context: Context,private val ink: Int,private v
         orientation=VERTICAL; setPadding(dp(3),dp(2),dp(5),dp(2))
         addView(label,LayoutParams(LayoutParams.MATCH_PARENT,dp(18)))
         val row=LinearLayout(context).apply { orientation=HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        row.addView(value,LayoutParams(0,dp(30),1f))
-        row.addView(unit,LayoutParams(dp(32),dp(30)).apply { marginStart=dp(3) })
-        addView(row,LayoutParams(LayoutParams.MATCH_PARENT,dp(30)))
+        val numberHeight=if(numberSize>=30) 34 else 30
+        row.addView(value,LayoutParams(0,dp(numberHeight),1f))
+        row.addView(unit,LayoutParams(dp(32),dp(numberHeight)).apply { marginStart=dp(3) })
+        addView(row,LayoutParams(LayoutParams.MATCH_PARENT,dp(numberHeight)))
     }
     fun bind(next: MetricReading) {
         if(next==reading) return

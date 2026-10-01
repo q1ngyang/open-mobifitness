@@ -6,7 +6,7 @@ import org.openmobifitness.core.MetricId
 
 enum class DisplayScope(val key: String,val limit: Int,val defaults: List<MetricId>) {
     TRAINING("training_metrics",12,listOf(MetricId.DISTANCE,MetricId.CALORIES,MetricId.CADENCE,MetricId.HEART,MetricId.POWER,MetricId.SPEED)),
-    COMPACT("compact_metrics",2,listOf(MetricId.TIME,MetricId.CALORIES)),
+    COMPACT("compact_metrics",2,listOf(MetricId.TIME,MetricId.RESISTANCE)),
     EXPANDED("expanded_metrics",4,listOf(MetricId.DISTANCE,MetricId.CALORIES,MetricId.CADENCE,MetricId.HEART))
 }
 class DisplayPreferences(private val prefs: SharedPreferences) {

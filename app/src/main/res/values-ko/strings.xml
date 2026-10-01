@@ -221,4 +221,11 @@
     <string name="pause_short">일시정지</string>
     <string name="float_short">작은 창</string>
     <string name="floating_settings">플로팅 패널</string>
+    <string name="overlay_remaining">%1$s 남음</string>
+    <string name="overlay_free_pace">자유로운 페이스</string>
+    <string name="overlay_pending">응답 대기</string>
+    <string name="overlay_monitor">측정 전용</string>
+    <string name="overlay_auto">자동</string>
+    <string name="overlay_manual">수동</string>
+    <string name="overlay_open">운동 화면</string>
 </resources>

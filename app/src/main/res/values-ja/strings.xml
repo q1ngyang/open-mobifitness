@@ -221,4 +221,11 @@
     <string name="pause_short">一時停止</string>
     <string name="float_short">小窓</string>
     <string name="floating_settings">フローティングパネル</string>
+    <string name="overlay_remaining">残り %1$s</string>
+    <string name="overlay_free_pace">自分のペースで</string>
+    <string name="overlay_pending">応答待ち</string>
+    <string name="overlay_monitor">測定のみ</string>
+    <string name="overlay_auto">自動</string>
+    <string name="overlay_manual">手動</string>
+    <string name="overlay_open">運動画面</string>
 </resources>

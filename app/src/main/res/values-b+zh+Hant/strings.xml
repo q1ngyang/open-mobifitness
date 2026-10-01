@@ -221,4 +221,11 @@
     <string name="pause_short">暫停</string>
     <string name="float_short">懸浮視窗</string>
     <string name="floating_settings">懸浮視窗</string>
+    <string name="overlay_remaining">剩餘 %1$s</string>
+    <string name="overlay_free_pace">自由節奏</string>
+    <string name="overlay_pending">等待回饋</string>
+    <string name="overlay_monitor">僅監測</string>
+    <string name="overlay_auto">自動</string>
+    <string name="overlay_manual">手動</string>
+    <string name="overlay_open">運動畫面</string>
 </resources>
