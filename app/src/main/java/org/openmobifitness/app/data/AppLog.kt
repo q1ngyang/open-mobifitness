@@ -53,12 +53,14 @@ object AppLog {
     suspend fun report(c: Controller): String=withContext(Dispatchers.IO) {
         synchronized(guard) {
             buildString {
-                appendLine("OpenMobi diagnostic report 2")
+                appendLine("OpenMobi diagnostic report 3")
                 appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
                 appendLine("Android: ${Build.VERSION.SDK_INT}; manufacturer=${Build.MANUFACTURER}; model=${Build.MODEL}")
                 appendLine("Protocol trace enabled: ${c.display.packets.value}; simulated: ${c.state.value.demo}")
                 listOf("equipment" to c.ble.state.value,"heart" to c.heart.state.value).forEach { (role,state) ->
                     appendLine("$role: ${state.phase} ${state.protocol} ${state.machine} range=${state.range} writable=${state.writable}")
+                    appendLine("  subscriptions=${state.subscriptions} received=${state.receivedPackets} parsed=${state.parsedPackets} dataReceived=${state.dataReceived}")
+                    appendLine("  lastPacketAgeMs=${state.lastReceiveAt.takeIf { it>0 }?.let { android.os.SystemClock.elapsedRealtime()-it }} controlFeedbackTimedOut=${state.controlTimedOut}")
                     state.diagnostic.forEach { appendLine(clean(it)) }
                 }
                 appendLine("--- Recent application events (up to 512 KiB) ---")

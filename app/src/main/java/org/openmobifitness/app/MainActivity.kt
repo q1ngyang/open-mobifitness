@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     private val controller get()=(application as OpenMobiApp).controller
     val page=mutableStateOf(0)
     val focusTraining=mutableStateOf(false)
+    val metricScope=mutableStateOf<DisplayScope?>(null)
     private var pendingPermission: (() -> Unit)?=null
     private var exportKind="sessions"
     private var exportSessionId: String?=null
@@ -82,10 +83,11 @@ class MainActivity : ComponentActivity() {
         page.value=savedInstanceState?.getInt("page") ?: 0
         focusTraining.value=savedInstanceState?.getBoolean("focusTraining") ?: false
         if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }
+        metricScope.value=runCatching { DisplayScope.valueOf(savedInstanceState?.getString("metrics_scope") ?: intent.getStringExtra("metrics_scope") ?: "") }.getOrNull()
         setContent { OpenMobi(this,controller) }
     }
-    override fun onSaveInstanceState(outState: Bundle) { outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); super.onSaveInstanceState(outState) }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } }
+    override fun onSaveInstanceState(outState: Bundle) { outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }; metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
         if(awaitingOverlay && Settings.canDrawOverlays(this)) { awaitingOverlay=false; minimize(); return }
@@ -115,7 +117,7 @@ class MainActivity : ComponentActivity() {
             }
         } catch(e: Exception) { controller.error(R.string.permission_help) }
     }
-    fun startTraining() { if(!controller.canStart()) { controller.error(R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
+    fun startTraining() { if(!controller.canStart()) { controller.error(if(controller.ble.state.value.phase=="awaiting_data") R.string.waiting_data_help else R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
     fun minimize() {
         if(controller.state.value.session==null) return
         if(!Settings.canDrawOverlays(this)) {

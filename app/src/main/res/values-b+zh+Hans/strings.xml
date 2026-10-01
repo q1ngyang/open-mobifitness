@@ -19,7 +19,7 @@
     <string name="stopped">已保存</string>
     <string name="interrupted">已恢复中断记录</string>
     <string name="presets">选择运动节奏</string>
-    <string name="original_templates">18 个离线训练方案，选择适合自己的节奏。</string>
+    <string name="original_templates">21 个离线训练方案，选择适合自己的节奏。</string>
     <string name="custom">我的训练</string>
     <string name="new_workout">创建训练</string>
     <string name="edit">编辑</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">单车</string>
     <string name="machine_rower">划船机</string>
     <string name="machine_treadmill">跑步机</string>
+    <string name="configure_display">显示设置</string>
+    <string name="resistance_slider">滑动调节阻力</string>
+    <string name="slider_target">目标 %1$s 档 · %2$d%%</string>
+    <string name="control_no_feedback">未收到档位确认，请检查器材并导出诊断日志。</string>
+    <string name="awaiting_data">已连接 · 等待器材数据</string>
+    <string name="waiting_data_help">蓝牙已连接，尚未收到有效运动数据。请唤醒器材并轻踩片刻；仍无读数时开启协议报文记录并导出诊断日志。</string>
+    <string name="subscription_failed">器材数据订阅失败 · 请重连或导出诊断</string>
+    <string name="display_settings_help">分别选择运动页、小悬浮窗和大悬浮窗显示的信息。</string>
+    <string name="customize_panel">指标</string>
+    <string name="plan_cardio40">有氧进阶 · 40 分钟</string>
+    <string name="plan_hiit30">HIIT 递进 · 30 分钟</string>
+    <string name="plan_hiit40">HIIT 长间歇 · 40 分钟</string>
+    <string name="plan_range">阻力范围 %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">参考消耗：按 %1$s kg、整场平均 6–8 MET 假设，40 分钟约 %2$d–%3$d kcal。档位不代表实测强度，运动记录按器材读数或你的估算设置计算。</string>
 </resources>

@@ -19,7 +19,7 @@
     <string name="stopped">Saved</string>
     <string name="interrupted">Recovered after interruption</string>
     <string name="presets">Find your rhythm</string>
-    <string name="original_templates">18 offline plans. Choose a rhythm, then make it yours.</string>
+    <string name="original_templates">21 offline plans. Choose a rhythm, then make it yours.</string>
     <string name="custom">My workouts</string>
     <string name="new_workout">Create workout</string>
     <string name="edit">Edit</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">Bike</string>
     <string name="machine_rower">Rower</string>
     <string name="machine_treadmill">Treadmill</string>
+    <string name="configure_display">Display</string>
+    <string name="resistance_slider">Slide to set resistance</string>
+    <string name="slider_target">Target %1$s · %2$d%%</string>
+    <string name="control_no_feedback">No resistance confirmation received. Check the equipment and export diagnostics.</string>
+    <string name="awaiting_data">Connected · waiting for data</string>
+    <string name="waiting_data_help">Connected, but no valid sensor data yet. Wake the equipment and pedal briefly. If readings stay empty, enable protocol logging and export diagnostics.</string>
+    <string name="subscription_failed">Sensor notifications unavailable · reconnect or export diagnostics</string>
+    <string name="display_settings_help">Choose the information shown on each screen separately.</string>
+    <string name="customize_panel">Metrics</string>
+    <string name="plan_cardio40">Cardio progression · 40 min</string>
+    <string name="plan_hiit30">HIIT progression · 30 min</string>
+    <string name="plan_hiit40">HIIT long intervals · 40 min</string>
+    <string name="plan_range">Resistance %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">Reference only: about %2$d–%3$d kcal at %1$s kg, assuming an average 6–8 MET over 40 minutes. Resistance does not measure effort. Recorded calories use device data or your estimation settings.</string>
 </resources>

@@ -11,7 +11,7 @@ class CoreTest {
         assertArrayEquals(byteArrayOf(4,0x90.toByte(),1),Protocols.ftmsResistance(40.0))
     }
     @Test fun legacyControlRequiresMatchingTemplate() {
-        val original=byteArrayOf(0xac.toByte(),4,0,11,17,80,9,0,0,3,0)
+        val original=byteArrayOf(0xab.toByte(),4,0,11,17,80,9,0,0,3,0)
         assertArrayEquals(byteArrayOf(0xab.toByte(),3,0,11,17,5,9),Protocols.v1Resistance(original,5))
         assertThrows(IllegalArgumentException::class.java) { Protocols.v1Resistance(ByteArray(20),5) }
         assertEquals(24.0,Protocols.v1Range(original)!!.max,0.0)
@@ -32,10 +32,26 @@ class CoreTest {
         assertTrue(r.contains(r.percent(33))); assertFalse(r.contains(3.3)); assertEquals(8.0,r.next(8.0,1),0.0)
     }
     @Test fun legacyMagneticEllipticalUsesTwoPulsesPerRevolution() {
-        val frame=byteArrayOf(0xac.toByte(),4,0,11,17,80,9,0,0,1,0xf4.toByte(),0,0,12,125)
+        val frame=byteArrayOf(0xab.toByte(),4,0,11,17,80,9,0,0,1,0xf4.toByte(),0,0,12,125)
         val result=Protocols.v1Metrics(frame)!!
         assertEquals(60.0,result.cadence!!,0.0); assertEquals(125,result.heartBpm)
         assertEquals(60.0,Protocols.intervalCadence(byteArrayOf(1,0xf4.toByte(),0,42),2)!!,0.0)
+    }
+    @Test fun mbEpAbStateRegressionRejectsEventsAndControlEchoes() {
+        // Shape from the MB-EP report; sensor values normalized, heart rate omitted.
+        val state=byteArrayOf(0xab.toByte(),4,0x11,11,17,0,1,0,0,1,0xf4.toByte(),0,0,1,0)
+        val metrics=Protocols.v1Metrics(state)!!
+        assertEquals(60.0,metrics.cadence!!,0.0)
+        assertEquals(1.0,metrics.resistance!!,0.0)
+        assertNull(metrics.heartBpm)
+        assertEquals(ResistanceRange(1.0,24.0),Protocols.v1Range(state))
+        val command=Protocols.v1Resistance(state,2)
+        assertArrayEquals(byteArrayOf(0xab.toByte(),3,0,11,17,2,1),command)
+        assertNull(Protocols.v1Metrics(command))
+        assertNull(Protocols.v1Metrics(state.copyOf().apply { this[0]=0xac.toByte() }))
+        assertNull(Protocols.v1Range(state.copyOf().apply { this[0]=0xac.toByte() }))
+        assertThrows(IllegalArgumentException::class.java) { Protocols.v1Resistance(state,25) }
+        for(n in 0..10) assertNull(Protocols.v1Metrics(state.copyOf(n)))
     }
     @Test fun csvRoundTripsQuotedUnicodeNewlinesAndFormulaText() {
         val s=Session(device="=SUM(1,2)\n莫比\"",elapsedMs=3000,demo=true,status="completed")
@@ -61,9 +77,16 @@ class CoreTest {
         assertTrue(engine.tick(22000,520.0,null)); assertTrue(engine.done)
     }
     @Test fun allPresetDurationsAndTargetsAreBounded() {
-        assertEquals(18,Presets.all.size)
+        assertEquals(21,Presets.all.size)
         assertEquals(20*60.0,Presets.all.first { it.id=="interval20" }.steps.sumOf { it.target },0.0)
-        assertTrue(Presets.all.all { w -> w.steps.all { it.resistancePercent!! in 0..55 } })
+        assertTrue(Presets.all.all { w -> w.steps.all { it.resistancePercent!! in 0..80 } })
+        for(id in listOf("cardio40","hiit40")) assertEquals(40*60.0,Presets.all.first { it.id==id }.steps.sumOf { it.target },0.0)
+        assertEquals(30*60.0,Presets.all.first { it.id=="hiit30" }.steps.sumOf { it.target },0.0)
+        for(id in listOf("hiit","hiit30","hiit40")) {
+            val w=Presets.all.first { it.id==id }
+            assertTrue(w.steps.filter { it.resistancePercent!!>=45 }.map { it.resistancePercent }.distinct().size>=3)
+            assertTrue(w.steps.first().target>=300 && w.steps.last().target>=300)
+        }
     }
     @Test fun delayedTicksDoNotStretchTimedIntervals() {
         val engine=TrainingEngine(Workout(title="intervals",steps=List(3) { Step(target=2.0) }))

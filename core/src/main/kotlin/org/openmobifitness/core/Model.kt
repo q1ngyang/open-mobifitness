@@ -43,7 +43,7 @@ data class Workout(val id: String = UUID.randomUUID().toString(), val title: Str
     init { require(title.isNotBlank() && title.length <= 120 && steps.size in 1..200) }
 }
 object Presets {
-    // Original, editable templates, not recovered commercial courses. Low initial targets by design.
+    // Original, editable templates. Device-range targets are not physiological intensity measurements.
     private fun plan(id: String, vararg sections: Pair<Int, Int>) = Workout(id, id, sections.map { Step(target = it.first * 60.0, resistancePercent = it.second) }, true)
     val all = listOf(
         plan("warmup", 2 to 5, 2 to 10, 2 to 15, 2 to 20),
@@ -60,10 +60,13 @@ object Presets {
         plan("cooldown", 2 to 20, 2 to 15, 2 to 10, 2 to 5),
         plan("light", 5 to 5, 10 to 15, 5 to 5),
         plan("moderate", 5 to 10, 20 to 30, 5 to 5),
-        plan("vigorous", 5 to 10, 5 to 35, 10 to 50, 5 to 30, 5 to 5),
-        plan("strength", 5 to 10, 2 to 50, 2 to 15, 2 to 50, 2 to 15, 2 to 50, 2 to 15, 5 to 5),
-        plan("weight", 5 to 10, 30 to 25, 5 to 5),
-        plan("hiit", 5 to 10, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 1 to 55, 1 to 15, 5 to 5)
+        plan("vigorous", 5 to 10, 5 to 40, 10 to 65, 5 to 40, 5 to 10),
+        plan("strength", 5 to 10, 2 to 55, 2 to 15, 2 to 60, 2 to 15, 2 to 65, 2 to 15, 5 to 5),
+        plan("weight", 5 to 10, 10 to 35, 10 to 45, 10 to 35, 5 to 5),
+        plan("hiit", 5 to 10, 1 to 45, 1 to 15, 1 to 50, 1 to 15, 1 to 55, 1 to 15, 1 to 60, 1 to 15, 1 to 65, 1 to 15, 5 to 5),
+        plan("cardio40", 5 to 10, 5 to 35, 10 to 50, 10 to 60, 5 to 45, 5 to 10),
+        plan("hiit30", 5 to 10, 1 to 55, 1 to 20, 1 to 60, 1 to 20, 1 to 60, 1 to 20, 1 to 65, 1 to 20, 1 to 65, 1 to 20, 1 to 70, 1 to 20, 1 to 70, 1 to 20, 1 to 75, 1 to 20, 1 to 70, 1 to 20, 1 to 60, 1 to 20, 5 to 10),
+        plan("hiit40", 5 to 10, 5 to 35, 3 to 65, 2 to 25, 3 to 70, 2 to 25, 3 to 75, 2 to 25, 3 to 80, 2 to 25, 5 to 40, 5 to 10)
     )
 }
 

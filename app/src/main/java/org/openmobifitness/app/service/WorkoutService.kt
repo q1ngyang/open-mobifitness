@@ -33,6 +33,8 @@ class WorkoutService : Service() {
     private var pause: Button?=null
     private var plus: Button?=null
     private var minus: Button?=null
+    private var panelText=Color.WHITE
+    private var panelMuted=Color.LTGRAY
     private val wm get() = getSystemService(WindowManager::class.java)
     private var parameters: WindowManager.LayoutParams?=null
     private var wakeLock: PowerManager.WakeLock?=null
@@ -81,9 +83,14 @@ class WorkoutService : Service() {
     private fun showPanel() {
         if(panel!=null || !Settings.canDrawOverlays(this)) return
         val c=localized(); val area=bounds()
+        val dark=controller.theme.value=="dark" || (controller.theme.value=="system" && resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK==android.content.res.Configuration.UI_MODE_NIGHT_YES)
+        panelText=if(dark) Color.rgb(240,243,249) else Color.rgb(29,34,43)
+        panelMuted=if(dark) Color.rgb(190,202,218) else Color.rgb(89,99,115)
+        val surface=if(dark) Color.rgb(25,28,34) else Color.rgb(250,251,253)
+        val buttonColor=if(dark) Color.rgb(43,52,67) else Color.rgb(231,237,246)
         val content=LinearLayout(c).apply {
-            orientation=LinearLayout.VERTICAL; setPadding(dp(14),dp(12),dp(14),dp(12)); elevation=dp(10).toFloat()
-            background=GradientDrawable().apply { setColor(Color.rgb(25,28,34)); cornerRadius=dp(22).toFloat(); setStroke(dp(1),Color.rgb(73,78,89)) }
+            orientation=LinearLayout.VERTICAL; setPadding(dp(12),dp(8),dp(12),dp(8)); elevation=dp(8).toFloat()
+            background=GradientDrawable().apply { setColor(surface); cornerRadius=dp(20).toFloat(); setStroke(dp(1),if(dark) Color.rgb(66,74,85) else Color.rgb(215,220,229)) }
         }
         val root=object: ScrollView(c) {
             override fun onMeasure(widthMeasureSpec: Int,heightMeasureSpec: Int) {
@@ -91,15 +98,20 @@ class WorkoutService : Service() {
             }
         }.apply { isFillViewport=false; isVerticalScrollBarEnabled=false; addView(content) }
         val top=LinearLayout(c).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
-        heading=TextView(c).apply { text="OpenMobi"; textSize=13f; setTextColor(Color.rgb(200,209,224)); setTypeface(null,Typeface.BOLD) }
+        heading=TextView(c).apply { text="OpenMobi"; textSize=12f; setTextColor(panelMuted); setTypeface(null,Typeface.BOLD); maxLines=2 }
         top.addView(heading,LinearLayout.LayoutParams(0,dp(if(expanded) 48 else 24),1f))
         fun button(label: String,action: ()->Unit)=Button(c).apply {
-            text=label; isAllCaps=false; textSize=13f; minHeight=dp(48); minWidth=0; minimumWidth=0
-            setPadding(dp(6),dp(4),dp(6),dp(4)); setTextColor(Color.rgb(225,233,246))
-            background=android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Color.rgb(68,90,122)),GradientDrawable().apply { setColor(Color.rgb(46,61,84)); cornerRadius=dp(14).toFloat() },null)
+            text=label; isAllCaps=false; textSize=12f; minHeight=0; minimumHeight=0; minWidth=0; minimumWidth=0
+            setPadding(dp(4),0,dp(4),0); setTextColor(panelText)
+            val shape=GradientDrawable().apply { setColor(buttonColor); cornerRadius=dp(12).toFloat() }
+            background=android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(if(dark) Color.rgb(68,90,122) else Color.rgb(202,218,242)),android.graphics.drawable.InsetDrawable(shape,dp(3)),null)
             setOnClickListener { action() }
         }
-        if(expanded) top.addView(button("⌄") { expanded=false; rebuild() }.apply { contentDescription=c.getString(R.string.collapse_panel) },LinearLayout.LayoutParams(dp(48),dp(48)))
+        if(expanded) {
+            top.addView(button(c.getString(R.string.customize_panel)) { hidePanel(); startActivity(openIntent().putExtra("metrics_scope",DisplayScope.EXPANDED.name)) }.apply { contentDescription=c.getString(R.string.choose_metrics) },LinearLayout.LayoutParams(dp(48),dp(48)))
+            top.addView(button("↗") { hidePanel(); startActivity(openIntent()) }.apply { textSize=22f; contentDescription=c.getString(R.string.open_app) },LinearLayout.LayoutParams(dp(48),dp(48)))
+            top.addView(button("⌄") { expanded=false; rebuild() }.apply { textSize=22f; contentDescription=c.getString(R.string.collapse_panel) },LinearLayout.LayoutParams(dp(48),dp(48)))
+        }
         else {
             val signature=LinearLayout(c)
             listOf(0xFFECA2C5,0xFFDF535D,0xFFF0C84B,0xFF5888DB).forEach { color ->
@@ -111,22 +123,21 @@ class WorkoutService : Service() {
         fields.chunked(2).forEach { pair ->
             val row=LinearLayout(c).apply { orientation=LinearLayout.HORIZONTAL }
             pair.forEach { id ->
-                val text=TextView(c).apply { textSize=if(expanded) 18f else 17f; setTextColor(Color.WHITE); setPadding(dp(2),dp(8),dp(5),dp(8)); setLineSpacing(dp(4).toFloat(),1f) }
+                val text=TextView(c).apply { textSize=18f; setTextColor(panelText); setPadding(dp(2),dp(4),dp(5),dp(4)); setLineSpacing(dp(2).toFloat(),1f) }
                 metricViews.add(id to text); row.addView(text,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f))
             }; content.addView(row)
         }
         if(expanded) {
-            status=TextView(c).apply { textSize=12f; setTextColor(Color.rgb(190,202,218)); setPadding(0,dp(6),0,dp(6)) }; content.addView(status)
+            status=TextView(c).apply { textSize=11f; setTextColor(panelMuted); setPadding(dp(3),dp(4),dp(3),dp(4)) }; content.addView(status)
             val controls=LinearLayout(c).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
             minus=button("−") { controller.adjust(-1) }.apply { contentDescription=c.getString(R.string.decrease) }
             plus=button("+") { controller.adjust(1) }.apply { contentDescription=c.getString(R.string.increase) }
             pause=button(c.getString(R.string.pause)) { controller.pauseResume() }
-            controls.addView(minus,LinearLayout.LayoutParams(dp(48),dp(52)))
-            controls.addView(pause,LinearLayout.LayoutParams(0,dp(56),1f).apply { marginStart=dp(4); marginEnd=dp(4) })
-            controls.addView(plus,LinearLayout.LayoutParams(dp(48),dp(52))); content.addView(controls)
-            content.addView(button(c.getString(R.string.open_app)) { hidePanel(); startActivity(openIntent()) },LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,dp(52)))
+            controls.addView(minus,LinearLayout.LayoutParams(dp(48),dp(48)))
+            controls.addView(pause,LinearLayout.LayoutParams(0,dp(48),1f))
+            controls.addView(plus,LinearLayout.LayoutParams(dp(48),dp(48))); content.addView(controls)
         }
-        val width=minOf(dp(if(expanded) 320 else 216),area.width()-dp(16))
+        val width=minOf(dp(if(expanded) 280 else 204),area.width()-dp(16))
         val params=WindowManager.LayoutParams(width,WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT).apply { gravity=Gravity.TOP or Gravity.START; x=savedX; y=savedY }
         var startX=0f; var startY=0f; var oldX=0; var oldY=0; var dragged=false
@@ -167,7 +178,7 @@ class WorkoutService : Service() {
             val r=c.reading(id,controller)
             val text=android.text.SpannableString("${r.label}\n${r.value}${if(r.unit.isEmpty()) "" else " ${r.unit}"}")
             text.setSpan(android.text.style.RelativeSizeSpan(.68f),0,r.label.length,0)
-            text.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(190,202,218)),0,r.label.length,0)
+            text.setSpan(android.text.style.ForegroundColorSpan(panelMuted),0,r.label.length,0)
             view.text=text
         }
         val resistance=c.reading(MetricId.RESISTANCE,controller)

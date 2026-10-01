@@ -19,7 +19,7 @@
     <string name="stopped">已儲存</string>
     <string name="interrupted">已復原中斷紀錄</string>
     <string name="presets">選擇運動節奏</string>
-    <string name="original_templates">18 個離線訓練方案，選擇適合自己的節奏。</string>
+    <string name="original_templates">21 個離線訓練方案，選擇適合自己的節奏。</string>
     <string name="custom">我的訓練</string>
     <string name="new_workout">建立訓練</string>
     <string name="edit">編輯</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">單車</string>
     <string name="machine_rower">划船機</string>
     <string name="machine_treadmill">跑步機</string>
+    <string name="configure_display">顯示設定</string>
+    <string name="resistance_slider">滑動調整阻力</string>
+    <string name="slider_target">目標 %1$s 檔 · %2$d%%</string>
+    <string name="control_no_feedback">未收到檔位確認，請檢查器材並匯出診斷日誌。</string>
+    <string name="awaiting_data">已連線 · 等待器材資料</string>
+    <string name="waiting_data_help">藍牙已連線，尚未收到有效運動資料。請喚醒器材並輕踩片刻；仍無讀數時開啟通訊封包記錄並匯出診斷日誌。</string>
+    <string name="subscription_failed">器材資料訂閱失敗 · 請重新連線或匯出診斷</string>
+    <string name="display_settings_help">分別選擇運動頁、小懸浮窗和大懸浮窗顯示的資訊。</string>
+    <string name="customize_panel">指標</string>
+    <string name="plan_cardio40">有氧進階 · 40 分鐘</string>
+    <string name="plan_hiit30">HIIT 遞進 · 30 分鐘</string>
+    <string name="plan_hiit40">HIIT 長間歇 · 40 分鐘</string>
+    <string name="plan_range">阻力範圍 %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">參考消耗：按 %1$s kg、整場平均 6–8 MET 假設，40 分鐘約 %2$d–%3$d kcal。檔位不代表實測強度，運動記錄按器材讀數或你的估算設定計算。</string>
 </resources>

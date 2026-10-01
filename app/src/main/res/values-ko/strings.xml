@@ -19,7 +19,7 @@
     <string name="stopped">저장됨</string>
     <string name="interrupted">중단 기록 복구됨</string>
     <string name="presets">내 리듬 찾기</string>
-    <string name="original_templates">18가지 오프라인 플랜에서 나에게 맞는 리듬을 찾으세요.</string>
+    <string name="original_templates">21가지 오프라인 플랜에서 나에게 맞는 리듬을 찾으세요.</string>
     <string name="custom">내 운동 프로그램</string>
     <string name="new_workout">운동 만들기</string>
     <string name="edit">편집</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">사이클</string>
     <string name="machine_rower">로잉 머신</string>
     <string name="machine_treadmill">트레드밀</string>
+    <string name="configure_display">표시 설정</string>
+    <string name="resistance_slider">슬라이더로 저항 조절</string>
+    <string name="slider_target">목표 %1$s · %2$d%%</string>
+    <string name="control_no_feedback">저항 확인을 받지 못했습니다. 기기를 확인하고 진단 로그를 내보내세요.</string>
+    <string name="awaiting_data">연결됨 · 데이터 대기 중</string>
+    <string name="waiting_data_help">연결되었지만 유효한 운동 데이터가 없습니다. 기기를 깨우고 잠시 페달을 밟으세요. 계속 비어 있으면 프로토콜 기록을 켜고 진단을 내보내세요.</string>
+    <string name="subscription_failed">센서 알림 등록 실패 · 재연결하거나 진단 내보내기</string>
+    <string name="display_settings_help">운동 화면과 작은/큰 플로팅 창의 표시 항목을 각각 선택하세요.</string>
+    <string name="customize_panel">지표</string>
+    <string name="plan_cardio40">유산소 단계 훈련 · 40분</string>
+    <string name="plan_hiit30">HIIT 단계 강화 · 30분</string>
+    <string name="plan_hiit40">HIIT 긴 인터벌 · 40분</string>
+    <string name="plan_range">저항 범위 %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">참고: 체중 %1$s kg, 40분 평균 6–8 MET를 가정하면 약 %2$d–%3$d kcal입니다. 저항은 실제 강도 측정값이 아닙니다. 기록에는 기기 데이터 또는 추정 설정을 사용합니다.</string>
 </resources>

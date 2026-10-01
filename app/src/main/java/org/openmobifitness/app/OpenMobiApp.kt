@@ -48,6 +48,7 @@ class Controller(val app: Application) {
     private var totals=TelemetryTotals()
     private var demoStrokes=0.0
     private var demoResistance=1.0
+    private var manualControl: Job?=null
     var serviceStarted=false
     init {
         scope.launch { try { repo.load(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
@@ -67,6 +68,7 @@ class Controller(val app: Application) {
     fun connect(device: FoundDevice) {
         if(device.heart) { heart.connect(device); return }
         if(state.value.session!=null && state.value.demo) return
+        manualControl?.cancel()
         state.value=state.value.copy(demo=false,paused=state.value.session!=null)
         totals.rebase()
         prefs.edit().putString("last_address",device.address).putString("last_name",device.name).apply()
@@ -104,19 +106,34 @@ class Controller(val app: Application) {
     } } }
     fun finish() { scope.launch { sessionLock.withLock {
         val stored=state.value.session ?: return@withLock
+        manualControl?.cancel()
         val s=if(state.value.paused) stored else stored.copy(elapsedMs=stored.elapsedMs+(SystemClock.elapsedRealtime()-lastTick).coerceAtLeast(0))
         try { repo.save(s.copy(end=Instant.now().toString(),status=if(state.value.done) "completed" else "stopped")) }
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); return@withLock }
         org.openmobifitness.app.data.AppLog.event("session_finish","duration_ms=${s.elapsedMs}")
         state.value=state.value.copy(session=null,paused=false,done=false,stage=0,progress=0f,remainingMs=null); engine=null
     } } }
-    fun resumeAutomatic() { state.value=state.value.copy(automatic=true); lastAuto=0 }
-    fun adjust(delta: Int) { scope.launch {
-        val range=range() ?: return@launch
-        val current=if(state.value.demo) demoResistance else ble.state.value.requested ?: ble.state.value.metrics.resistance ?: return@launch
+    fun resumeAutomatic() { manualControl?.cancel(); state.value=state.value.copy(automatic=true); lastAuto=0 }
+    fun adjust(delta: Int) {
+        val range=range() ?: return
+        val current=if(state.value.demo) demoResistance else ble.state.value.requested ?: ble.state.value.metrics.resistance ?: return
+        adjustTo(range.next(current,delta))
+    }
+    fun adjustTo(value: Double) {
+        val range=range() ?: return
+        if(!value.isFinite() || state.value.session==null) return
+        if(!state.value.demo && (ble.state.value.phase!="ready" || ble.state.value.busy)) return
+        val target=range.next(value,0)
+        val connection=ble.connectionId; val session=state.value.session?.id; val demo=state.value.demo
         state.value=state.value.copy(automatic=false)
-        setResistance(range.next(current,delta))
-    } }
+        manualControl?.cancel()
+        manualControl=scope.launch {
+            if(!demo) delay(ble.resistanceDelayMs())
+            // A pending slider release must never outlive its connection or workout.
+            if(connection!=ble.connectionId || session!=state.value.session?.id || demo!=state.value.demo) return@launch
+            setResistance(target)
+        }
+    }
     private suspend fun setResistance(value: Double) {
         if(state.value.demo) { demoResistance=value; state.value=state.value.copy(metrics=state.value.metrics.copy(resistance=value)) }
         else if(!ble.resistance(value)) error(R.string.control_unavailable)

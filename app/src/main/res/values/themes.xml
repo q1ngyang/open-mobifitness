@@ -6,5 +6,5 @@
         <item name="android:windowBackground">#F8F7FA</item>
         <item name="android:colorAccent">#CE477B</item>
     </style>
-    <color name="icon_bg">#15161D</color>
+    <color name="icon_bg">#FFFFFF</color>
 </resources>

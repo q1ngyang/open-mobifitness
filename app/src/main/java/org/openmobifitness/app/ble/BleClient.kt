@@ -18,7 +18,9 @@ data class LinkState(
     val name: String = "", val address: String = "", val phase: String = "disconnected", val protocol: Protocol = Protocol.UNKNOWN,
     val machine: Machine = Machine.UNKNOWN, val range: ResistanceRange? = null, val metrics: Metrics = Metrics(),
     val motionAt: Long = 0, val resistanceAt: Long = 0, val heartAt: Long = 0, val requested: Double? = null,
-    val busy: Boolean = false, val writable: Boolean = false, val diagnostic: List<String> = emptyList()
+    val busy: Boolean = false, val writable: Boolean = false, val diagnostic: List<String> = emptyList(),
+    val dataReceived: Boolean = false, val receivedPackets: Int = 0, val parsedPackets: Int = 0,
+    val subscriptions: Int = 0, val lastReceiveAt: Long = 0, val controlTimedOut: Boolean = false
 )
 @SuppressLint("MissingPermission") // Entry points are gated by runtime permission checks; revoked permissions are caught.
 class BleClient(private val context: Context, private val scope: CoroutineScope) {
@@ -28,6 +30,9 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     private val adapter get() = context.getSystemService(BluetoothManager::class.java)?.adapter
     private var gatt: BluetoothGatt? = null
     private var connectionJob: Job? = null
+    private var dataWatchdog: Job? = null
+    private var feedbackJob: Job? = null
+    var connectionId: Long = 0; private set
     private var scanJob: Job? = null
     private val operations = Mutex()
     private var pending: CompletableDeferred<Boolean>? = null
@@ -35,13 +40,14 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     private var indication: CompletableDeferred<Boolean>? = null
     private var expectedOpcode = -1
     private var template: ByteArray? = null
-    private var templateAt = 0L
     private var magnets: Int? = null
     private var ftmsFeature = false
     private var granted = false
     private var unlocked = false
     private var lastWrite = 0L
     private var legacyProfile: String? = null
+    private val callbackKinds=mutableSetOf<String>()
+    private val rejectedFrames=mutableSetOf<String>()
     private val cccd = uuid("2902")
     private fun log(value: String) { org.openmobifitness.app.data.AppLog.event("ble",value); state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
     fun available() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
@@ -77,13 +83,17 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     }
     fun disconnect() {
         if(gatt!=null) org.openmobifitness.app.data.AppLog.event("disconnect",state.value.protocol.name)
-        connectionJob?.cancel(); pending?.complete(false); indication?.complete(false)
+        connectionId++; connectionJob?.cancel(); dataWatchdog?.cancel(); feedbackJob?.cancel(); pending?.complete(false); indication?.complete(false)
         val old=gatt; gatt=null; runCatching { old?.disconnect(); old?.close() }
-        template=null; magnets=null; ftmsFeature=false; granted=false; unlocked=false; legacyProfile=null
-        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),motionAt=0,resistanceAt=0,requested=null,busy=false,writable=false)
+        template=null; magnets=null; ftmsFeature=false; granted=false; unlocked=false; legacyProfile=null; lastWrite=0
+        callbackKinds.clear(); rejectedFrames.clear()
+        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),motionAt=0,resistanceAt=0,heartAt=0,requested=null,busy=false,writable=false,dataReceived=false,controlTimedOut=false)
     }
     private fun fail(reason: String) { log(reason); disconnect() }
-    private fun complete(key: String,status: Int) { if(pendingKey==key) pending?.complete(status==BluetoothGatt.GATT_SUCCESS) }
+    private fun complete(key: String,status: Int) {
+        if(status!=BluetoothGatt.GATT_SUCCESS) log("gatt_status:$key:$status")
+        if(pendingKey==key) pending?.complete(status==BluetoothGatt.GATT_SUCCESS)
+    }
     private val callback=object: BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt,status: Int,newState: Int) { scope.launch {
             if(g !== gatt) return@launch
@@ -95,18 +105,25 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             if(status!=0) { fail("discovery_failed:$status"); return@launch }
             try { initialize(g) } catch(e: SecurityException) { fail("permission_revoked") }
         } }
-        override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int) = receivedRead(g,c,value,status)
+        override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int) = receivedRead(g,c,value.copyOf(),status,"read_value")
         @Deprecated("Legacy callback") override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,status: Int) {
-            if(Build.VERSION.SDK_INT<33) receivedRead(g,c,c.value ?: byteArrayOf(),status)
+            receivedRead(g,c,c.value?.copyOf() ?: byteArrayOf(),status,"read_legacy")
         }
-        private fun receivedRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int) { scope.launch {
+        private fun receivedRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int,source: String) { scope.launch {
             if(g!==gatt) return@launch
+            if(callbackKinds.add(source)) log("callback:$source")
             if(status==0) receive(c.uuid,value)
             complete("read:${c.uuid}",status)
         } }
-        override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray) = changed(g,c,value)
-        @Deprecated("Legacy callback") override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic) { if(Build.VERSION.SDK_INT<33) changed(g,c,c.value ?: byteArrayOf()) }
-        private fun changed(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray) { scope.launch { if(g===gatt) receive(c.uuid,value) } }
+        override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray) = changed(g,c,value.copyOf(),"notify_value")
+        // Accept the callback actually delivered by the stack, not an SDK-based guess.
+        // Snapshot characteristic.value before leaving the Bluetooth callback thread.
+        @Deprecated("Legacy callback") override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic) { changed(g,c,c.value?.copyOf() ?: byteArrayOf(),"notify_legacy") }
+        private fun changed(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,source: String) { scope.launch {
+            if(g!==gatt) return@launch
+            if(callbackKinds.add(source)) log("callback:$source")
+            receive(c.uuid,value)
+        } }
         override fun onCharacteristicWrite(g: BluetoothGatt,c: BluetoothGattCharacteristic,status: Int) { scope.launch { if(g===gatt) complete("write:${c.uuid}",status) } }
         override fun onDescriptorWrite(g: BluetoothGatt,d: BluetoothGattDescriptor,status: Int) { scope.launch { if(g===gatt) complete("notify:${d.characteristic.uuid}",status) } }
     }
@@ -117,19 +134,23 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             if(!start(current)) { log("gatt_rejected:$key"); return@withLock false }
             withTimeout(6000) { result.await() }.also { if(!it) log("gatt_failed:$key") }
         } catch(e: TimeoutCancellationException) { fail("gatt_timeout:$key"); false }
+        catch(e: CancellationException) { if(gatt===current) fail("gatt_cancelled:$key"); throw e }
         catch(e: SecurityException) { fail("permission_revoked"); false }
         finally { if(pending===result) { pending=null; pendingKey=null } }
     }
     private fun characteristic(service: String,which: String) = gatt?.getService(uuid(service))?.getCharacteristic(uuid(which))
     private suspend fun read(c: BluetoothGattCharacteristic) = operation("read:${c.uuid}") { it.readCharacteristic(c) }
     private suspend fun subscribe(c: BluetoothGattCharacteristic): Boolean {
-        val d=c.getDescriptor(cccd) ?: return false
+        val d=c.getDescriptor(cccd) ?: run { log("notify_missing_cccd:${c.uuid.short()}"); return false }
         val bytes=if(c.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) BluetoothGattDescriptor.ENABLE_INDICATION_VALUE else BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        return operation("notify:${c.uuid}") { g ->
+        log("notify_start:${c.uuid.short()}")
+        val success=operation("notify:${c.uuid}") { g ->
             if(!g.setCharacteristicNotification(c,true)) false
             else if(Build.VERSION.SDK_INT>=33) g.writeDescriptor(d,bytes)==BluetoothStatusCodes.SUCCESS
             else { d.value=bytes; g.writeDescriptor(d) }
         }
+        log("notify_${if(success) "enabled" else "failed"}:${c.uuid.short()}")
+        return success
     }
     private suspend fun write(service: String,which: String,bytes: ByteArray): Boolean {
         val c=characteristic(service,which) ?: return false
@@ -141,7 +162,10 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
         }
     }
     private suspend fun initialize(g: BluetoothGatt) {
-        g.services.forEach { s -> log("service:${s.uuid}"); s.characteristics.forEach { log("  characteristic:${it.uuid} properties:${it.properties}") } }
+        g.services.forEach { s -> log("service:${s.uuid}"); s.characteristics.forEach { c ->
+            log("  characteristic:${c.uuid} properties:${c.properties}")
+            c.descriptors.forEach { log("    descriptor:${it.uuid}") }
+        } }
         val services=g.services.map { it.uuid }
         val protocol=when {
             uuid("8800") in services -> Protocol.V2
@@ -155,13 +179,15 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             val chars=g.getService(uuid("1826"))?.characteristics?.map { it.uuid.short() } ?: emptyList()
             state.value=state.value.copy(machine=when { "2ace" in chars -> Machine.ELLIPTICAL; "2ad2" in chars -> Machine.BIKE; "2ad1" in chars -> Machine.ROWER; "2acd" in chars -> Machine.TREADMILL; else -> Machine.UNKNOWN })
         }
-        val allowedNotify=setOf("ffe1","ffe4","8811","8812","8813","880e","2ad9","2ada","2ad1","2ad2","2ace","2acd","2a37","fff1")
+        val allowedNotify=setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","880e","2ad9","2ada","2ad1","2ad2","2ace","2acd","2a37","fff1")
         var controlNotify=false
+        var subscriptions=0
         for(s in g.services) for(c in s.characteristics) {
             if(g!==gatt) return
             val short=c.uuid.short()
             if(short in allowedNotify && c.properties and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE)!=0) {
                 val success=subscribe(c)
+                if(success) subscriptions++
                 if(short=="2ad9") controlNotify=success
             }
         }
@@ -176,13 +202,25 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             Protocol.FTMS -> state.value.range!=null && ftmsFeature && controlNotify && characteristic("1826","2ad9")!=null
             else -> false
         }
-        connectionJob?.cancel(); state.value=state.value.copy(phase="ready",writable=writable && state.value.machine in setOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER))
+        connectionJob?.cancel(); state.value=state.value.copy(
+            phase=if(state.value.dataReceived) "ready" else if(subscriptions>0) "awaiting_data" else "subscription_failed",
+            subscriptions=subscriptions,writable=writable && state.value.machine in setOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER))
+        log("initialization:subscriptions=$subscriptions data=${state.value.dataReceived} phase=${state.value.phase}")
+        dataWatchdog=scope.launch {
+            delay(10_000)
+            if(g===gatt && !state.value.dataReceived) log("no_sensor_data:received=${state.value.receivedPackets} parsed=${state.value.parsedPackets}")
+        }
         if(protocol==Protocol.HUANTONG) log("huantong_read_only_pending_profile")
     }
     private fun receive(id: UUID,data: ByteArray) {
         val short=id.short(); val now=SystemClock.elapsedRealtime()
-        if(short in setOf("ffe1","ffe4","8811","8812","8813","8802","8805","8806","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
+        if(short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8802","8805","8806","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
             org.openmobifitness.app.data.AppLog.packet("rx",short,data)
+        val sensor=short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","2ad1","2ad2","2ace","2acd","2a37","fff1")
+        if(sensor) {
+            state.value=state.value.copy(receivedPackets=state.value.receivedPackets+1,lastReceiveAt=now)
+            if(state.value.receivedPackets==1) log("first_sensor_packet:$short length=${data.size}")
+        }
         // Diagnostics intentionally omit names, addresses, serial number and raw workout samples.
         if(short in setOf("8802","8805","8806","2acc","2ad6")) log("capability:$short:${data.joinToString("") { "%02x".format(it) }}")
         var metrics: Metrics?=null; var motion=false
@@ -201,8 +239,8 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
                 motion=true
             }
             "8811" -> if(state.value.machine in listOf(Machine.ELLIPTICAL,Machine.BIKE)) { metrics=Metrics(cadence=magnets?.let { Protocols.intervalCadence(data,it) }); motion=true }
-            "ffe1","ffe4" -> {
-                if(data.size>=11 && (data[0].toInt() and 255)==0xac && data[1].toInt()==4) {
+            "ffe1","ffe4","ffea","ffeb","fff4" -> {
+                if(Protocols.isV1State(data)) {
                     val kind=data[3].toInt() and 255
                     val subtype=data[4].toInt() and 255
                     val range=Protocols.v1Range(data)
@@ -213,7 +251,11 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
                     state.value=state.value.copy(machine=machine,range=range,writable=writable)
                 }
                 val parsed=Protocols.v1Metrics(data)
-                if(parsed!=null) { template=data.copyOf(); templateAt=now; metrics=parsed; motion=true; state.value=state.value.copy(range=Protocols.v1Range(data)) }
+                if(parsed!=null) { template=data.copyOf(); metrics=parsed; motion=true; state.value=state.value.copy(range=Protocols.v1Range(data)) }
+                else if(rejectedFrames.size<8) {
+                    val shape="unparsed_v1:$short length=${data.size} header=${data.firstOrNull()?.let { it.toInt() and 255 }} format=${data.getOrNull(1)?.let { it.toInt() and 255 }}"
+                    if(rejectedFrames.add(shape)) log(shape)
+                }
             }
             "2acc" -> ftmsFeature=data.size>=8 && (data[4].toInt() and 4)!=0
             "2ad6" -> state.value=state.value.copy(range=Protocols.ftmsRange(data))
@@ -228,10 +270,18 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
             "2ada" -> if(data.firstOrNull()?.let { it.toInt() and 255 }==0xff) { granted=false; state.value=state.value.copy(writable=false); log("control_lost") }
             "2a24","2a26" -> log("$short:${data.toString(Charsets.UTF_8).filter { !it.isISOControl() }.take(80)}")
         }
-        metrics?.let { next -> state.value=state.value.copy(metrics=state.value.metrics.merge(next),motionAt=if(motion) now else state.value.motionAt,
+        metrics?.let { next ->
+            val valid=next!=Metrics()
+            val confirmed=next.resistance?.let { measured -> state.value.requested?.let { kotlin.math.abs(it-measured)<0.05 } }==true
+            if(confirmed) { feedbackJob?.cancel(); log("control_feedback:${next.resistance}") }
+            state.value=state.value.copy(metrics=state.value.metrics.merge(next),motionAt=if(motion && valid) now else state.value.motionAt,
             resistanceAt=if(next.resistance!=null) now else state.value.resistanceAt,
             heartAt=if(next.heartBpm!=null) now else state.value.heartAt,
-            requested=if(next.resistance!=null && state.value.requested?.let { kotlin.math.abs(it-requireNotNull(next.resistance))<0.05 }==true) null else state.value.requested) }
+            dataReceived=state.value.dataReceived || valid,
+            parsedPackets=state.value.parsedPackets+if(sensor && valid) 1 else 0,
+            phase=if(valid && state.value.phase in setOf("awaiting_data","subscription_failed")) "ready" else state.value.phase,
+            requested=if(confirmed) null else state.value.requested,controlTimedOut=if(confirmed) false else state.value.controlTimedOut)
+        }
     }
     private suspend fun ftms(bytes: ByteArray): Boolean {
         expectedOpcode=bytes[0].toInt() and 255; val response=CompletableDeferred<Boolean>(); indication=response
@@ -242,20 +292,34 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     suspend fun resistance(value: Double): Boolean {
         val s=state.value; val range=s.range ?: return false
         if(s.phase!="ready" || !s.writable || s.busy || s.machine==Machine.TREADMILL || !range.contains(value) || SystemClock.elapsedRealtime()-lastWrite<700) return false
-        state.value=s.copy(busy=true,requested=value); lastWrite=SystemClock.elapsedRealtime()
+        val connection=gatt
+        feedbackJob?.cancel()
+        state.value=s.copy(busy=true,requested=value,controlTimedOut=false); lastWrite=SystemClock.elapsedRealtime()
         return try {
             val ok=when(s.protocol) {
                 Protocol.V2 -> {
                     if(!unlocked) unlocked=write("8800","88ff",byteArrayOf(0x11,0x82.toByte(),7))
                     unlocked && value%1.0==0.0 && write("8800","880f",Protocols.v2Resistance(value.toInt()))
                 }
-                Protocol.V1 -> template?.takeIf { SystemClock.elapsedRealtime()-templateAt<5000 }?.let { write("ffe0","ffe3",Protocols.v1Resistance(it,value.toInt())) } ?: false
+                // These are device configuration bytes, not motion readings. Retain within
+                // this connection so a stationary rider can adjust; disconnect clears them.
+                Protocol.V1 -> template?.let { write("ffe0","ffe3",Protocols.v1Resistance(it,value.toInt())) } ?: false
                 Protocol.FTMS -> { if(!granted) granted=ftms(byteArrayOf(0)); granted && ftms(Protocols.ftmsResistance(value)) }
                 else -> false
             }
-            if(!ok) { log("control_failed"); state.value=state.value.copy(requested=null) }; ok
-        } finally { state.value=state.value.copy(busy=false) }
+            if(gatt!==connection) return false
+            if(!ok) { log("control_failed"); state.value=state.value.copy(requested=null) }
+            else if(state.value.requested!=null) feedbackJob=scope.launch {
+                delay(5000)
+                if(gatt===connection && state.value.requested==value) {
+                    log("control_feedback_timeout:requested=$value")
+                    state.value=state.value.copy(requested=null,controlTimedOut=true)
+                }
+            }
+            ok
+        } finally { if(gatt===connection) state.value=state.value.copy(busy=false) }
     }
+    fun resistanceDelayMs()=(700-(SystemClock.elapsedRealtime()-lastWrite)).coerceAtLeast(0)
     companion object { fun uuid(short: String): UUID = UUID.fromString("0000$short-0000-1000-8000-00805f9b34fb") }
 }
 private fun UUID.short() = toString().substring(4,8)

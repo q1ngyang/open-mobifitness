@@ -65,10 +65,13 @@ internal val brandColors=listOf(Color(0xFFECA2C5),Color(0xFFDF535D),Color(0xFFF0
                 Text(stringResource(R.string.training_screen),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis)
                 if(state.demo) Text(stringResource(R.string.demo),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick={ picker=true }) { Icon(Icons.Default.List,stringResource(R.string.choose_metrics)) }
+            TextButton(onClick={ picker=true },contentPadding=PaddingValues(horizontal=8.dp),modifier=Modifier.semantics { contentDescription=activity.getString(R.string.choose_metrics) }) {
+                Icon(Icons.Default.List,null,Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.configure_display))
+            }
             Box {
                 IconButton(onClick={ menu=true }) { Icon(Icons.Default.MoreVert,stringResource(R.string.more_actions)) }
                 DropdownMenu(menu,{ menu=false }) {
+                    DropdownMenuItem(text={ Text(stringResource(R.string.choose_metrics)) },onClick={ menu=false; picker=true })
                     DropdownMenuItem(text={ Text(stringResource(R.string.stage_overview)) },onClick={ menu=false; stages=true },enabled=state.selected!=null)
                     DropdownMenuItem(text={ Text(stringResource(R.string.finish),color=MaterialTheme.colorScheme.error) },onClick={ menu=false; finish=true })
                 }
@@ -209,6 +212,8 @@ internal val brandColors=listOf(Color(0xFFECA2C5),Color(0xFFDF535D),Color(0xFFF0
 }
 @Composable private fun TrainingControls(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
     val can=state.demo || (link.writable && link.range!=null && link.metrics.resistance!=null && !link.busy && link.phase=="ready")
+    val range=c.range()
+    var sliding by remember { mutableStateOf<Float?>(null) }
     Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface,modifier=Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -222,6 +227,20 @@ internal val brandColors=listOf(Color(0xFFECA2C5),Color(0xFFDF535D),Color(0xFFF0
                 }
                 FilledTonalButton(onClick={ c.adjust(1) },enabled=can,modifier=Modifier.size(52.dp).semantics { contentDescription=activity.getString(R.string.increase) },contentPadding=PaddingValues(0.dp)) { Text("+",fontSize=28.sp) }
             }
+            if(range!=null && range.max>range.min) {
+                val shown=range.next((sliding?.toDouble() ?: link.requested ?: state.metrics.resistance ?: range.min),0)
+                Column {
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.resistance_slider),style=MaterialTheme.typography.labelSmall)
+                        Text(if(sliding!=null) stringResource(R.string.slider_target,WorkoutService.number(shown),range.percentage(shown)) else "${WorkoutService.number(range.min)}–${WorkoutService.number(range.max)}",style=MaterialTheme.typography.labelSmall)
+                    }
+                    Slider(value=(sliding ?: (link.requested ?: state.metrics.resistance ?: range.min).toFloat()).coerceIn(range.min.toFloat(),range.max.toFloat()),
+                        onValueChange={ sliding=it },onValueChangeFinished={ sliding?.let { c.adjustTo(it.toDouble()) }; sliding=null },
+                        valueRange=range.min.toFloat()..range.max.toFloat(),steps=(((range.max-range.min)/range.increment).toInt()-1).coerceIn(0,100),
+                        enabled=can,modifier=Modifier.fillMaxWidth().height(40.dp).semantics { contentDescription=activity.getString(R.string.resistance_slider) })
+                }
+            }
+            if(link.controlTimedOut) Text(stringResource(R.string.control_no_feedback),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.error)
             if(!can || link.requested!=null) Text(if(link.requested!=null) stringResource(R.string.control_pending,WorkoutService.number(link.requested)) else stringResource(R.string.control_unavailable),style=MaterialTheme.typography.labelSmall,maxLines=2,color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(state.selected!=null && !state.automatic) TextButton(onClick=c::resumeAutomatic,enabled=can,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(0.dp)) { Text(stringResource(R.string.restore_auto),style=MaterialTheme.typography.labelMedium) }
             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -245,8 +264,8 @@ internal val brandColors=listOf(Color(0xFFECA2C5),Color(0xFFDF535D),Color(0xFFF0
         }
     },confirmButton={ TextButton(onClick=close) { Text(stringResource(R.string.close)) } })
 }
-@Composable internal fun MetricPicker(c: Controller,close: ()->Unit) {
-    var selectedScope by remember { mutableStateOf(DisplayScope.TRAINING) }
+@Composable internal fun MetricPicker(c: Controller,initialScope: DisplayScope=DisplayScope.TRAINING,close: ()->Unit) {
+    var selectedScope by remember(initialScope) { mutableStateOf(initialScope) }
     val draft=remember { mutableStateMapOf<DisplayScope,List<MetricId>>().apply { putAll(c.display.selections.value) } }
     val labels=listOf(R.string.training_screen,R.string.compact_panel,R.string.expanded_panel)
     Dialog(onDismissRequest=close,properties=DialogProperties(usePlatformDefaultWidth=false)) {

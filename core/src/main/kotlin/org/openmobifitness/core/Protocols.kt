@@ -12,6 +12,9 @@ private class Packet(val data: ByteArray) {
     fun skip(n: Int) { require(pos + n <= data.size); pos += n }
 }
 object Protocols {
+    // AB is the V1 state header. AC is a separate command/event family, not motion data.
+    // Verified against international APK Smali, the CN handler and a physical MB-EP capture.
+    fun isV1State(data: ByteArray)=data.size>=11 && data[0].u()==0xab && data[1].u()==4
     fun machine(name: String) = when {
         name.startsWith("MB-E",true) || name.startsWith("MB-MEH",true) || name.startsWith("MOBI-E",true) -> Machine.ELLIPTICAL
         name.startsWith("MB-B",true) || name.startsWith("MB-MBH",true) -> Machine.BIKE
@@ -21,8 +24,8 @@ object Protocols {
     }
     fun v2Resistance(value: Int): ByteArray { require(value in 0..255); return byteArrayOf(2, value.toString().length.toByte(), value.toByte()) }
     fun v1Resistance(template: ByteArray, value: Int): ByteArray {
-        require(template.size >= 11 && template[0].u() == 0xac && template[1].u() == 4 && template[3].u() in 10..11)
-        require(value in 1..32)
+        require(isV1State(template) && template[3].u() in 10..11)
+        require(v1Range(template)?.contains(value.toDouble())==true)
         return byteArrayOf(0xab.toByte(),3,0,template[3],template[4],value.toByte(),template[6])
     }
     fun ftmsResistance(value: Double): ByteArray {
@@ -40,7 +43,7 @@ object Protocols {
     }.getOrNull()
     // Only named subtypes whose ranges are supported by the decoded legacy switch.
     fun v1Range(data: ByteArray): ResistanceRange? {
-        if(data.size < 11 || data[0].u() != 0xac || data[1].u() != 4) return null
+        if(!isV1State(data)) return null
         val max = when(data[3].u()) {
             11 -> when(data[4].u()) { 17,19 -> 24; 18 -> 8; else -> return null }
             10 -> when(data[4].u()) { 18,21,23 -> 24; 19,20,22 -> 32; else -> return null }
@@ -49,7 +52,7 @@ object Protocols {
         return ResistanceRange(1.0,max.toDouble())
     }
     fun v1Metrics(data: ByteArray): Metrics? = runCatching {
-        require(data.size >= 11 && data[0].u() == 0xac && data[1].u() == 4 && data[3].u() in 10..11)
+        require(isV1State(data) && data[3].u() in 10..11)
         val interval = (7..10).fold(0L) { acc,i -> (acc shl 8) or data[i].u().toLong() }
         val magneticElliptical=data[3].u()==11 && data[4].u()==17
         val rpm = if(interval == 0L) 0.0 else 60000.0 / interval / if(magneticElliptical) 2 else 1

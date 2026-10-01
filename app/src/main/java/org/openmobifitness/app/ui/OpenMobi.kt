@@ -91,13 +91,13 @@ private val lightColors=lightColorScheme(
                 val icons=listOf(Icons.Default.PlayArrow,Icons.Default.List,Icons.Default.Search,Icons.Default.Settings)
                 Row(Modifier.fillMaxSize()) {
                     if(rail) NavigationRail(containerColor=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxHeight().width(100.dp)) {
-                        Image(painterResource(R.drawable.ic_mark),"OpenMobi",Modifier.size(76.dp))
+                        BrandMark(dark,Modifier.size(76.dp))
                         Spacer(Modifier.height(32.dp))
                         labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={ Text(stringResource(id)) },modifier=Modifier.padding(vertical=8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {
-                            if(!rail) Image(painterResource(R.drawable.ic_mark),null,Modifier.size(40.dp))
+                            if(!rail) { BrandMark(dark,Modifier.size(48.dp)); Spacer(Modifier.width(10.dp)) }
                             Text("OpenMobi",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
                             Spacer(Modifier.weight(1f))
                             BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
@@ -129,10 +129,14 @@ private val lightColors=lightColorScheme(
             }
         }
         val preview by activity.preview
+        activity.metricScope.value?.let { scope -> MetricPicker(controller,scope) { activity.metricScope.value=null; activity.intent.removeExtra("metrics_scope") } }
         if(preview!=null) AlertDialog(onDismissRequest={ activity.preview.value=null },title={ Text(stringResource(R.string.import_preview)) },
             text={ Text(stringResource(R.string.import_summary,preview!!.sessions.size,preview!!.samples.size,preview!!.workouts.size)) },
             confirmButton={ TextButton(onClick=activity::confirmImport) { Text(stringResource(R.string.confirm)) } },dismissButton={ TextButton(onClick={ activity.preview.value=null }) { Text(stringResource(R.string.cancel)) } })
     }
+}
+@Composable private fun BrandMark(dark: Boolean,modifier: Modifier=Modifier) {
+    Image(painterResource(if(dark) R.drawable.brand_dark else R.drawable.brand_light),"OpenMobi",modifier.clip(RoundedCornerShape(12.dp)))
 }
 @Composable private fun BadgeText(text: String,color: Color) {
     Surface(color=color.copy(alpha=.13f),shape=RoundedCornerShape(30.dp)) {
@@ -170,7 +174,7 @@ private val lightColors=lightColorScheme(
             }
             item { ConnectionCard(state,link) { activity.page.value=2 } }
             item { SectionTitle(stringResource(R.string.presets),stringResource(R.string.original_templates)) }
-            items(Presets.all.sortedBy { listOf("warmup","light","moderate","vigorous","strength","weight","hiit","cooldown").indexOf(it.id).let { rank -> if(rank<0) 99 else rank } }.chunked(columns)) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+            items(Presets.all.sortedBy { listOf("warmup","light","moderate","cardio40","vigorous","strength","weight","hiit","hiit30","hiit40","cooldown").indexOf(it.id).let { rank -> if(rank<0) 99 else rank } }.chunked(columns)) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                 group.forEachIndexed { i,workout -> PlanCard(workout,i,Modifier.weight(1f)) { detail=workout } }
                 repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
             } }
@@ -181,7 +185,20 @@ private val lightColors=lightColorScheme(
             items(workouts) { w -> PlanCard(w,0,Modifier.fillMaxWidth()) { detail=w } }
         }
     }
-    detail?.let { workout -> AlertDialog(onDismissRequest={ detail=null },title={ Text(workoutTitle(workout)) },text={ Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { Profile(workout); Text(stringResource(R.string.plan_help),style=MaterialTheme.typography.bodySmall); Text(stringResource(R.string.stages_format,workout.steps.size)); Text(workout.steps.joinToString(" → ") { "${it.resistancePercent ?: 0}%" },style=MaterialTheme.typography.bodySmall) } },
+    detail?.let { workout -> AlertDialog(onDismissRequest={ detail=null },title={ Text(workoutTitle(workout)) },text={ Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        Profile(workout)
+        if(workout.builtin && workout.id=="cardio40") {
+            val weight by c.display.weight.collectAsStateWithLifecycle()
+            Text(stringResource(R.string.plan_energy_reference,num(weight),(6*3.5*weight/200*40).toInt(),(8*3.5*weight/200*40).toInt()),style=MaterialTheme.typography.bodySmall)
+        }
+        Text(stringResource(R.string.plan_help),style=MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.stages_format,workout.steps.size))
+        workout.steps.forEachIndexed { i,step -> Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+            Text("${i+1}",style=MaterialTheme.typography.bodySmall)
+            Text(if(step.condition==Condition.TIME) activity.minutesSeconds((step.target*1000).toLong()) else "${num(step.target)} ${if(step.condition==Condition.DISTANCE) "m" else stringResource(R.string.strokes)}",Modifier.weight(1f),style=MaterialTheme.typography.bodySmall)
+            Text("${step.resistancePercent ?: 0}%",style=MaterialTheme.typography.bodySmall)
+        } }
+    } },
         confirmButton={ TextButton(onClick={ c.select(workout); detail=null; activity.startTraining() }) { Text(stringResource(R.string.start)) } },
         dismissButton={ TextButton(onClick={ editor=workout; detail=null }) { Text(stringResource(if(workout.builtin) R.string.duplicate else R.string.edit)) } }) }
     editor?.let { WorkoutEditor(it,onDismiss={ editor=null },onSave={ w -> c.scope.launch { runCatching { c.repo.saveWorkout(w) }.onFailure { c.error(R.string.storage_failed) } }; editor=null }) }
@@ -214,6 +231,8 @@ private val lightColors=lightColorScheme(
                 if(workout.steps.all { it.condition==Condition.TIME }) Text(stringResource(R.string.minutes_format,(workout.steps.sumOf { it.target }/60).toInt()),style=MaterialTheme.typography.labelMedium)
                 Text(stringResource(R.string.stages_format,workout.steps.size),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            val targets=workout.steps.mapNotNull { it.resistancePercent }
+            if(targets.isNotEmpty()) Text(stringResource(R.string.plan_range,targets.min(),targets.max()),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -233,9 +252,9 @@ private val lightColors=lightColorScheme(
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
         item { SectionTitle(stringResource(R.string.devices),stringResource(R.string.scan_help)) }
         item { ConnectionCard(state,link) {} }
-        if(link.phase=="ready") item {
+        if(link.phase in setOf("ready","awaiting_data","subscription_failed")) item {
             Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                Text("${link.protocol} · ${stringResource(if(link.writable) R.string.unverified else R.string.read_only)}")
+                Text("${link.protocol} · ${stringResource(when(link.phase) { "awaiting_data" -> R.string.waiting_data_help; "subscription_failed" -> R.string.subscription_failed; else -> if(link.writable) R.string.unverified else R.string.read_only })}")
                 link.range?.let { Text(stringResource(R.string.range_format,num(it.min),num(it.max))) }
                 FlowRow(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick=activity::disconnect) { Text(stringResource(R.string.disconnect)) }
@@ -331,7 +350,7 @@ private val lightColors=lightColorScheme(
     val theme by c.theme.collectAsStateWithLifecycle(); val imperial by c.imperial.collectAsStateWithLifecycle()
     var checking by remember { mutableStateOf(false) }; var updateMessage by remember { mutableStateOf<Int?>(null) }; var release by remember { mutableStateOf<Release?>(null) }
     val scope=rememberCoroutineScope()
-    var picker by remember { mutableStateOf(false) }; var estimates by remember { mutableStateOf(false) }
+    var estimates by remember { mutableStateOf(false) }
     val packets by c.display.packets.collectAsStateWithLifecycle()
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(28.dp)) {
         item { SectionTitle(stringResource(R.string.settings),stringResource(R.string.local_only)) }
@@ -357,7 +376,12 @@ private val lightColors=lightColorScheme(
             }
         } }
         item { SettingGroup(stringResource(R.string.training_screen)) {
-            OutlinedButton(onClick={ picker=true }) { Text(stringResource(R.string.choose_metrics)) }
+            Text(stringResource(R.string.display_settings_help),style=MaterialTheme.typography.bodySmall)
+            FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                listOf(DisplayScope.TRAINING to R.string.training_screen,DisplayScope.COMPACT to R.string.compact_panel,DisplayScope.EXPANDED to R.string.expanded_panel).forEach { (scope,label) ->
+                    OutlinedButton(onClick={ activity.metricScope.value=scope }) { Text(stringResource(label)) }
+                }
+            }
             OutlinedButton(onClick={ estimates=true }) { Text(stringResource(R.string.estimation_settings)) }
         } }
         item { SettingGroup(stringResource(R.string.diagnostics)) {
@@ -380,7 +404,6 @@ private val lightColors=lightColorScheme(
         } }
         item { Text(stringResource(R.string.overlay_info),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     }
-    if(picker) MetricPicker(c) { picker=false }
     if(estimates) EstimateDialog(c) { estimates=false }
 }
 @Composable private fun SettingGroup(title: String,content: @Composable ColumnScope.()->Unit) {
@@ -422,10 +445,10 @@ private data class Draft(val condition: Condition,val target: String,val resista
     }
 }
 @Composable internal fun workoutTitle(workout: Workout): String {
-    val id=when(workout.id) { "warmup" -> R.string.warmup; "recovery" -> R.string.recovery; "steady20" -> R.string.steady20; "steady30" -> R.string.steady30; "endurance" -> R.string.endurance; "interval10" -> R.string.interval10; "interval20" -> R.string.interval20; "interval30" -> R.string.interval30; "pyramid20" -> R.string.pyramid20; "pyramid30" -> R.string.pyramid30; "progressive" -> R.string.progressive; "cooldown" -> R.string.cooldown; "light" -> R.string.plan_light; "moderate" -> R.string.plan_moderate; "vigorous" -> R.string.plan_vigorous; "strength" -> R.string.plan_strength; "weight" -> R.string.plan_weight; "hiit" -> R.string.plan_hiit; else -> null }
+    val id=when(workout.id) { "warmup" -> R.string.warmup; "recovery" -> R.string.recovery; "steady20" -> R.string.steady20; "steady30" -> R.string.steady30; "endurance" -> R.string.endurance; "interval10" -> R.string.interval10; "interval20" -> R.string.interval20; "interval30" -> R.string.interval30; "pyramid20" -> R.string.pyramid20; "pyramid30" -> R.string.pyramid30; "progressive" -> R.string.progressive; "cooldown" -> R.string.cooldown; "light" -> R.string.plan_light; "moderate" -> R.string.plan_moderate; "vigorous" -> R.string.plan_vigorous; "strength" -> R.string.plan_strength; "weight" -> R.string.plan_weight; "hiit" -> R.string.plan_hiit; "cardio40" -> R.string.plan_cardio40; "hiit30" -> R.string.plan_hiit30; "hiit40" -> R.string.plan_hiit40; else -> null }
     return if(workout.builtin && id!=null) stringResource(id) else workout.title
 }
-@Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; else -> R.string.disconnected })
+@Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "awaiting_data" -> R.string.awaiting_data; "subscription_failed" -> R.string.subscription_failed; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; else -> R.string.disconnected })
 @Composable private fun status(value: String) = stringResource(when(value) { "completed" -> R.string.completed; "interrupted" -> R.string.interrupted; "active" -> R.string.active; else -> R.string.stopped })
 private fun num(value: Double?)=WorkoutService.number(value)
 private fun date(value: String)=runCatching { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()).format(Instant.parse(value)) }.getOrDefault(value)

@@ -20,6 +20,11 @@ class ExerciseFlowTest {
     @get:Rule val compose=createAndroidComposeRule<MainActivity>()
     private val instrumentation get()=InstrumentationRegistry.getInstrumentation()
     private val controller get()=(compose.activity.application as OpenMobiApp).controller
+    @After fun cleanup() {
+        compose.runOnUiThread { if(controller.state.value.session!=null) controller.finish() }
+        val deadline=android.os.SystemClock.elapsedRealtime()+10_000
+        while(controller.state.value.session!=null && android.os.SystemClock.elapsedRealtime()<deadline) Thread.sleep(50)
+    }
     private fun screenshot(name: String) {
         val image=instrumentation.uiAutomation.takeScreenshot() ?: return
         val dir=File(compose.activity.getExternalFilesDir(null),"screenshots").apply { mkdirs() }
@@ -32,6 +37,9 @@ class ExerciseFlowTest {
         compose.waitUntil(30_000) { controller.state.value.session!=null }
         val id=controller.state.value.session!!.id
         compose.waitUntil(30_000) { controller.state.value.session!!.elapsedMs>1000 }
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.resistance_slider))
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(6f) }
+        compose.waitUntil(20_000) { controller.state.value.metrics.resistance==6.0 && !controller.state.value.automatic }
         compose.onNodeWithText("+").assertIsDisplayed().performClick()
         compose.waitUntil(20_000) { !controller.state.value.automatic }
         screenshot("phone-live")
@@ -55,12 +63,13 @@ class ExerciseFlowTest {
         info.flags=info.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         instrumentation.uiAutomation.serviceInfo=info
         val compact=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.expand_panel))),30_000)
+        screenshot("overlay-after-minimize")
         assertNotNull("Small info-only panel should be visible",compact)
-        assertFalse(device.hasObject(By.text(compose.activity.getString(R.string.open_app))))
+        assertFalse(device.hasObject(By.desc(compose.activity.getString(R.string.open_app))))
         screenshot("phone-overlay-small")
         val center=compact.visibleCenter
         device.swipe(center.x,center.y,center.x+25,center.y+90,20)
-        assertFalse("Dragging must not expand the panel",device.hasObject(By.text(compose.activity.getString(R.string.open_app))))
+        assertFalse("Dragging must not expand the panel",device.hasObject(By.desc(compose.activity.getString(R.string.open_app))))
         device.findObject(By.desc(compose.activity.getString(R.string.expand_panel))).click()
         val shrink=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.collapse_panel))),30_000)
         assertNotNull(shrink)
@@ -68,7 +77,7 @@ class ExerciseFlowTest {
         shrink.click()
         val smallAgain=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.expand_panel))),30_000)
         assertNotNull(smallAgain); smallAgain.click()
-        val open=device.wait(Until.findObject(By.text(compose.activity.getString(R.string.open_app))),30_000)
+        val open=device.wait(Until.findObject(By.desc(compose.activity.getString(R.string.open_app))),30_000)
         assertNotNull("Expanded panel should offer return to training",open)
         open.click()
         compose.waitUntil(30_000) { compose.activity.hasWindowFocus() }

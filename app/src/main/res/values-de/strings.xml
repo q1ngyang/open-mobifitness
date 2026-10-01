@@ -19,7 +19,7 @@
     <string name="stopped">Gespeichert</string>
     <string name="interrupted">Nach Unterbrechung gesichert</string>
     <string name="presets">Deinen Rhythmus finden</string>
-    <string name="original_templates">18 Offline-Pläne. Finde deinen eigenen Rhythmus.</string>
+    <string name="original_templates">21 Offline-Pläne. Finde deinen eigenen Rhythmus.</string>
     <string name="custom">Meine Trainings</string>
     <string name="new_workout">Training erstellen</string>
     <string name="edit">Bearbeiten</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">Fahrrad</string>
     <string name="machine_rower">Rudergerät</string>
     <string name="machine_treadmill">Laufband</string>
+    <string name="configure_display">Anzeige</string>
+    <string name="resistance_slider">Widerstand einstellen</string>
+    <string name="slider_target">Ziel %1$s · %2$d%%</string>
+    <string name="control_no_feedback">Keine Widerstandsbestätigung. Gerät prüfen und Diagnose exportieren.</string>
+    <string name="awaiting_data">Verbunden · Warte auf Daten</string>
+    <string name="waiting_data_help">Verbunden, aber noch keine gültigen Sensordaten. Gerät aktivieren und kurz treten. Bleiben Werte leer, Protokollaufzeichnung aktivieren und Diagnose exportieren.</string>
+    <string name="subscription_failed">Sensormeldungen fehlen · Neu verbinden oder Diagnose exportieren</string>
+    <string name="display_settings_help">Anzeigen für Trainingsansicht sowie kleines und großes Schwebefenster getrennt wählen.</string>
+    <string name="customize_panel">Werte</string>
+    <string name="plan_cardio40">Ausdaueraufbau · 40 Min</string>
+    <string name="plan_hiit30">HIIT Steigerung · 30 Min</string>
+    <string name="plan_hiit40">HIIT lange Intervalle · 40 Min</string>
+    <string name="plan_range">Widerstand %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">Richtwert: ca. %2$d–%3$d kcal bei %1$s kg, angenommen durchschnittlich 6–8 MET über 40 Minuten. Widerstand misst keine Anstrengung. Aufgezeichnete Kalorien nutzen Gerätedaten oder deine Schätzeinstellungen.</string>
 </resources>

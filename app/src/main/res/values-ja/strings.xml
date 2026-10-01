@@ -19,7 +19,7 @@
     <string name="stopped">保存済み</string>
     <string name="interrupted">中断した記録を復元</string>
     <string name="presets">メニューを選ぶ</string>
-    <string name="original_templates">18 のオフラインプラン。自分に合うリズムで。</string>
+    <string name="original_templates">21 のオフラインプラン。自分に合うリズムで。</string>
     <string name="custom">マイメニュー</string>
     <string name="new_workout">メニュー作成</string>
     <string name="edit">編集</string>
@@ -177,4 +177,18 @@
     <string name="machine_bike">バイク</string>
     <string name="machine_rower">ローイング</string>
     <string name="machine_treadmill">トレッドミル</string>
+    <string name="configure_display">表示設定</string>
+    <string name="resistance_slider">スライドで負荷を調整</string>
+    <string name="slider_target">目標 %1$s · %2$d%%</string>
+    <string name="control_no_feedback">負荷の確認がありません。機器を確認し診断ログを保存してください。</string>
+    <string name="awaiting_data">接続済み · データ待機中</string>
+    <string name="waiting_data_help">接続済みですが有効な運動データがありません。機器を起動し少しこいでください。表示されなければ通信ログを有効にして診断を保存してください。</string>
+    <string name="subscription_failed">データ通知の登録失敗 · 再接続または診断を保存</string>
+    <string name="display_settings_help">運動画面と大小のフローティングパネルの表示項目を個別に選択できます。</string>
+    <string name="customize_panel">項目</string>
+    <string name="plan_cardio40">有酸素ステップアップ · 40分</string>
+    <string name="plan_hiit30">HIIT ステップアップ · 30分</string>
+    <string name="plan_hiit40">HIIT ロングインターバル · 40分</string>
+    <string name="plan_range">負荷範囲 %1$d–%2$d%%</string>
+    <string name="plan_energy_reference">参考値：体重 %1$s kg、40分間の平均を6–8 METと仮定すると約 %2$d–%3$d kcal。負荷は実際の運動強度ではありません。記録には機器の測定値または設定した推定値を使用します。</string>
 </resources>
