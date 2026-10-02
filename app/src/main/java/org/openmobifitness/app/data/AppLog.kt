@@ -10,7 +10,7 @@ import org.openmobifitness.app.Controller
 import java.io.File
 import java.time.Instant
 
-/** Bounded, opt-in packet trace. Never collect system logcat, addresses, names or serial numbers. */
+/** Bounded packet trace, enabled by default with a persistent user switch. No system logcat or device identity. */
 object AppLog {
     private sealed interface Command {
         data class Append(val line: String): Command
@@ -44,7 +44,7 @@ object AppLog {
     private fun frames(t: Throwable)=t.javaClass.simpleName+"\n"+t.stackTrace.take(14).joinToString("\n")
     fun exception(type: String,error: Throwable)=event(type,frames(error))
     fun packet(direction: String,characteristic: String,bytes: ByteArray) {
-        if(prefs?.getBoolean("packet_logs",false)!=true) return
+        if(prefs?.getBoolean("packet_logs",true)!=true) return
         val key="$direction:$characteristic"; val now=android.os.SystemClock.elapsedRealtime()
         synchronized(lastPacket) {
             if(direction=="rx" && now-(lastPacket[key] ?: 0)<200) return

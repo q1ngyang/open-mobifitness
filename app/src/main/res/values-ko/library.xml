@@ -1,0 +1,77 @@
+<resources>
+    <string name="library">운동 프로그램</string>
+    <string name="search_plans">운동 검색</string>
+    <string name="filters">필터</string>
+    <string name="all_items">전체</string>
+    <string name="favorites">즐겨찾기</string>
+    <string name="favorite_add">즐겨찾기 추가</string>
+    <string name="favorite_remove">즐겨찾기 해제</string>
+    <string name="favorites_empty">별을 눌러 자주 하는 운동을 추가하세요.</string>
+    <string name="builtin_plans">기본 프로그램</string>
+    <string name="show_all_count">전체 %1$d개 보기</string>
+    <string name="show_less">접기</string>
+    <string name="no_matches">조건에 맞는 항목이 없습니다.</string>
+    <string name="reset_filters">필터 초기화</string>
+    <string name="short_plans">20분 미만</string>
+    <string name="medium_plans">20–40분</string>
+    <string name="long_plans">40분 초과</string>
+    <string name="peak_target">최대 저항 목표</string>
+    <string name="low_target" formatted="false">낮음 · ≤25%</string>
+    <string name="medium_target" formatted="false">중간 · 26–50%</string>
+    <string name="high_target" formatted="false">높음 · &gt;50%</string>
+    <string name="plan_type">프로그램 종류</string>
+    <string name="return_workout">운동으로 돌아가기</string>
+    <string name="mapped_target">기기 목표: %1$s단계 · %2$d%%</string>
+    <string name="percentage_help">비율 = 단계 ÷ 최대 단계. 연결하면 지원 단계로 반올림한 목표를 확인할 수 있습니다.</string>
+    <string name="search_history">운동, 기기, 날짜 검색</string>
+    <string name="week">주</string>
+    <string name="month">월</string>
+    <string name="year">년</string>
+    <string name="previous_period">이전 기간</string>
+    <string name="next_period">다음 기간</string>
+    <string name="workout_count">운동 횟수</string>
+    <string name="stats_include_archive">통계에는 보관된 기록도 포함됩니다.</string>
+    <string name="archive_records">보관함</string>
+    <string name="archive_action">기록 보관</string>
+    <string name="restore_record">복원</string>
+    <string name="archive_bulk">필터된 기록 보관</string>
+    <string name="archive_confirmation">일치하는 기록 %1$d개를 보관할까요? 통계에 유지되며 언제든 복원할 수 있습니다.</string>
+    <string name="record_scope">목록 범위</string>
+    <string name="recent_records">미보관</string>
+    <string name="source_data">데이터 출처</string>
+    <string name="real_data">실제 기기</string>
+    <string name="machine_type">기기 종류</string>
+    <string name="page_count">%1$d / %2$d · %3$d개</string>
+    <string name="workout_detail">운동 상세</string>
+    <string name="average_value">평균</string>
+    <string name="maximum_value">최대</string>
+    <string name="minimum_value">최소</string>
+    <string name="metric_average">평균 %1$s</string>
+    <string name="metric_maximum">최대 %1$s</string>
+    <string name="steps_total">총 걸음 수</string>
+    <string name="motion_data">운동 데이터</string>
+    <string name="source_quality">출처 및 품질</string>
+    <string name="coverage_format">유효 데이터: %1$s / 운동 시간 %2$s</string>
+    <string name="quality_note">평균은 유효 운동 시간으로 가중하며 5초 넘는 공백은 보정하지 않습니다. 없는 값은 —로 표시합니다.</string>
+    <string name="export_report">통계 CSV 내보내기</string>
+    <string name="export_help">통계 CSV는 읽기용 보고서입니다. 복원 및 이전에는 전체 백업을 사용하세요.</string>
+    <string name="local_date">현지 시작 시간</string>
+    <string name="end_date">종료 시간</string>
+    <string name="status_label">상태</string>
+    <string name="estimated_label">추정</string>
+    <string name="measured_label">기기 보고</string>
+    <string name="power_source">파워 출처</string>
+    <string name="sample_count">샘플 수</string>
+    <string name="loading">불러오는 중…</string>
+    <string name="chart_minutes">운동 분</string>
+    <string name="favorite_first">즐겨찾기 먼저 표시</string>
+    <string name="current_period">현재 기간</string>
+    <string name="stats_partial">일부 기록에 열량이 없어 수집된 값만 합산합니다.</string>
+    <string name="plan_unrecorded">프로그램 미기록</string>
+    <string name="previous_page">이전 페이지</string>
+    <string name="next_page">다음 페이지</string>
+    <string name="stats_demo_count">데모 운동 %1$d회 포함.</string>
+    <string name="export_exchange">원본 CSV 내보내기 (가져오기용)</string>
+    <string name="show_trend">추세 보기</string>
+    <string name="hide_trend">추세 숨기기</string>
+</resources>

@@ -40,7 +40,7 @@ class TelemetryTest {
         val e=TrainingEngine(Workout(title="timer",steps=listOf(Step(target=60.0),Step(target=30.0))))
         assertEquals(60000L,e.remainingMs(0)); assertEquals(1L,e.remainingMs(59999))
         e.tick(60500,null,null); assertEquals(29500L,e.remainingMs(60500)); e.tick(90000,null,null); assertEquals(0L,e.remainingMs(90000))
-        val r=ResistanceRange(1.0,24.0); assertEquals(0,r.percentage(1.0)); assertEquals(100,r.percentage(24.0)); assertEquals(52,r.percentage(r.percent(50)))
+        val r=ResistanceRange(1.0,24.0); assertEquals(4,r.percentage(1.0)); assertEquals(100,r.percentage(24.0)); assertEquals(50,r.percentage(r.percent(50)))
     }
     @Test fun newPlansHaveWarmupRecoveryAndNamedDurations() {
         val minutes=mapOf("light" to 20,"moderate" to 30,"vigorous" to 30,"strength" to 22,"weight" to 40,"hiit" to 20)

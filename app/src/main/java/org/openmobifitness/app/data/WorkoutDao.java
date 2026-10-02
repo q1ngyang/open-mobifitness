@@ -3,6 +3,10 @@ import androidx.room.*;
 import java.util.List;
 @Dao public interface WorkoutDao {
  @Query("SELECT * FROM sessions ORDER BY start DESC") List<SessionRow> sessions();
+ @Query("SELECT * FROM sessions ORDER BY startEpoch DESC, id DESC LIMIT 100") List<SessionRow> recentSessions();
+ @Query("SELECT * FROM sessions WHERE status='active'") List<SessionRow> activeSessions();
+ @RawQuery List<SessionRow> history(androidx.sqlite.db.SupportSQLiteQuery query);
+ @Query("UPDATE sessions SET archived=:archived WHERE id=:id AND status!='active'") void setArchived(String id, boolean archived);
  @Query("SELECT * FROM sessions WHERE id=:id") SessionRow session(String id);
  @Query("SELECT * FROM samples ORDER BY sessionId,elapsedMs") List<SampleRow> samples();
  @Query("SELECT * FROM samples WHERE sessionId=:id ORDER BY elapsedMs") List<SampleRow> samplesFor(String id);

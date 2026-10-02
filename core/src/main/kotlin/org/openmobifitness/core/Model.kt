@@ -11,9 +11,13 @@ data class ResistanceRange(val min: Double, val max: Double, val increment: Doub
     init { require(min.isFinite() && max.isFinite() && increment.isFinite() && min >= 0 && max >= min && max <= 3276.7 && increment > 0) }
     fun contains(value: Double) = value.isFinite() && value >= min - 0.0001 && value <= max + 0.0001 &&
         kotlin.math.abs((value - min) / increment - ((value - min) / increment).roundToInt()) < 0.001
-    fun percent(percent: Int): Double = (min + ((max - min) * percent.coerceIn(0, 100) / 100 / increment).roundToInt() * increment).coerceIn(min, max)
-    fun next(value: Double, delta: Int) = (min + (((value - min) / increment).roundToInt() + delta) * increment).coerceIn(min, max)
-    fun percentage(value: Double): Int = if(max==min) 0 else ((value-min)/(max-min)*100).roundToInt().coerceIn(0,100)
+    // Official MOBI: percentage is a fraction of the maximum level, not of the span.
+    fun percent(percent: Int): Double = next(max * percent.coerceIn(0, 100) / 100, 0)
+    fun next(value: Double, delta: Int): Double {
+        val last=kotlin.math.floor((max-min)/increment+0.000001).toInt()
+        return min+(((value-min)/increment).roundToInt()+delta).coerceIn(0,last)*increment
+    }
+    fun percentage(value: Double): Int = if(max==0.0) 0 else (value/max*100).roundToInt().coerceIn(0,100)
 }
 data class Metrics(
     val cadence: Double? = null, val resistance: Double? = null, val speedMps: Double? = null,
@@ -34,7 +38,8 @@ data class Session(
     val machine: Machine = Machine.UNKNOWN, val protocol: Protocol = Protocol.UNKNOWN,
     val elapsedMs: Long = 0, val distanceM: Double? = null, val demo: Boolean = false, val status: String = "active",
     val caloriesKcal: Double? = null, val caloriesEstimated: Boolean = false, val distanceEstimated: Boolean = false,
-    val weightKg: Double? = null, val met: Double? = null
+    val weightKg: Double? = null, val met: Double? = null,
+    val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false
 )
 data class Sample(val sessionId: String, val elapsedMs: Long, val metrics: Metrics)
 enum class Condition { TIME, DISTANCE, STROKES }

@@ -1,0 +1,77 @@
+<resources>
+    <string name="library">Workout library</string>
+    <string name="search_plans">Search workouts</string>
+    <string name="filters">Filters</string>
+    <string name="all_items">All</string>
+    <string name="favorites">Favorites</string>
+    <string name="favorite_add">Add to favorites</string>
+    <string name="favorite_remove">Remove favorite</string>
+    <string name="favorites_empty">Star a workout to keep it here.</string>
+    <string name="builtin_plans">Built-in plans</string>
+    <string name="show_all_count">Show all %1$d</string>
+    <string name="show_less">Show less</string>
+    <string name="no_matches">No matches. Try changing your filters.</string>
+    <string name="reset_filters">Reset filters</string>
+    <string name="short_plans">Under 20 min</string>
+    <string name="medium_plans">20–40 min</string>
+    <string name="long_plans">Over 40 min</string>
+    <string name="peak_target">Peak resistance target</string>
+    <string name="low_target" formatted="false">Low · ≤25%</string>
+    <string name="medium_target" formatted="false">Medium · 26–50%</string>
+    <string name="high_target" formatted="false">High · &gt;50%</string>
+    <string name="plan_type">Plan type</string>
+    <string name="return_workout">Return to workout</string>
+    <string name="mapped_target">Device target: %1$s · %2$d%%</string>
+    <string name="percentage_help">Percent = level ÷ maximum level. Targets round to a supported level; connect equipment to preview.</string>
+    <string name="search_history">Search workout, device or date</string>
+    <string name="week">Week</string>
+    <string name="month">Month</string>
+    <string name="year">Year</string>
+    <string name="previous_period">Previous period</string>
+    <string name="next_period">Next period</string>
+    <string name="workout_count">Workouts</string>
+    <string name="stats_include_archive">Statistics include archived records.</string>
+    <string name="archive_records">Archive</string>
+    <string name="archive_action">Archive record</string>
+    <string name="restore_record">Restore</string>
+    <string name="archive_bulk">Archive matching records</string>
+    <string name="archive_confirmation">Archive %1$d matching records? They remain in statistics and can be restored. Nothing is deleted.</string>
+    <string name="record_scope">List scope</string>
+    <string name="recent_records">Unarchived</string>
+    <string name="source_data">Data source</string>
+    <string name="real_data">Equipment</string>
+    <string name="machine_type">Equipment type</string>
+    <string name="page_count">%1$d / %2$d · %3$d records</string>
+    <string name="workout_detail">Workout details</string>
+    <string name="average_value">Average</string>
+    <string name="maximum_value">Maximum</string>
+    <string name="minimum_value">Minimum</string>
+    <string name="metric_average">Average %1$s</string>
+    <string name="metric_maximum">Maximum %1$s</string>
+    <string name="steps_total">Total steps</string>
+    <string name="motion_data">Workout data</string>
+    <string name="source_quality">Source &amp; quality</string>
+    <string name="coverage_format">Valid data: %1$s of %2$s active time</string>
+    <string name="quality_note">Averages use available samples weighted by active time, with gaps over 5 seconds excluded. No reading is shown as —. Older records may have fewer fields.</string>
+    <string name="export_report">Export statistics CSV</string>
+    <string name="export_help">Statistics CSV is a readable report. Use full backup for importing and migration.</string>
+    <string name="local_date">Local start date</string>
+    <string name="end_date">End time</string>
+    <string name="status_label">Status</string>
+    <string name="estimated_label">Estimated</string>
+    <string name="measured_label">Device reported</string>
+    <string name="power_source">Power source</string>
+    <string name="sample_count">Sample count</string>
+    <string name="loading">Loading…</string>
+    <string name="chart_minutes">Active minutes</string>
+    <string name="favorite_first">Favorites appear first</string>
+    <string name="current_period">Current period</string>
+    <string name="stats_partial">Some records have no energy data; the total includes available values only.</string>
+    <string name="plan_unrecorded">Plan not recorded</string>
+    <string name="previous_page">Previous page</string>
+    <string name="next_page">Next page</string>
+    <string name="stats_demo_count">Includes %1$d demo workouts.</string>
+    <string name="export_exchange">Export exchange CSV (for import)</string>
+    <string name="show_trend">Show trend</string>
+    <string name="hide_trend">Hide trend</string>
+</resources>

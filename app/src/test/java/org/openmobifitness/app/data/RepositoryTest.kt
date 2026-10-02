@@ -58,7 +58,7 @@ class RepositoryTest {
         assertEquals(1,repo.archive().samples.size)
     }
     @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking {
-        for(version in 1..2) {
+        for(version in 1..3) {
         repo.db.close()
         val context=RuntimeEnvironment.getApplication()
         context.deleteDatabase("openmobi.db")
@@ -83,7 +83,7 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(3,repo.db.openHelper.readableDatabase.version)
+        assertEquals(4,repo.db.openHelper.readableDatabase.version)
         assertFalse(restored.samples.single().metrics.powerEstimated)
         }
     }

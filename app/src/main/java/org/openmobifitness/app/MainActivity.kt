@@ -18,6 +18,8 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import org.openmobifitness.app.ble.FoundDevice
 import org.openmobifitness.app.data.Files
+import org.openmobifitness.app.data.HistoryQuery
+import org.openmobifitness.app.data.StatisticsReport
 import org.openmobifitness.app.service.WorkoutService
 import org.openmobifitness.app.ui.OpenMobi
 import org.openmobifitness.core.*
@@ -30,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private var pendingPermission: (() -> Unit)?=null
     private var exportKind="sessions"
     private var exportSessionId: String?=null
+    private var reportQuery=HistoryQuery()
     val preview=mutableStateOf<Archive?>(null)
     private var awaitingOverlay=false
     private var externalNavigation=false
@@ -43,7 +46,7 @@ class MainActivity : ComponentActivity() {
         if(uri!=null) controller.scope.launch {
             try {
                 val archive=withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)!!.use { Files.read(it) } }
-                Exchange.validateReferences(archive,controller.repo.sessions.value)
+                controller.repo.validate(archive)
                 preview.value=archive
             } catch(e: ImportProblem) { controller.error(R.string.import_row_error,e.row) }
             catch(e: Exception) { controller.error(R.string.import_failed) }
@@ -53,12 +56,16 @@ class MainActivity : ComponentActivity() {
         if(uri!=null) controller.scope.launch {
             val kind=exportKind
             val sessionId=exportSessionId
+            val query=reportQuery
+            val units=controller.imperial.value
+            val reportContext=applicationContext.localized().let { it.createConfigurationContext(android.content.res.Configuration(it.resources.configuration)) }
             try {
                 val diagnostic=if(kind=="diagnostics") org.openmobifitness.app.data.AppLog.report(controller) else null
-                val archive=if(kind=="diagnostics") Archive() else controller.repo.archive(sessionId)
+                val archive=if(kind=="diagnostics" || kind=="report") Archive() else controller.repo.archive(sessionId,includeSamples=kind in setOf("backup","samples"),includeWorkouts=kind in setOf("backup","workouts"),includeSessions=kind!="workouts")
                 withContext(Dispatchers.IO) {
                     contentResolver.openOutputStream(uri,"wt")!!.use { output ->
                         when(kind) {
+                            "report" -> StatisticsReport.write(reportContext,controller.repo.history,query,sessionId,output,units)
                             "backup" -> Files.backup(output,archive)
                             else -> {
                                 val text=when(kind) {
@@ -81,6 +88,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState); enableEdgeToEdge()
         exportKind=savedInstanceState?.getString("exportKind") ?: "sessions"
         exportSessionId=savedInstanceState?.getString("exportSessionId")
+        reportQuery=HistoryQuery.decode(savedInstanceState?.getString("reportQuery"))
         awaitingOverlay=savedInstanceState?.getBoolean("overlay") ?: false
         page.value=savedInstanceState?.getInt("page") ?: 0
         focusTraining.value=savedInstanceState?.getBoolean("focusTraining") ?: false
@@ -88,7 +96,7 @@ class MainActivity : ComponentActivity() {
         metricScope.value=runCatching { DisplayScope.valueOf(savedInstanceState?.getString("metrics_scope") ?: intent.getStringExtra("metrics_scope") ?: "") }.getOrNull()
         setContent { OpenMobi(this,controller) }
     }
-    override fun onSaveInstanceState(outState: Bundle) { outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
+    override fun onSaveInstanceState(outState: Bundle) { outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }; metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
@@ -158,6 +166,7 @@ class MainActivity : ComponentActivity() {
         else recreate()
     }
     fun export(kind: String,sessionId: String?=null) { externalNavigation=true; exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
+    fun exportReport(query: HistoryQuery=HistoryQuery(),sessionId: String?=null) { reportQuery=query; export("report",sessionId) }
     fun importFile() { externalNavigation=true; importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
     fun confirmImport() {
         val archive=preview.value ?: return; preview.value=null

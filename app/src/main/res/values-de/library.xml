@@ -1,0 +1,77 @@
+<resources>
+    <string name="library">Trainingspläne</string>
+    <string name="search_plans">Training suchen</string>
+    <string name="filters">Filter</string>
+    <string name="all_items">Alle</string>
+    <string name="favorites">Favoriten</string>
+    <string name="favorite_add">Als Favorit speichern</string>
+    <string name="favorite_remove">Favorit entfernen</string>
+    <string name="favorites_empty">Mit dem Stern häufige Trainings hier ablegen.</string>
+    <string name="builtin_plans">Integrierte Pläne</string>
+    <string name="show_all_count">Alle %1$d anzeigen</string>
+    <string name="show_less">Weniger anzeigen</string>
+    <string name="no_matches">Keine Treffer. Filter anpassen.</string>
+    <string name="reset_filters">Filter zurücksetzen</string>
+    <string name="short_plans">Unter 20 Min.</string>
+    <string name="medium_plans">20–40 Min.</string>
+    <string name="long_plans">Über 40 Min.</string>
+    <string name="peak_target">Maximales Widerstandsziel</string>
+    <string name="low_target" formatted="false">Niedrig · ≤25%</string>
+    <string name="medium_target" formatted="false">Mittel · 26–50%</string>
+    <string name="high_target" formatted="false">Hoch · &gt;50%</string>
+    <string name="plan_type">Plantyp</string>
+    <string name="return_workout">Zum Training</string>
+    <string name="mapped_target">Geräteziel: Stufe %1$s · %2$d%%</string>
+    <string name="percentage_help">Prozent = Stufe ÷ höchste Stufe. Nach Verbindung wird das gerundete Geräteziel angezeigt.</string>
+    <string name="search_history">Training, Gerät oder Datum suchen</string>
+    <string name="week">Woche</string>
+    <string name="month">Monat</string>
+    <string name="year">Jahr</string>
+    <string name="previous_period">Voriger Zeitraum</string>
+    <string name="next_period">Nächster Zeitraum</string>
+    <string name="workout_count">Anzahl</string>
+    <string name="stats_include_archive">Statistik enthält archivierte Einträge.</string>
+    <string name="archive_records">Archiv</string>
+    <string name="archive_action">Eintrag archivieren</string>
+    <string name="restore_record">Wiederherstellen</string>
+    <string name="archive_bulk">Gefilterte Einträge archivieren</string>
+    <string name="archive_confirmation">%1$d passende Einträge archivieren? Sie bleiben in der Statistik und lassen sich wiederherstellen.</string>
+    <string name="record_scope">Listenbereich</string>
+    <string name="recent_records">Nicht archiviert</string>
+    <string name="source_data">Datenquelle</string>
+    <string name="real_data">Echte Geräte</string>
+    <string name="machine_type">Gerätetyp</string>
+    <string name="page_count">%1$d / %2$d · %3$d Einträge</string>
+    <string name="workout_detail">Trainingsdetails</string>
+    <string name="average_value">Durchschnitt</string>
+    <string name="maximum_value">Maximum</string>
+    <string name="minimum_value">Minimum</string>
+    <string name="metric_average">Ø %1$s</string>
+    <string name="metric_maximum">Max. %1$s</string>
+    <string name="steps_total">Schritte gesamt</string>
+    <string name="motion_data">Trainingsdaten</string>
+    <string name="source_quality">Quelle und Qualität</string>
+    <string name="coverage_format">Gültige Daten: %1$s von %2$s aktiver Zeit</string>
+    <string name="quality_note">Mittelwerte sind nach gültiger aktiver Zeit gewichtet. Lücken über 5 Sekunden werden nicht aufgefüllt. Fehlende Werte: —.</string>
+    <string name="export_report">Statistik-CSV exportieren</string>
+    <string name="export_help">Statistik-CSV ist ein lesbarer Bericht. Zum Importieren die vollständige Sicherung nutzen.</string>
+    <string name="local_date">Lokaler Beginn</string>
+    <string name="end_date">Endzeit</string>
+    <string name="status_label">Status</string>
+    <string name="estimated_label">Geschätzt</string>
+    <string name="measured_label">Vom Gerät gemeldet</string>
+    <string name="power_source">Leistungsquelle</string>
+    <string name="sample_count">Anzahl Messpunkte</string>
+    <string name="loading">Wird geladen…</string>
+    <string name="chart_minutes">Aktive Minuten</string>
+    <string name="favorite_first">Favoriten zuerst</string>
+    <string name="current_period">Aktueller Zeitraum</string>
+    <string name="stats_partial">Einige Einträge haben keine Energiedaten. Die Summe enthält nur vorhandene Werte.</string>
+    <string name="plan_unrecorded">Plan nicht erfasst</string>
+    <string name="previous_page">Vorige Seite</string>
+    <string name="next_page">Nächste Seite</string>
+    <string name="stats_demo_count">Enthält %1$d Demo-Trainings.</string>
+    <string name="export_exchange">Austausch-CSV exportieren (zum Import)</string>
+    <string name="show_trend">Verlauf</string>
+    <string name="hide_trend">Einklappen</string>
+</resources>

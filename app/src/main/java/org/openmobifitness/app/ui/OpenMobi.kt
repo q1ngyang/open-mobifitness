@@ -77,6 +77,7 @@ private val lightColors=lightColorScheme(
     val theme by controller.theme.collectAsStateWithLifecycle()
     val state by controller.state.collectAsStateWithLifecycle()
     val link by controller.ble.state.collectAsStateWithLifecycle()
+    val pageState=androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val page by activity.page
     val focused by activity.focusTraining
     val dark=theme=="dark" || (theme=="system" && isSystemInDarkTheme())
@@ -85,18 +86,19 @@ private val lightColors=lightColorScheme(
         Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
             BoxWithConstraints(Modifier.safeDrawingPadding()) {
                 if(focused && state.session!=null) { TrainingScreen(activity,controller,state,link) } else {
-                val rail=maxWidth>=720.dp
+                val shortLayout=maxHeight<480.dp
+                val rail=maxWidth>=720.dp || (maxWidth>=520.dp && shortLayout)
                 val labels=listOf(R.string.train,R.string.history,R.string.devices,R.string.settings)
                 val icons=listOf(Icons.Default.PlayArrow,Icons.Default.List,Icons.Default.Search,Icons.Default.Settings)
                 Row(Modifier.fillMaxSize()) {
                     if(rail) NavigationRail(containerColor=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxHeight().width(100.dp)) {
-                        BrandMark(dark,Modifier.size(76.dp))
-                        Spacer(Modifier.height(32.dp))
-                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={ Text(stringResource(id)) },modifier=Modifier.padding(vertical=8.dp)) }
+                        BrandMark(dark,Modifier.size(if(shortLayout) 40.dp else 76.dp))
+                        Spacer(Modifier.height(if(shortLayout) 4.dp else 32.dp))
+                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({ Text(stringResource(id)) }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {
-                            if(!rail) { BrandMark(dark,Modifier.size(48.dp)); Spacer(Modifier.width(10.dp)) }
+                        if(!shortLayout || !rail) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
+                            if(!rail) { BrandMark(dark,Modifier.size(36.dp)); Spacer(Modifier.width(10.dp)) }
                             Text("OpenMOBI",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
                             Spacer(Modifier.weight(1f))
                             BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
@@ -107,14 +109,14 @@ private val lightColors=lightColorScheme(
                                 IconButton(onClick={ controller.error(null) }) { Icon(Icons.Default.Close,stringResource(R.string.close)) }
                             }
                         }
-                        if(state.session!=null && page!=0) TextButton(onClick={ activity.page.value=0; activity.focusTraining.value=true },modifier=Modifier.fillMaxWidth()) { Text("${stringResource(R.string.active)} · ${WorkoutService.elapsed(state.session!!.elapsedMs)}") }
+                        if(state.session!=null && page!=0) ActiveWorkoutBanner(state) { activity.page.value=0; activity.focusTraining.value=true }
                         Box(Modifier.weight(1f).fillMaxWidth()) {
-                            when(page) {
-                                0 -> if(state.session==null) Home(activity,controller,state,link) else TrainingScreen(activity,controller,state,link)
-                                1 -> History(activity,controller)
+                            pageState.SaveableStateProvider(page) { when(page) {
+                                0 -> if(state.session==null) WorkoutLibrary(activity,controller,state,link) else TrainingScreen(activity,controller,state,link)
+                                1 -> HistoryScreen(activity,controller)
                                 2 -> Devices(activity,controller,state,link)
                                 else -> SettingsPage(activity,controller)
-                            }
+                            } }
                         }
                         if(!rail) NavigationBar(containerColor=MaterialTheme.colorScheme.surface) {
                             labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={
@@ -148,60 +150,6 @@ private val lightColors=lightColorScheme(
         if(subtitle!=null) Text(subtitle,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
-@Composable private fun Home(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
-    val workouts by c.repo.workouts.collectAsStateWithLifecycle()
-    val newWorkoutTitle=stringResource(R.string.new_workout)
-    var detail by remember { mutableStateOf<Workout?>(null) }
-    var editor by remember { mutableStateOf<Workout?>(null) }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val columns=if(maxWidth>=1000.dp) 3 else if(maxWidth>=600.dp) 2 else 1
-        LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
-            item {
-                Surface(color=Ink,shape=RoundedCornerShape(28.dp),modifier=Modifier.fillMaxWidth()) {
-                    Box {
-                        OrbitArt(Modifier.align(Alignment.TopEnd).size(230.dp))
-                        Column(Modifier.padding(28.dp).widthIn(max=640.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
-                            BrandSignature()
-                            Text(stringResource(R.string.ready_title),color=Color.White,style=MaterialTheme.typography.headlineLarge,fontWeight=FontWeight.Bold)
-                            Text(stringResource(R.string.ready_body),color=Color(0xFFCAC8D3),style=MaterialTheme.typography.bodyLarge)
-                            Button(onClick={ c.select(null); activity.startTraining() },colors=ButtonDefaults.buttonColors(containerColor=Color(0xFFDCE8FA),contentColor=Color(0xFF173655)),contentPadding=PaddingValues(horizontal=24.dp,vertical=16.dp)) {
-                                Icon(Icons.Default.PlayArrow,null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.free_training))
-                            }
-                        }
-                    }
-                }
-            }
-            item { ConnectionCard(state,link) { activity.page.value=2 } }
-            item { SectionTitle(stringResource(R.string.presets),stringResource(R.string.original_templates)) }
-            items(Presets.all.sortedBy { listOf("warmup","light","moderate","cardio40","vigorous","strength","weight","hiit","hiit30","hiit40","cooldown").indexOf(it.id).let { rank -> if(rank<0) 99 else rank } }.chunked(columns)) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
-                group.forEachIndexed { i,workout -> PlanCard(workout,i,Modifier.weight(1f)) { detail=workout } }
-                repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
-            } }
-            item { Row(verticalAlignment=Alignment.CenterVertically) {
-                Text(stringResource(R.string.custom),style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f))
-                TextButton(onClick={ editor=Workout(title=newWorkoutTitle,steps=listOf(Step(target=60.0))) }) { Icon(Icons.Default.Add,null); Text(stringResource(R.string.new_workout)) }
-            } }
-            items(workouts) { w -> PlanCard(w,0,Modifier.fillMaxWidth()) { detail=w } }
-        }
-    }
-    detail?.let { workout -> AlertDialog(onDismissRequest={ detail=null },title={ Text(workoutTitle(workout)) },text={ Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        Profile(workout)
-        if(workout.builtin && workout.id=="cardio40") {
-            val weight by c.display.weight.collectAsStateWithLifecycle()
-            Text(stringResource(R.string.plan_energy_reference,num(weight),(6*3.5*weight/200*40).toInt(),(8*3.5*weight/200*40).toInt()),style=MaterialTheme.typography.bodySmall)
-        }
-        Text(stringResource(R.string.plan_help),style=MaterialTheme.typography.bodySmall)
-        Text(stringResource(R.string.stages_format,workout.steps.size))
-        workout.steps.forEachIndexed { i,step -> Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-            Text("${i+1}",style=MaterialTheme.typography.bodySmall)
-            Text(if(step.condition==Condition.TIME) activity.minutesSeconds((step.target*1000).toLong()) else "${num(step.target)} ${if(step.condition==Condition.DISTANCE) "m" else stringResource(R.string.strokes)}",Modifier.weight(1f),style=MaterialTheme.typography.bodySmall)
-            Text("${step.resistancePercent ?: 0}%",style=MaterialTheme.typography.bodySmall)
-        } }
-    } },
-        confirmButton={ TextButton(onClick={ c.select(workout); detail=null; activity.startTraining() }) { Text(stringResource(R.string.start)) } },
-        dismissButton={ TextButton(onClick={ editor=workout; detail=null }) { Text(stringResource(if(workout.builtin) R.string.duplicate else R.string.edit)) } }) }
-    editor?.let { WorkoutEditor(it,onDismiss={ editor=null },onSave={ w -> c.scope.launch { runCatching { c.repo.saveWorkout(w) }.onFailure { c.error(R.string.storage_failed) } }; editor=null }) }
-}
 @Composable private fun ConnectionCard(state: ExerciseState,link: LinkState,onClick: ()->Unit) {
     OutlinedCard(onClick=onClick,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(20.dp)) {
         Row(Modifier.padding(20.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
@@ -211,37 +159,6 @@ private val lightColors=lightColorScheme(
                 Text(if(state.demo) stringResource(R.string.demo) else phase(link.phase),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Default.KeyboardArrowRight,stringResource(R.string.devices))
-        }
-    }
-}
-@Composable private fun OrbitArt(modifier: Modifier) { Canvas(modifier) {
-    val center=androidx.compose.ui.geometry.Offset(size.width*.77f,size.height*.44f)
-    brandColors.forEachIndexed { i,color -> drawCircle(color.copy(alpha=.16f),size.width*(.2f+i*.14f),center,style=Stroke(12.dp.toPx())) }
-} }
-@Composable private fun PlanCard(workout: Workout,index: Int,modifier: Modifier,onClick: ()->Unit) {
-    Card(onClick=onClick,modifier=modifier,colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),shape=RoundedCornerShape(22.dp)) {
-        Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment=Alignment.CenterVertically) {
-                Text(workoutTitle(workout),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                Icon(Icons.Default.PlayArrow,null,tint=MaterialTheme.colorScheme.primary)
-            }
-            Profile(workout)
-            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                if(workout.steps.all { it.condition==Condition.TIME }) Text(stringResource(R.string.minutes_format,(workout.steps.sumOf { it.target }/60).toInt()),style=MaterialTheme.typography.labelMedium)
-                Text(stringResource(R.string.stages_format,workout.steps.size),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            val targets=workout.steps.mapNotNull { it.resistancePercent }
-            if(targets.isNotEmpty()) Text(stringResource(R.string.plan_range,targets.min(),targets.max()),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-@Composable private fun Profile(workout: Workout,current: Int=-1) {
-    val color=MaterialTheme.colorScheme.primary
-    Canvas(Modifier.fillMaxWidth().height(46.dp)) {
-        val step=size.width/workout.steps.size
-        workout.steps.forEachIndexed { i,s ->
-            val h=size.height*(.12f+(s.resistancePercent ?: 0)/100f*.88f)
-            drawRoundRect(if(i==current) Yellow else color.copy(alpha=if(i<current) .25f else .6f),androidx.compose.ui.geometry.Offset(i*step+1,size.height-h),androidx.compose.ui.geometry.Size((step-3).coerceAtLeast(1f),h),androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
         }
     }
 }
@@ -295,56 +212,6 @@ private val lightColors=lightColorScheme(
     }
     if(diagnostics) AlertDialog(onDismissRequest={ diagnostics=false },title={ Text(stringResource(R.string.diagnostics)) },text={ Column(Modifier.heightIn(max=420.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(16.dp)) { Text(stringResource(R.string.diagnostic_help)); Text(link.diagnostic.joinToString("\n"),style=MaterialTheme.typography.bodySmall) } },confirmButton={ TextButton(onClick={ activity.export("diagnostics") }) { Text(stringResource(R.string.export_diagnostics)) } },dismissButton={ TextButton(onClick={ diagnostics=false }) { Text(stringResource(R.string.close)) } })
 }
-@Composable private fun History(activity: MainActivity,c: Controller) {
-    val sessions by c.repo.sessions.collectAsStateWithLifecycle()
-    val imperial by c.imperial.collectAsStateWithLifecycle()
-    var detail by remember { mutableStateOf<Session?>(null) }; var deleting by remember { mutableStateOf<Session?>(null) }
-    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
-        item { SectionTitle(stringResource(R.string.history)) }
-        item { FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick={ activity.export("sessions") }) { Text(stringResource(R.string.export_sessions)) }
-            OutlinedButton(onClick={ activity.export("backup") }) { Text(stringResource(R.string.export_backup)) }
-            TextButton(onClick=activity::importFile) { Text(stringResource(R.string.import_file)) }
-        } }
-        if(sessions.isEmpty()) item { Text(stringResource(R.string.records_empty),Modifier.padding(vertical=60.dp),style=MaterialTheme.typography.headlineSmall) }
-        if(sessions.isNotEmpty()) item { Text(stringResource(R.string.estimated_values),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-        items(sessions,key={ it.id }) { session ->
-            Card(onClick={ detail=session },colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),shape=RoundedCornerShape(22.dp),modifier=Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment=Alignment.CenterVertically) {
-                        Text(date(session.start),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                        if(session.demo) BadgeText(stringResource(R.string.demo),Yellow)
-                    }
-                    Text(session.device,style=MaterialTheme.typography.bodySmall)
-                    FlowRow(horizontalArrangement=Arrangement.spacedBy(24.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                        Text(WorkoutService.elapsed(session.elapsedMs),style=MaterialTheme.typography.headlineSmall)
-                        Text(session.distanceM?.let { (if(session.distanceEstimated) "≈" else "")+"%.2f %s".format(it/(if(imperial) 1609.344 else 1000.0),if(imperial) "mi" else "km") } ?: "—",style=MaterialTheme.typography.headlineSmall)
-                    }
-                    session.caloriesKcal?.let { Text("${if(session.caloriesEstimated) "≈" else ""}${"%.1f".format(it)} kcal",style=MaterialTheme.typography.bodyMedium) }
-                    Text(status(session.status),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-    detail?.let { session ->
-        var samples by remember(session.id) { mutableStateOf<List<Sample>>(emptyList()) }
-        LaunchedEffect(session.id) { runCatching { c.repo.archive(session.id).samples }.onSuccess { samples=it }.onFailure { c.error(R.string.storage_failed) } }
-        AlertDialog(onDismissRequest={ detail=null },title={ Text(date(session.start)) },text={ Column(verticalArrangement=Arrangement.spacedBy(16.dp)) {
-            Text("${session.device}\n${WorkoutService.elapsed(session.elapsedMs)}\n${status(session.status)}")
-            if(samples.any { it.metrics.cadence!=null }) { Text(stringResource(R.string.cadence)); Sparkline(samples.mapNotNull { it.metrics.cadence }) } else Text(stringResource(R.string.no_samples))
-            TextButton(onClick={ activity.export("samples",session.id) }) { Text(stringResource(R.string.export_samples)) }
-            TextButton(onClick={ activity.export("backup",session.id) }) { Text(stringResource(R.string.export_backup)) }
-        } },confirmButton={ TextButton(onClick={ detail=null }) { Text(stringResource(R.string.close)) } },dismissButton={ if(session.status!="active") TextButton(onClick={ deleting=session; detail=null }) { Text(stringResource(R.string.delete),color=MaterialTheme.colorScheme.error) } })
-    }
-    deleting?.let { session -> AlertDialog(onDismissRequest={ deleting=null },title={ Text(stringResource(R.string.delete)) },text={ Text(stringResource(R.string.delete_confirmation)) },confirmButton={ TextButton(onClick={ c.scope.launch { runCatching { c.repo.deleteSession(session.id) }.onFailure { c.error(R.string.storage_failed) } }; deleting=null }) { Text(stringResource(R.string.delete)) } },dismissButton={ TextButton(onClick={ deleting=null }) { Text(stringResource(R.string.cancel)) } }) }
-}
-@Composable private fun Sparkline(values: List<Double>) { Canvas(Modifier.fillMaxWidth().height(100.dp)) {
-    if(values.size>1) {
-        val sampled=values.filterIndexed { i,_ -> i%maxOf(1,values.size/120)==0 }; val max=(sampled.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
-        val path=Path(); sampled.forEachIndexed { i,v -> val x=size.width*i/(sampled.size-1); val y=size.height*(1-v/max).toFloat(); if(i==0) path.moveTo(x,y) else path.lineTo(x,y) }
-        drawPath(path,Blue,style=Stroke(3.dp.toPx(),cap=StrokeCap.Round))
-    }
-} }
 @Composable private fun SettingsPage(activity: MainActivity,c: Controller) {
     val theme by c.theme.collectAsStateWithLifecycle(); val imperial by c.imperial.collectAsStateWithLifecycle()
     var checking by remember { mutableStateOf(false) }; var updateMessage by remember { mutableStateOf<Int?>(null) }; var release by remember { mutableStateOf<Release?>(null) }
@@ -424,7 +291,7 @@ private val lightColors=lightColorScheme(
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold); content() }
 }
 private data class Draft(val condition: Condition,val target: String,val resistance: String)
-@Composable private fun WorkoutEditor(workout: Workout,onDismiss: ()->Unit,onSave: (Workout)->Unit) {
+@Composable internal fun WorkoutEditor(workout: Workout,range: ResistanceRange?=null,onDismiss: ()->Unit,onSave: (Workout)->Unit) {
     val originalName=if(workout.title.isEmpty()) "" else workoutTitle(workout)
     var title by remember { mutableStateOf(originalName) }; var invalid by remember { mutableStateOf(false) }
     val steps=remember { mutableStateListOf<Draft>().apply { addAll(workout.steps.map { Draft(it.condition,num(it.target),(it.resistancePercent ?: 0).toString()) }) } }
@@ -444,6 +311,7 @@ private data class Draft(val condition: Condition,val target: String,val resista
                                 OutlinedTextField(draft.target,{ steps[i]=draft.copy(target=it) },label={ Text(stringResource(R.string.target)) },modifier=Modifier.weight(1f),singleLine=true)
                                 OutlinedTextField(draft.resistance,{ steps[i]=draft.copy(resistance=it) },label={ Text(stringResource(R.string.resistance_percent)) },modifier=Modifier.weight(1f),singleLine=true)
                             }
+                            draft.resistance.toIntOrNull()?.takeIf { it in 0..100 }?.let { percent -> range?.let { r -> Text(stringResource(R.string.mapped_target,num(r.percent(percent)),r.percentage(r.percent(percent))),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary) } }
                             if(steps.size>1) TextButton(onClick={ steps.removeAt(i) }) { Text(stringResource(R.string.remove_step)) }
                         } }
                     }
@@ -458,10 +326,7 @@ private data class Draft(val condition: Condition,val target: String,val resista
         }
     }
 }
-@Composable internal fun workoutTitle(workout: Workout): String {
-    val id=when(workout.id) { "warmup" -> R.string.warmup; "recovery" -> R.string.recovery; "steady20" -> R.string.steady20; "steady30" -> R.string.steady30; "endurance" -> R.string.endurance; "interval10" -> R.string.interval10; "interval20" -> R.string.interval20; "interval30" -> R.string.interval30; "pyramid20" -> R.string.pyramid20; "pyramid30" -> R.string.pyramid30; "progressive" -> R.string.progressive; "cooldown" -> R.string.cooldown; "light" -> R.string.plan_light; "moderate" -> R.string.plan_moderate; "vigorous" -> R.string.plan_vigorous; "strength" -> R.string.plan_strength; "weight" -> R.string.plan_weight; "hiit" -> R.string.plan_hiit; "cardio40" -> R.string.plan_cardio40; "hiit30" -> R.string.plan_hiit30; "hiit40" -> R.string.plan_hiit40; else -> null }
-    return if(workout.builtin && id!=null) stringResource(id) else workout.title
-}
+@Composable internal fun workoutTitle(workout: Workout): String = LocalContext.current.workoutName(workout)
 @Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "awaiting_data" -> R.string.awaiting_data; "subscription_failed" -> R.string.subscription_failed; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; else -> R.string.disconnected })
 @Composable private fun status(value: String) = stringResource(when(value) { "completed" -> R.string.completed; "interrupted" -> R.string.interrupted; "active" -> R.string.active; else -> R.string.stopped })
 private fun num(value: Double?)=WorkoutService.number(value)

@@ -16,7 +16,7 @@ class DisplayPreferences(private val prefs: SharedPreferences) {
     val weight=MutableStateFlow(prefs.getFloat("weight_kg",70f).toDouble().coerceIn(20.0,300.0))
     val met=MutableStateFlow(prefs.getFloat("estimate_met",5f).toDouble().coerceIn(1.0,20.0))
     val targetCadence=MutableStateFlow(prefs.getInt("target_cadence",24).coerceIn(1,300))
-    val packets=MutableStateFlow(prefs.getBoolean("packet_logs",false))
+    val packets=MutableStateFlow(prefs.getBoolean("packet_logs",true))
     val floatingEnabled=MutableStateFlow(prefs.getBoolean("floating_enabled",true))
     val autoFloating=MutableStateFlow(prefs.getBoolean("auto_floating",true))
     fun floating(enabled: Boolean) { floatingEnabled.value=enabled; prefs.edit().putBoolean("floating_enabled",enabled).apply() }

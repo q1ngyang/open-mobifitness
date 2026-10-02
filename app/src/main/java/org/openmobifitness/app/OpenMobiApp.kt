@@ -83,7 +83,7 @@ class Controller(val app: Application) {
         }
         val s=Session(device=if(state.value.demo) "OpenMOBI Demo" else ble.state.value.name,
             machine=if(state.value.demo) state.value.demoMachine else ble.state.value.machine,
-            protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=display.weight.value,met=display.met.value)
+            protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=display.weight.value,met=display.met.value,workoutId=state.value.selected?.id ?: "free",workoutTitle=state.value.selected?.let { app.localized().workoutName(it) } ?: app.localized().getString(R.string.free_training))
         try { repo.save(s) } catch(e: Exception) { error(R.string.storage_failed); return@withLock }
         engine=state.value.selected?.let { TrainingEngine(it) }
         lastTick=SystemClock.elapsedRealtime(); lastAuto=0L

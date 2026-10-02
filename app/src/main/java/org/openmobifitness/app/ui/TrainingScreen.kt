@@ -161,7 +161,7 @@ internal val brandColors = listOf(Color(0xFFECA2C5), Color(0xFFDF535D), Color(0x
 }
 
 @Composable private fun WorkoutHeader(state: ExerciseState, link: LinkState, tablet: Boolean, short: Boolean, back: () -> Unit, display: () -> Unit) {
-    val context = LocalContext.current
+    val displayDescription = stringResource(R.string.choose_metrics)
     Row(Modifier.fillMaxWidth().height(if (short) 48.dp else if (tablet) 72.dp else 56.dp).padding(horizontal = if (tablet) 16.dp else 2.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = back) { Icon(Icons.Default.ArrowBack, stringResource(R.string.back_to_app), Modifier.size(if (tablet) 26.dp else 20.dp)) }
         if (tablet) { VerticalDivider(Modifier.height(32.dp).padding(horizontal = 10.dp)); Spacer(Modifier.width(12.dp)) }
@@ -176,7 +176,7 @@ internal val brandColors = listOf(Color(0xFFECA2C5), Color(0xFFDF535D), Color(0x
             Text(if (tablet) "$equipment · $status" else "$status · $equipment", fontSize = if (tablet) 13.sp else 9.sp, lineHeight = if (tablet) 17.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(stringResource(R.string.local_only), fontSize = if (tablet) 13.sp else 9.sp, lineHeight = if (tablet) 17.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
-        TextButton(onClick = display, modifier = Modifier.semantics { contentDescription = context.getString(R.string.choose_metrics) }, contentPadding = PaddingValues(horizontal = if (tablet) 8.dp else 5.dp), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
+        TextButton(onClick = display, modifier = Modifier.semantics { contentDescription = displayDescription }, contentPadding = PaddingValues(horizontal = if (tablet) 8.dp else 5.dp), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
             WorkoutIcon(WorkoutGlyph.DISPLAY, Modifier.size(if (tablet) 24.dp else 18.dp))
             Spacer(Modifier.width(if (tablet) 10.dp else 4.dp))
             Text(stringResource(R.string.configure_display), fontSize = if (tablet) 16.sp else 11.sp, maxLines = 1)
@@ -185,7 +185,7 @@ internal val brandColors = listOf(Color(0xFFECA2C5), Color(0xFFDF535D), Color(0x
 }
 
 @Composable private fun WorkoutDock(state: ExerciseState, floating: Boolean, large: Boolean, pause: () -> Unit, finish: () -> Unit, minimize: () -> Unit) {
-    val context = LocalContext.current
+    val minimizeDescription = stringResource(R.string.minimize)
     Surface(color = MaterialTheme.colorScheme.surface) {
         Column {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -198,7 +198,7 @@ internal val brandColors = listOf(Color(0xFFECA2C5), Color(0xFFDF535D), Color(0x
                 OutlinedButton(onClick = finish, modifier = Modifier.weight(1.15f).height(height).testTag("finish"), shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), contentPadding = PaddingValues(horizontal = 6.dp)) {
                     DockContent(WorkoutGlyph.STOP, stringResource(R.string.finish), large)
                 }
-                if (floating) OutlinedButton(onClick = minimize, modifier = Modifier.weight(1f).height(height).testTag("float").semantics { contentDescription = context.getString(R.string.minimize) }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
+                if (floating) OutlinedButton(onClick = minimize, modifier = Modifier.weight(1f).height(height).testTag("float").semantics { contentDescription = minimizeDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
                     DockContent(WorkoutGlyph.FLOAT, stringResource(R.string.float_short), large)
                 }
             }
@@ -226,6 +226,7 @@ private fun workoutClock(ms: Long): String {
 
 @Composable private fun TrainingProgress(c: Controller, state: ExerciseState, modifier: Modifier, spacious: Boolean, dense: Boolean, stages: () -> Unit) {
     val context = LocalContext.current
+    val stageDescription = stringResource(R.string.stage_overview)
     val workout = state.selected
     InstrumentPanel(modifier.testTag("training-progress")) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -262,7 +263,7 @@ private fun workoutClock(ms: Long): String {
                     }
                 }
                 if (workout != null) {
-                    Column(Modifier.fillMaxWidth().testTag("stage-preview").clickable(onClick = stages).semantics { contentDescription = context.getString(R.string.stage_overview) }, verticalArrangement = Arrangement.spacedBy(if (large) 12.dp else if (dense) 4.dp else 6.dp)) {
+                    Column(Modifier.fillMaxWidth().testTag("stage-preview").clickable(onClick = stages).semantics { contentDescription = stageDescription }, verticalArrangement = Arrangement.spacedBy(if (large) 12.dp else if (dense) 4.dp else 6.dp)) {
                         StageTimeline(state, large, dense)
                         val first = (state.stage - 1).coerceIn(0, (workout.steps.size - 3).coerceAtLeast(0))
                         Row(horizontalArrangement = Arrangement.spacedBy(if (large) 8.dp else 5.dp)) {
@@ -450,7 +451,8 @@ private fun workoutClock(ms: Long): String {
                 ResistanceSlider(range, value, can, spacious, change = { sliding = it }, finish = { sliding?.let { c.adjustTo(it.toDouble()) }; sliding = null })
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(WorkoutService.number(range.min), fontSize = if (spacious) 12.sp else 10.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(if (sliding != null) stringResource(R.string.slider_target, WorkoutService.number(range.next(sliding!!.toDouble(), 0)), range.percentage(sliding!!.toDouble())) else "", fontSize = 10.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val previewTarget = sliding?.let { range.next(it.toDouble(), 0) }
+                    Text(previewTarget?.let { stringResource(R.string.slider_target, WorkoutService.number(it), range.percentage(it)) } ?: "", fontSize = 10.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(WorkoutService.number(range.max), fontSize = if (spacious) 12.sp else 10.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

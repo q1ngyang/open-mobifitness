@@ -6,10 +6,10 @@ import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[1]
 resources = root / "app/src/main/res"
-files = [resources / folder / "strings.xml" for folder in
+files = [resources / folder for folder in
          ("values", "values-b+zh+Hans", "values-b+zh+Hant", "values-ja", "values-ko", "values-de")]
 def strings(path):
-    items = ET.parse(path).getroot().findall("string")
+    items = [node for file in path.glob("*.xml") for node in ET.parse(file).getroot().findall("string")]
     result = {node.attrib["name"]: "".join(node.itertext()) for node in items}
     assert len(result) == len(items), f"Duplicate resource: {path}"
     return result
