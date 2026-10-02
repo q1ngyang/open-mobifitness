@@ -59,7 +59,7 @@ class LibraryHistoryTest {
         compose.waitForIdle(); Thread.sleep(350)
         val bitmap=instrumentation.uiAutomation.takeScreenshot() ?: error("screenshot")
         val dir=File(compose.activity.getExternalFilesDir(null),"screenshots").apply { mkdirs() }
-        File(dir,"alpha6-$case-$name.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }; bitmap.recycle()
+        File(dir,"alpha7-$case-$name.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }; bitmap.recycle()
     }
     @Before fun seed() {
         androidx.test.uiautomator.Configurator.getInstance().waitForIdleTimeout=100
@@ -74,7 +74,7 @@ class LibraryHistoryTest {
             c.repo.importArchive(Archive(rows,samples))
             c.repo.saveWorkout(Workout(id=customId,title="UI custom 50%",steps=listOf(Step(target=120.0,resistancePercent=50))))
         }
-        compose.runOnUiThread { c.setDemo(true); c.setTheme(if(case.contains("dark")) "dark" else "light"); c.prefs.edit().putStringSet("favorite_workouts",setOf("cardio40","hiit30")).commit(); compose.activity.page.value=0; compose.activity.focusTraining.value=false }
+        compose.runOnUiThread { c.dismissResult(); c.setDemo(true); c.setTheme(if(case.contains("dark")) "dark" else "light"); c.prefs.edit().putStringSet("favorite_workouts",setOf("cardio40","hiit30")).commit(); compose.activity.page.value=0; compose.activity.focusTraining.value=false }
         compose.activityRule.scenario.recreate()
     }
     @After fun finish() { compose.runOnUiThread { if(c.state.value.session!=null) c.finish() }; compose.waitUntil(20000) { c.state.value.session==null } }
@@ -98,14 +98,16 @@ class LibraryHistoryTest {
         compose.waitUntil(30000) { compose.onAllNodesWithText(compose.activity.getString(R.string.loading)).fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("history-search").performTextInput("UI fixture")
         compose.onNodeWithTag("history-search").performImeAction()
-        val window=PeriodWindow.of(HistoryPeriod.MONTH,LocalDate.now(),ZoneId.systemDefault())
-        val count=runBlocking { c.repo.history.page(HistoryQuery(window.from,window.until,search="UI fixture")).count }
+        val recent=RecordDates.recent()
+        val count=runBlocking { c.repo.history.page(HistoryQuery(recent.first,recent.second,search="UI fixture")).count }
         compose.waitUntil(30000) { compose.onAllNodesWithText(compose.activity.getString(R.string.page_count,1,((count+19)/20).coerceAtLeast(1),count)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("history")
         if(case=="phone-final") {
-            compose.onNodeWithText(compose.activity.getString(R.string.all_items)).performClick()
-            val total=runBlocking { c.repo.history.page(HistoryQuery(search="UI fixture")).count }
-            val pages=(total+19)/20
+            scrollTo("history-list",hasTestTag("all-records")); tap("all-records")
+            compose.onNodeWithTag("record-year").assertExists()
+            compose.waitUntil(30000) { compose.onAllNodesWithTag("history-loading").fetchSemanticsNodes().isEmpty() }
+            screenshot("all-records")
+            val total=count; val pages=(total+19)/20
             fun pageVisible(n: Int)=compose.onAllNodesWithText(compose.activity.getString(R.string.page_count,n,pages,total)).fetchSemanticsNodes().isNotEmpty()
             compose.waitUntil(30000) { pageVisible(1) }
             compose.onNodeWithContentDescription(compose.activity.getString(R.string.next_page)).performClick()
@@ -113,18 +115,8 @@ class LibraryHistoryTest {
             compose.activityRule.scenario.recreate()
             compose.waitUntil(30000) { pageVisible(2) }
             compose.onNodeWithTag("history-search").assertTextEquals("UI fixture")
-            compose.onNodeWithContentDescription(compose.activity.getString(R.string.previous_page)).performClick()
+            tap("all-records-back")
             compose.waitUntil(30000) { pageVisible(1) }
-            compose.onNodeWithText(compose.activity.getString(R.string.week)).performClick()
-            val week=PeriodWindow.of(HistoryPeriod.WEEK,LocalDate.now(),ZoneId.systemDefault())
-            val weekly=runBlocking { c.repo.history.page(HistoryQuery(week.from,week.until,search="UI fixture")).count }
-            compose.waitUntil(30000) { compose.onAllNodesWithText(compose.activity.getString(R.string.page_count,1,((weekly+19)/20).coerceAtLeast(1),weekly)).fetchSemanticsNodes().isNotEmpty() }
-            screenshot("history-week")
-            scrollTo("history-list",hasTestTag("history-trend"))
-            tap("history-trend")
-            compose.onNodeWithText(compose.activity.getString(R.string.hide_trend)).assertExists()
-            screenshot("history-trend")
-            tap("history-trend")
         }
         compose.onNodeWithTag("history-search").performTextReplacement("UI fixture detail")
         compose.onNodeWithTag("history-search").performImeAction()
@@ -136,25 +128,29 @@ class LibraryHistoryTest {
         screenshot("detail")
         scrollTo("detail-scroll",hasText(compose.activity.getString(R.string.motion_data)))
         screenshot("detail-chart")
-        scrollTo("detail-scroll",hasTestTag("archive-record"))
-        screenshot("before-archive")
-        tap("archive-record")
-        try {
-            compose.waitUntil(30000) { compose.onAllNodesWithText(compose.activity.getString(R.string.restore_record)).fetchSemanticsNodes().isNotEmpty() }
-        } catch(e: Exception) {
-            screenshot("archive-timeout")
-            android.util.Log.e("OpenMOBI-ui-test","archive=${runBlocking { c.repo.history.session(fixtureId)?.archived }}; "+compose.onRoot().printToString())
-            throw e
-        }
-        assertTrue(runBlocking { c.repo.history.session(fixtureId)!!.archived })
-        tap("archive-record")
-        compose.waitUntil(30000) { compose.onAllNodesWithText(compose.activity.getString(R.string.archive_action)).fetchSemanticsNodes().isNotEmpty() }
-        assertFalse(runBlocking { c.repo.history.session(fixtureId)!!.archived })
-        screenshot("detail-actions")
+        compose.onNodeWithTag("archive-record").assertDoesNotExist()
         tap("detail-back")
         compose.onNodeWithTag("record-$fixtureId").assertIsDisplayed()
         compose.onNodeWithTag("history-filter").performClick(); screenshot("history-filter")
         compose.onNodeWithText(compose.activity.getString(R.string.confirm)).performClick()
+        compose.runOnUiThread { compose.activity.page.value=3; compose.activity.settingsSection.value="" }
+        screenshot("settings")
+        compose.onNodeWithTag("setting-floating").performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.auto_floating)).performScrollTo().assertExists()
+        screenshot("floating-settings")
+        compose.runOnUiThread { compose.activity.openDiagnostics() }
+        compose.onNodeWithTag("export-diagnostics").performScrollTo().assertIsDisplayed()
+        screenshot("diagnostics")
+        compose.runOnUiThread { compose.activity.settingsSection.value="about" }
+        screenshot("about")
+        compose.runOnUiThread { compose.activity.page.value=2; c.setDemo(false); c.ble.state.value=org.openmobifitness.app.ble.LinkState(name="MB-EP · UI fixture",phase="ready",protocol=Protocol.V1,machine=Machine.ELLIPTICAL,range=ResistanceRange(1.0,24.0),metrics=Metrics(cadence=60.0,resistance=12.0),motionAt=android.os.SystemClock.elapsedRealtime(),writable=true,dataReceived=true) }
+        screenshot("devices")
+        // UI fixture only: the GATT client remains disconnected; no hardware claim.
+        if(compose.onAllNodesWithTag("device-connections").fetchSemanticsNodes().isNotEmpty()) compose.onNodeWithTag("connection-help").performScrollTo() else scrollTo("device-list",hasTestTag("connection-help"))
+        tap("connection-help"); screenshot("connection-help")
+        compose.onNodeWithTag("open-diagnostics").performScrollTo().performClick()
+        assertEquals("diagnostics",compose.activity.settingsSection.value)
+        compose.runOnUiThread { c.setDemo(true) }
         compose.runOnUiThread { c.select(Presets.all.first { it.id=="cardio40" }); compose.activity.startTraining() }
         compose.waitUntil(30000) { c.state.value.session!=null }
         compose.runOnUiThread { c.pauseResume(); compose.activity.focusTraining.value=false; compose.activity.page.value=3 }
@@ -164,5 +160,18 @@ class LibraryHistoryTest {
         tap("return-workout")
         compose.waitUntil(30000) { compose.activity.focusTraining.value }
         assertEquals(sessionId,c.state.value.session!!.id)
+        compose.runOnUiThread { c.finish() }
+        compose.waitUntil(30000) { c.state.value.session==null && c.finishedSession.value==sessionId }
+        compose.waitUntil(30000) { compose.onAllNodesWithTag("detail-scroll").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(compose.activity.getString(R.string.workout_saved)).assertIsDisplayed()
+        screenshot("saved-result")
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText(compose.activity.getString(R.string.workout_saved)).assertExists()
+        // Dialog windows have their own origin below the status bar. Read the
+        // actual screen bounds through accessibility instead of window coordinates.
+        val device=androidx.test.uiautomator.UiDevice.getInstance(instrumentation)
+        val close=device.wait(androidx.test.uiautomator.Until.findObject(androidx.test.uiautomator.By.desc(compose.activity.getString(R.string.close))),10000)
+        assertNotNull(close); close.click()
+        compose.waitUntil(10000) { c.finishedSession.value==null }
     }
 }

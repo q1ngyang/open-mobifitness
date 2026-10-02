@@ -37,7 +37,7 @@ import org.openmobifitness.app.service.WorkoutService
 import org.openmobifitness.core.*
 import kotlin.math.abs
 
-@Composable internal fun SessionDetailScreen(activity: MainActivity,c: Controller,id: String,onBack: ()->Unit) {
+@Composable internal fun SessionDetailScreen(activity: MainActivity,c: Controller,id: String,saved: Boolean=false,onBack: ()->Unit) {
     BackHandler(onBack=onBack)
     val revision by c.repo.revision.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
@@ -53,8 +53,8 @@ import kotlin.math.abs
     }
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp).testTag("session-detail")) {
         Row(verticalAlignment=Alignment.CenterVertically) {
-            IconButton(onClick=onBack,modifier=Modifier.testTag("detail-back")) { Icon(Icons.Default.ArrowBack,stringResource(R.string.history)) }
-            Text(stringResource(R.string.workout_detail),Modifier.weight(1f),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+            IconButton(onClick=onBack,modifier=Modifier.testTag("detail-back")) { Icon(if(saved) Icons.Default.Close else Icons.Default.ArrowBack,stringResource(if(saved) R.string.close else R.string.history)) }
+            Text(stringResource(if(saved) R.string.workout_saved else R.string.workout_detail),Modifier.weight(1f),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             Box { IconButton(onClick={ overflow=true }) { Icon(Icons.Default.MoreVert,stringResource(R.string.more_actions)) }
                 DropdownMenu(overflow,onDismissRequest={ overflow=false }) {
                     DropdownMenuItem(text={ Text(stringResource(R.string.export_report)) },onClick={ overflow=false; activity.exportReport(sessionId=id) })
@@ -118,6 +118,7 @@ import kotlin.math.abs
             if(quality) {
                 Text(stringResource(R.string.quality_note),style=MaterialTheme.typography.bodySmall)
                 Text(stringResource(R.string.estimated_values),style=MaterialTheme.typography.bodySmall)
+                DataLine(stringResource(R.string.energy_source),stringResource(energySourceResource(s)))
                 DataLine(stringResource(R.string.sample_count),stats.samples.toString())
                 DataLine(stringResource(R.string.power_source),if(stats.metrics.getValue(SeriesMetric.POWER).average==null) "—" else stringResource(if(stats.powerEstimated) R.string.estimated_label else R.string.measured_label))
                 Text("${s.protocol.name} · ${s.zone}",style=MaterialTheme.typography.bodySmall)
@@ -137,12 +138,8 @@ import kotlin.math.abs
     }
 }
 @Composable private fun ReportActions(activity: MainActivity,c: Controller,s: Session) {
-    var busy by remember(s.id) { mutableStateOf(false) }
-    LaunchedEffect(s.archived) { busy=false }
     Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick={ activity.exportReport(sessionId=s.id) },modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.export_report)) }
-        // A confirmed write must outlive a lazy item being scrolled out of composition.
-        FilledTonalButton(enabled=!busy,onClick={ busy=true; c.scope.launch { runCatching { c.repo.setArchived(s.id,!s.archived) }.onFailure { busy=false; c.error(R.string.io_failed) } } },modifier=Modifier.fillMaxWidth().testTag("archive-record")) { Text(stringResource(if(s.archived) R.string.restore_record else R.string.archive_action)) }
         Text(stringResource(R.string.export_help),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

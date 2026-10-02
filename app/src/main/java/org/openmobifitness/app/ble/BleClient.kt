@@ -50,6 +50,8 @@ class BleClient(private val context: Context, private val scope: CoroutineScope)
     private val rejectedFrames=mutableSetOf<String>()
     private val cccd = uuid("2902")
     private fun log(value: String) { org.openmobifitness.app.data.AppLog.event("ble",value); state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
+    // Energy uses the same feedback snapshot as displayed power, before integer truncation.
+    fun legacyEnergyPower(): Double? = if(state.value.protocol==Protocol.V1) template?.let { Protocols.v1Metrics(it,truncatePower=false)?.powerW } else null
     fun available() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
     fun scan() {
         stopScan(); found.value=emptyList()

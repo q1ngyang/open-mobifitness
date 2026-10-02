@@ -30,14 +30,6 @@
     <string name="previous_period">Voriger Zeitraum</string>
     <string name="next_period">Nächster Zeitraum</string>
     <string name="workout_count">Anzahl</string>
-    <string name="stats_include_archive">Statistik enthält archivierte Einträge.</string>
-    <string name="archive_records">Archiv</string>
-    <string name="archive_action">Eintrag archivieren</string>
-    <string name="restore_record">Wiederherstellen</string>
-    <string name="archive_bulk">Gefilterte Einträge archivieren</string>
-    <string name="archive_confirmation">%1$d passende Einträge archivieren? Sie bleiben in der Statistik und lassen sich wiederherstellen.</string>
-    <string name="record_scope">Listenbereich</string>
-    <string name="recent_records">Nicht archiviert</string>
     <string name="source_data">Datenquelle</string>
     <string name="real_data">Echte Geräte</string>
     <string name="machine_type">Gerätetyp</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">Trainingsdetails</string>
     <string name="average_value">Durchschnitt</string>
     <string name="maximum_value">Maximum</string>
-    <string name="minimum_value">Minimum</string>
     <string name="metric_average">Ø %1$s</string>
     <string name="metric_maximum">Max. %1$s</string>
     <string name="steps_total">Schritte gesamt</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">Anzahl Messpunkte</string>
     <string name="loading">Wird geladen…</string>
     <string name="chart_minutes">Aktive Minuten</string>
-    <string name="favorite_first">Favoriten zuerst</string>
-    <string name="current_period">Aktueller Zeitraum</string>
     <string name="stats_partial">Einige Einträge haben keine Energiedaten. Die Summe enthält nur vorhandene Werte.</string>
     <string name="plan_unrecorded">Plan nicht erfasst</string>
     <string name="previous_page">Vorige Seite</string>
     <string name="next_page">Nächste Seite</string>
     <string name="stats_demo_count">Enthält %1$d Demo-Trainings.</string>
     <string name="export_exchange">Austausch-CSV exportieren (zum Import)</string>
-    <string name="show_trend">Verlauf</string>
-    <string name="hide_trend">Einklappen</string>
 </resources>

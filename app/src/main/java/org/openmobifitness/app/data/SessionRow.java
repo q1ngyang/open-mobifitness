@@ -8,7 +8,7 @@ public class SessionRow {
  @NonNull public String start="", end="", zone="", device="", machine="", protocol="", status="";
  @androidx.room.ColumnInfo(defaultValue="0") public long startEpoch;
  @androidx.room.ColumnInfo(defaultValue="0") public boolean archived;
- @NonNull @androidx.room.ColumnInfo(defaultValue="''") public String workoutId="", workoutTitle="";
+ @NonNull @androidx.room.ColumnInfo(defaultValue="''") public String workoutId="", workoutTitle="", energyModel="";
  public long elapsedMs;
  public Double distanceM;
  public boolean demo;

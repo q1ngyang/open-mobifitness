@@ -33,7 +33,7 @@ class ExerciseFlowTest {
     }
     @Test fun demoTrainingSurvivesOverlayRoundTripAndSavesHistory() {
         compose.waitUntil(30_000) { controller.state.value.ready }
-        compose.runOnUiThread { controller.setDemo(true); controller.select(Presets.all.first()); compose.activity.startTraining() }
+        compose.runOnUiThread { controller.dismissResult(); controller.setDemo(true); controller.select(Presets.all.first()); compose.activity.startTraining() }
         compose.waitUntil(30_000) { controller.state.value.session!=null }
         val id=controller.state.value.session!!.id
         compose.waitUntil(30_000) { controller.state.value.session!!.elapsedMs>1000 }

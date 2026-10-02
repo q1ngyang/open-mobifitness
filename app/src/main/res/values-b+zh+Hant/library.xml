@@ -30,14 +30,6 @@
     <string name="previous_period">上一時段</string>
     <string name="next_period">下一時段</string>
     <string name="workout_count">訓練次數</string>
-    <string name="stats_include_archive">統計包含封存記錄。</string>
-    <string name="archive_records">封存</string>
-    <string name="archive_action">封存記錄</string>
-    <string name="restore_record">還原記錄</string>
-    <string name="archive_bulk">封存篩選出的記錄</string>
-    <string name="archive_confirmation">將目前篩選出的 %1$d 筆記錄封存？仍參與統計，可隨時還原，不會刪除資料。</string>
-    <string name="record_scope">列表範圍</string>
-    <string name="recent_records">未封存</string>
     <string name="source_data">資料來源</string>
     <string name="real_data">真實設備</string>
     <string name="machine_type">設備類型</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">訓練詳情</string>
     <string name="average_value">平均</string>
     <string name="maximum_value">最大</string>
-    <string name="minimum_value">最小</string>
     <string name="metric_average">平均%1$s</string>
     <string name="metric_maximum">最大%1$s</string>
     <string name="steps_total">總步數</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">取樣數量</string>
     <string name="loading">載入中…</string>
     <string name="chart_minutes">運動分鐘</string>
-    <string name="favorite_first">收藏優先顯示</string>
-    <string name="current_period">目前時段</string>
     <string name="stats_partial">部分記錄未採集熱量，合計僅包含已有數值。</string>
     <string name="plan_unrecorded">方案未記錄</string>
     <string name="previous_page">上一頁</string>
     <string name="next_page">下一頁</string>
     <string name="stats_demo_count">含 %1$d 次示範訓練。</string>
     <string name="export_exchange">匯出原始 CSV（可匯入）</string>
-    <string name="show_trend">展開趨勢</string>
-    <string name="hide_trend">收起趨勢</string>
 </resources>

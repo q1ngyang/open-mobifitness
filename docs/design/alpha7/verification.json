@@ -1,0 +1,50 @@
+{
+  "release": {
+    "package": "org.openmobifitness.app",
+    "label": "OpenMOBI",
+    "bytes": 26555108,
+    "sha256": "7f7df377f744f2697e09aafaa8fd3cda3844450661905a1e67c62afb86d48d1c",
+    "certificate_sha256": "2ae11d45867fbce785635c525b382bcbae0dc29f7710c1741029123fbc0d8c4e",
+    "zip_and_elf_16k": true,
+    "native_libraries": 2
+  },
+  "debug": {
+    "package": "org.openmobifitness.app.debug",
+    "label": "OpenMOBI Debug",
+    "bytes": 35735386,
+    "sha256": "eb465eabc78458cb434ad79e481c18147b54540c7060c2b2dbb553a907315d42",
+    "certificate_sha256": "24b3b02f4da6e8c520123bc81ae99d632546d9b2578232431d09f2ae90c1afb3",
+    "zip_and_elf_16k": true,
+    "native_libraries": 2
+  },
+  "tests": {
+    "core": {
+      "tests": 32,
+      "failures": 0,
+      "errors": 0
+    },
+    "testDebugUnitTest": {
+      "tests": 26,
+      "failures": 0,
+      "errors": 0
+    },
+    "testReleaseUnitTest": {
+      "tests": 27,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "upgrade": {
+    "upgrade": "alpha.6 -> alpha.7",
+    "schema": 5,
+    "rows": {
+      "sessions": 1,
+      "samples": 2,
+      "workouts": 1
+    },
+    "original_columns_identical": true,
+    "shared_preferences_identical": true,
+    "first_install_unchanged": true
+  },
+  "hardware_validation": "No physical equipment was connected in this iteration."
+}

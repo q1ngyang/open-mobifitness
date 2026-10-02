@@ -18,7 +18,7 @@ class RepositoryTest {
     @Before fun setup() { repo=Repository(RuntimeEnvironment.getApplication()) }
     @After fun close() { repo.db.close() }
     @Test fun backupRoundTripAndRepeatedImportAreLossless() = runBlocking {
-        val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0)
+        val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0,energyModel="legacy-v1")
         val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0,powerW=148.0,powerEstimated=true))
         repo.save(s,sample)
         val workout=Workout(title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
@@ -58,7 +58,7 @@ class RepositoryTest {
         assertEquals(1,repo.archive().samples.size)
     }
     @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking {
-        for(version in 1..3) {
+        for(version in 1..4) {
         repo.db.close()
         val context=RuntimeEnvironment.getApplication()
         context.deleteDatabase("openmobi.db")
@@ -83,7 +83,7 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(4,repo.db.openHelper.readableDatabase.version)
+        assertEquals(5,repo.db.openHelper.readableDatabase.version)
         assertFalse(restored.samples.single().metrics.powerEstimated)
         }
     }

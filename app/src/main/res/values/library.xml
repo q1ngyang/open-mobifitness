@@ -30,14 +30,6 @@
     <string name="previous_period">Previous period</string>
     <string name="next_period">Next period</string>
     <string name="workout_count">Workouts</string>
-    <string name="stats_include_archive">Statistics include archived records.</string>
-    <string name="archive_records">Archive</string>
-    <string name="archive_action">Archive record</string>
-    <string name="restore_record">Restore</string>
-    <string name="archive_bulk">Archive matching records</string>
-    <string name="archive_confirmation">Archive %1$d matching records? They remain in statistics and can be restored. Nothing is deleted.</string>
-    <string name="record_scope">List scope</string>
-    <string name="recent_records">Unarchived</string>
     <string name="source_data">Data source</string>
     <string name="real_data">Equipment</string>
     <string name="machine_type">Equipment type</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">Workout details</string>
     <string name="average_value">Average</string>
     <string name="maximum_value">Maximum</string>
-    <string name="minimum_value">Minimum</string>
     <string name="metric_average">Average %1$s</string>
     <string name="metric_maximum">Maximum %1$s</string>
     <string name="steps_total">Total steps</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">Sample count</string>
     <string name="loading">Loading…</string>
     <string name="chart_minutes">Active minutes</string>
-    <string name="favorite_first">Favorites appear first</string>
-    <string name="current_period">Current period</string>
     <string name="stats_partial">Some records have no energy data; the total includes available values only.</string>
     <string name="plan_unrecorded">Plan not recorded</string>
     <string name="previous_page">Previous page</string>
     <string name="next_page">Next page</string>
     <string name="stats_demo_count">Includes %1$d demo workouts.</string>
     <string name="export_exchange">Export exchange CSV (for import)</string>
-    <string name="show_trend">Show trend</string>
-    <string name="hide_trend">Hide trend</string>
 </resources>

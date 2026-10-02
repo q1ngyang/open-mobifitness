@@ -30,14 +30,6 @@
     <string name="previous_period">前の期間</string>
     <string name="next_period">次の期間</string>
     <string name="workout_count">回数</string>
-    <string name="stats_include_archive">統計にはアーカイブも含まれます。</string>
-    <string name="archive_records">アーカイブ</string>
-    <string name="archive_action">記録をアーカイブ</string>
-    <string name="restore_record">戻す</string>
-    <string name="archive_bulk">絞り込んだ記録をアーカイブ</string>
-    <string name="archive_confirmation">該当する%1$d件をアーカイブしますか？統計に残り、いつでも戻せます。削除されません。</string>
-    <string name="record_scope">一覧の範囲</string>
-    <string name="recent_records">未アーカイブ</string>
     <string name="source_data">データソース</string>
     <string name="real_data">実機</string>
     <string name="machine_type">機器の種類</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">トレーニング詳細</string>
     <string name="average_value">平均</string>
     <string name="maximum_value">最大</string>
-    <string name="minimum_value">最小</string>
     <string name="metric_average">平均%1$s</string>
     <string name="metric_maximum">最大%1$s</string>
     <string name="steps_total">合計歩数</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">サンプル数</string>
     <string name="loading">読み込み中…</string>
     <string name="chart_minutes">運動分数</string>
-    <string name="favorite_first">お気に入りを先頭に表示</string>
-    <string name="current_period">現在の期間</string>
     <string name="stats_partial">一部の記録には消費量がなく、取得できた値のみを合計しています。</string>
     <string name="plan_unrecorded">プラン未記録</string>
     <string name="previous_page">前のページ</string>
     <string name="next_page">次のページ</string>
     <string name="stats_demo_count">デモ%1$d回を含みます。</string>
     <string name="export_exchange">交換用CSVを書き出す（復元用）</string>
-    <string name="show_trend">グラフを表示</string>
-    <string name="hide_trend">グラフを隠す</string>
 </resources>

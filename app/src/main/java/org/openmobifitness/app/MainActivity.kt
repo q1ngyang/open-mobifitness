@@ -27,6 +27,7 @@ import org.openmobifitness.core.*
 class MainActivity : ComponentActivity() {
     private val controller get()=(application as OpenMobiApp).controller
     val page=mutableStateOf(0)
+    val settingsSection=mutableStateOf("")
     val focusTraining=mutableStateOf(false)
     val metricScope=mutableStateOf<DisplayScope?>(null)
     private var pendingPermission: (() -> Unit)?=null
@@ -91,12 +92,13 @@ class MainActivity : ComponentActivity() {
         reportQuery=HistoryQuery.decode(savedInstanceState?.getString("reportQuery"))
         awaitingOverlay=savedInstanceState?.getBoolean("overlay") ?: false
         page.value=savedInstanceState?.getInt("page") ?: 0
+        settingsSection.value=savedInstanceState?.getString("settingsSection") ?: ""
         focusTraining.value=savedInstanceState?.getBoolean("focusTraining") ?: false
         if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }
         metricScope.value=runCatching { DisplayScope.valueOf(savedInstanceState?.getString("metrics_scope") ?: intent.getStringExtra("metrics_scope") ?: "") }.getOrNull()
         setContent { OpenMobi(this,controller) }
     }
-    override fun onSaveInstanceState(outState: Bundle) { outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
+    override fun onSaveInstanceState(outState: Bundle) { outState.putString("settingsSection",settingsSection.value); outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }; metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
@@ -172,6 +174,8 @@ class MainActivity : ComponentActivity() {
         val archive=preview.value ?: return; preview.value=null
         controller.scope.launch { try { controller.repo.importArchive(archive); Toast.makeText(applicationContext.localized(),R.string.import_done,Toast.LENGTH_SHORT).show() } catch(e: Exception) { controller.error(R.string.import_failed) } }
     }
-    fun openUrl(url: String) { runCatching { startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url))) }.onFailure { controller.error(R.string.network_unavailable) } }
+    fun openDiagnostics() { focusTraining.value=false; page.value=3; settingsSection.value="diagnostics" }
+    fun feedback() { openUrl(org.openmobifitness.app.data.Updates.REPOSITORY+"/issues/new?template=device-problem.yml") }
+    fun openUrl(url: String) { externalNavigation=true; runCatching { startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url))) }.onFailure { externalNavigation=false; controller.error(R.string.network_unavailable) } }
     fun disconnect() { controller.ble.disconnect(); if(controller.state.value.session==null) stopService(Intent(this,WorkoutService::class.java)) }
 }

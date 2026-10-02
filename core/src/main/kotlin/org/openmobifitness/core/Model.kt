@@ -39,7 +39,7 @@ data class Session(
     val elapsedMs: Long = 0, val distanceM: Double? = null, val demo: Boolean = false, val status: String = "active",
     val caloriesKcal: Double? = null, val caloriesEstimated: Boolean = false, val distanceEstimated: Boolean = false,
     val weightKg: Double? = null, val met: Double? = null,
-    val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false
+    val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false, val energyModel: String = ""
 )
 data class Sample(val sessionId: String, val elapsedMs: Long, val metrics: Metrics)
 enum class Condition { TIME, DISTANCE, STROKES }

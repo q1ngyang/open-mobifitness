@@ -1,17 +1,17 @@
-name: Device compatibility / 器材问题
-description: Report equipment behavior with an exported OpenMobi diagnostic log.
-title: "[Device] "
+name: Problem report / 问题反馈
+description: Report connection, workout or interface problems in OpenMOBI.
+title: "[Feedback] "
 body:
   - type: markdown
     attributes:
       value: |
-        请在 OpenMobi「设置 → 设备诊断」开启协议报文记录，复现问题后导出日志，再关闭报文记录。分享前可以检查文件内容。
-        Enable Bluetooth protocol logging under Settings → Device diagnostics, reproduce once, export the log, then disable packet logging. Review the file before attaching it here.
+        请在 OpenMOBI「设置 → 设备诊断」保持协议报文记录开启，复现后及时导出日志。报文自动清理，分享前请检查可能含运动和心率值的内容；界面问题可以只附截图。
+        Keep protocol recording enabled under Settings → Device diagnostics, reproduce the issue and export promptly. Logs rotate automatically and may contain live movement and heart-rate values. Review before sharing. For interface issues, screenshots may suffice.
   - type: input
     id: equipment
     attributes:
       label: Equipment model / 器材型号
-      description: Product or label model; do not include a Bluetooth address or serial number.
+      description: Product or label model; use N/A for interface-only issues. Do not include a Bluetooth address or serial number.
     validations:
       required: true
   - type: input
@@ -31,4 +31,4 @@ body:
     id: log
     attributes:
       label: Exported log and optional screenshots / 日志与截图
-      description: Drag OpenMobi-diagnostics.txt here. Do not post keys, official APKs, or private workout backups.
+      description: Drag OpenMOBI-diagnostics.txt here. Do not post keys, official APKs, or private workout backups.

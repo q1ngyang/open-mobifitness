@@ -11,6 +11,11 @@ import java.time.Instant
 
 class Repository(context: Context) {
     companion object {
+        val MIGRATION_4_5=object: androidx.room.migration.Migration(4,5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN energyModel TEXT NOT NULL DEFAULT ''")
+            }
+        }
         val MIGRATION_3_4=object: androidx.room.migration.Migration(3,4) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE sessions ADD COLUMN startEpoch INTEGER NOT NULL DEFAULT 0")
@@ -36,7 +41,7 @@ class Repository(context: Context) {
             }
         }
     }
-    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4).build()
+    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5).build()
     private val dao get() = db.records()
     val revision = MutableStateFlow(0L)
     val history by lazy { HistoryStore(db) }
@@ -110,9 +115,9 @@ class Repository(context: Context) {
 internal fun Session.row() = SessionRow().also {
     it.id=id; it.start=start; it.startEpoch=Instant.parse(start).toEpochMilli(); it.archived=archived; it.workoutId=workoutId; it.workoutTitle=workoutTitle; it.end=end; it.zone=zone; it.device=device; it.machine=machine.name; it.protocol=protocol.name
     it.elapsedMs=elapsedMs; it.distanceM=distanceM; it.demo=demo; it.status=status
-    it.caloriesKcal=caloriesKcal; it.caloriesEstimated=caloriesEstimated; it.distanceEstimated=distanceEstimated; it.weightKg=weightKg; it.met=met
+    it.caloriesKcal=caloriesKcal; it.caloriesEstimated=caloriesEstimated; it.distanceEstimated=distanceEstimated; it.weightKg=weightKg; it.met=met; it.energyModel=energyModel
 }
-internal fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met,workoutId,workoutTitle,archived)
+internal fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met,workoutId,workoutTitle,archived,energyModel)
 private fun Sample.row() = SampleRow().also { s ->
     s.sessionId=sessionId; s.elapsedMs=elapsedMs
     metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes

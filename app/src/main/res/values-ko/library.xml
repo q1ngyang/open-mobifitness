@@ -30,14 +30,6 @@
     <string name="previous_period">이전 기간</string>
     <string name="next_period">다음 기간</string>
     <string name="workout_count">운동 횟수</string>
-    <string name="stats_include_archive">통계에는 보관된 기록도 포함됩니다.</string>
-    <string name="archive_records">보관함</string>
-    <string name="archive_action">기록 보관</string>
-    <string name="restore_record">복원</string>
-    <string name="archive_bulk">필터된 기록 보관</string>
-    <string name="archive_confirmation">일치하는 기록 %1$d개를 보관할까요? 통계에 유지되며 언제든 복원할 수 있습니다.</string>
-    <string name="record_scope">목록 범위</string>
-    <string name="recent_records">미보관</string>
     <string name="source_data">데이터 출처</string>
     <string name="real_data">실제 기기</string>
     <string name="machine_type">기기 종류</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">운동 상세</string>
     <string name="average_value">평균</string>
     <string name="maximum_value">최대</string>
-    <string name="minimum_value">최소</string>
     <string name="metric_average">평균 %1$s</string>
     <string name="metric_maximum">최대 %1$s</string>
     <string name="steps_total">총 걸음 수</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">샘플 수</string>
     <string name="loading">불러오는 중…</string>
     <string name="chart_minutes">운동 분</string>
-    <string name="favorite_first">즐겨찾기 먼저 표시</string>
-    <string name="current_period">현재 기간</string>
     <string name="stats_partial">일부 기록에 열량이 없어 수집된 값만 합산합니다.</string>
     <string name="plan_unrecorded">프로그램 미기록</string>
     <string name="previous_page">이전 페이지</string>
     <string name="next_page">다음 페이지</string>
     <string name="stats_demo_count">데모 운동 %1$d회 포함.</string>
     <string name="export_exchange">원본 CSV 내보내기 (가져오기용)</string>
-    <string name="show_trend">추세 보기</string>
-    <string name="hide_trend">추세 숨기기</string>
 </resources>

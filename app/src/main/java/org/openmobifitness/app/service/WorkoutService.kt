@@ -46,12 +46,15 @@ class WorkoutService : Service() {
     }
     private fun openIntent() = Intent(this,MainActivity::class.java).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP).putExtra("training",true)
+    private val notificationBrand by lazy {
+        android.graphics.BitmapFactory.decodeResource(resources,R.drawable.brand_light,android.graphics.BitmapFactory.Options().apply { inSampleSize=8 })
+    }
     private fun notification(): Notification {
         val c=localized(); val s=controller.state.value
         val content=PendingIntent.getActivity(this,1,openIntent(),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val toggle=PendingIntent.getService(this,2,Intent(this,WorkoutService::class.java).setAction(PAUSE),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val text=if(s.session!=null) "${elapsed(s.session.elapsedMs)} · ${c.getString(if(s.paused) R.string.paused else R.string.active)}" else c.getString(R.string.connected)
-        return NotificationCompat.Builder(this,"training").setSmallIcon(R.drawable.ic_mark).setContentTitle(c.getString(R.string.notification_title))
+        return NotificationCompat.Builder(this,"training").setSmallIcon(R.drawable.ic_notification).setLargeIcon(notificationBrand).setContentTitle(c.getString(R.string.notification_title))
             .setContentText(text).setContentIntent(content).setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
             .apply { if(s.session!=null) addAction(0,c.getString(if(s.paused) R.string.resume else R.string.pause),toggle) }.build()
     }

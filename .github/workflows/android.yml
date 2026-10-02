@@ -24,7 +24,7 @@ jobs:
       - name: Resources
         run: python3 tools/check_resources.py
       - name: Build and verify
-        run: ./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+        run: ./gradlew :core:test :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest
       - uses: actions/upload-artifact@v4
         if: always()
         with:

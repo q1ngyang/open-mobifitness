@@ -6,7 +6,7 @@
 
 ```sh
 python3 tools/check_resources.py
-./tools/build.sh :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+./tools/build.sh :core:test :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease :app:assembleDebug :app:assembleDebugAndroidTest
 ```
 
 协议测试覆盖 V1 状态模板和磁阻椭圆机双脉冲踏频、V2 数字位数字段、FTMS SINT16、能力范围、可选字段与截断数据包；数据测试覆盖 CSV 特殊字符、公式文本、备份往返、去重、冲突事务回滚、中断恢复。
@@ -19,6 +19,25 @@ adb shell appops set org.openmobifitness.app.debug SYSTEM_ALERT_WINDOW allow
 ```
 
 `LanguageLayoutTest` 在运动中切换全部六种语言，检查 Activity 重建后的界面文本与同一个会话 ID，并保存运动页截图。可通过 instrumentation 参数 `layout` 标记截图尺寸。
+
+## 0.1.0-alpha.7 验证结果
+
+- 32 项核心、26 项 Debug JVM、27 项 Release JVM 测试通过，共 85 次执行（59 个不同测试）；两版 Lint 无错误。覆盖官方 V1 原始功率与显示截断、随阻力变化的热量、暂停／缺包／零频率、会话 CSV v4/v5、旧备份与 Room v1–v4 → v5 非空迁移。普通版单独验证四类演示器材均无法启用。
+- 330 个资源键、六种语言集合及格式参数检查通过；初版图标及 21 个未引用字符串键已删除，已认可的浅／深色品牌位图保持不变。
+- Android 14 / x86_64 软件模拟器完成八组基础布局：360×780 dp 简体中文手机、1280×800 dp 简体中文深色平板、800×1280 dp 平板竖屏、780×360 dp 英语手机横屏、840×900 dp 繁体中文近方形窗口、320×640 dp 德语深色／130% 字体、640×320 dp 日语低矮横屏和 360×780 dp 韩语。
+- `LibraryHistoryTest` 检查方案搜索与收藏、档位预览、记录搜索和分页、详情与曲线、设置子页、排障转到统一诊断入口、返回同一训练，以及保存成功自动打开详情、旋转恢复和关闭。设备状态为合成夹具，没有连接真实 GATT。
+- `RecordsBrowserTest` 在普通手机、德语大字体窄屏和平板横屏验证：最近六个月仅包含近期记录；年月选择能找到带旧隐藏标记的历史训练；月份在 Activity 重建后保留；全部年份与返回近期范围的计数正确。手机趋势压缩后仍完整展开，并可在标准字号下与第一条完整记录同屏展示。
+- `StatisticsExportTest` 和 `DiagnosticExportTest` 经系统文件选择器实际写入并读回报告；核对可读 CSV 的范围、单位、时长和统计字段，以及 report 4 内容与小于 128 KiB 的上限。
+- `ExerciseFlowTest`、`FloatingSettingsTest`、`AutomaticOverlayTest`、`DisplayAndDiagnosticsTest` 回归调阻／暂停／两级悬浮／保存、Home 自动悬浮、长数字固定边界、两个开关的持久化、指标排序／范围、四类器材单位与日志脱敏／报文开关。
+- `NotificationBrandTest` 实际启动前台服务、展开系统通知，核对新版小图标资源、完整品牌图及返回入口；通知状态为显示夹具，不代表真实蓝牙连接。
+- 使用原发行签名从 alpha.6 覆盖升级：模拟器合成数据库 v4 → v5，原有 1 条训练、2 条样本、1 套自定义方案的旧列值完全一致；SharedPreferences 内容和首次安装时间保持不变。普通版与 Debug 包并存，普通版设备页没有演示入口。
+- 两个安装包的签名、包名、应用名、minSdk 29 和仅 arm64-v8a／x86_64 ABI 已核对；APK ZIP 与 ELF LOAD 段均通过 16 KiB 对齐检查。安装包不携带测试数据库。
+
+设计稿、提示词与精选实装截图见 [本轮设计](design/alpha7/README.md)。视觉复核修正了手机趋势占高、窄屏日期轴末端标签碰撞、设备页扣除侧栏后的横屏断点、低矮屏排障弹窗，以及设置摘要和图标层级；最后针对受影响的手机记录、窄屏日期轴、横屏排障进行复核。大字体和低矮窗口仍允许滚动，不宣称所有内容始终同屏。
+
+早期运行遇到模拟器冷启动 System UI ANR、动态分辨率切换引起的启动器异常，以及测试使用弹窗局部坐标导致点击偏移、按总屏宽猜测内部双栏造成定位失败。分别恢复系统、改用实际屏幕位置和实际布局标记后复跑；失败记录保留于本地日志，不计作通过。
+
+本轮未连接实体器材。功率／热量复核是原 APK 算法对照与合成输入检查，不是机械功率或人体能耗标定；其他器材、厂商后台策略和实体折叠铰链仍未实测。请优先复测 [F01–F08](DEVICE_TEST_CHECKLIST.md#alpha7-优先复测)。
 
 ## 0.1.0-alpha.6 验证结果
 

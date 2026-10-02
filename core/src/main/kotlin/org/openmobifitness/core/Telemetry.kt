@@ -11,14 +11,15 @@ object Estimates {
      * Cadence and resistance MUST be device feedback, never the requested target.
      * This is a legacy model estimate, not measured mechanical power.
      */
-    fun legacyPower(cadence: Double?, resistance: Double?, range: ResistanceRange?, magneticElliptical: Boolean): Double? {
+    fun legacyPower(cadence: Double?, resistance: Double?, range: ResistanceRange?, magneticElliptical: Boolean,truncate: Boolean=true): Double? {
         if(cadence==null || !cadence.isFinite() || cadence !in 0.0..300.0 || resistance==null || range==null || !range.contains(resistance)) return null
         if(cadence==0.0) return 0.0
         val x=kotlin.math.exp(cadence/100)
         val y=kotlin.math.exp(resistance*32/range.max.coerceAtLeast(1.0)/10)
         val watts=(39.94501450202982-67.52588516*x-39.15593086*y+27.55487038*x*x+38.79652081*x*y-0.30231185*y*y).coerceAtLeast(0.0)
         // The original display truncates to integer watts after the subtype multiplier.
-        return (watts*if(magneticElliptical) 1.5 else 1.0).toInt().toDouble()
+        val corrected=watts*if(magneticElliptical) 1.5 else 1.0
+        return if(truncate) corrected.toInt().toDouble() else corrected
     }
     // Legacy apps use this virtual speed conversion; it is not physical travel distance.
     fun legacySpeed(cadence: Double?, machine: Machine): Double? {
@@ -34,6 +35,12 @@ object Estimates {
         require(met in 1.0..20.0 && weightKg in 20.0..300.0 && milliseconds>=0)
         return met*3.5*weightKg/200*milliseconds/60000
     }
+    /** International type-0 energy rate. Uses unrounded model watts, as the original app does.
+     * This reproduces the vendor estimate, not a calibrated physiological measurement. */
+    fun legacyKcal(watts: Double,weightKg: Double,milliseconds: Long): Double {
+        require(watts.isFinite() && watts>=0 && weightKg in 20.0..300.0 && milliseconds>=0)
+        return if(watts==0.0) 0.0 else (weightKg/3600.0+watts/1000.0)*milliseconds/1000.0
+    }
 }
 
 /** Session-relative counters. Device resets, pauses and reconnects never add offline movement. */
@@ -44,12 +51,14 @@ class TelemetryTotals(initial: Metrics = Metrics()) {
     var steps: Int? = null; private set
     var distanceEstimated=false; private set
     var caloriesEstimated=false; private set
+    var energyModel=""; private set
+    private fun source(model: String) { energyModel=if(energyModel.isEmpty() || energyModel==model) model else "mixed" }
     private var lastDistance=initial.distanceM
     private var lastEnergy=initial.caloriesKcal
     private var lastStrokes=initial.strokes
     private var lastSteps=initial.stepCount
     fun rebase() { lastDistance=null; lastEnergy=null; lastStrokes=null; lastSteps=null }
-    fun update(m: Metrics,elapsedMs: Long,active: Boolean,machine: Machine,protocol: Protocol,weightKg: Double,met: Double) {
+    fun update(m: Metrics,elapsedMs: Long,active: Boolean,machine: Machine,protocol: Protocol,weightKg: Double,met: Double,legacyWatts: Double?=null) {
         val distanceDelta=m.distanceM?.let { raw -> lastDistance?.let { (raw-it).coerceAtLeast(0.0) } ?: 0.0 }
         val energyDelta=m.caloriesKcal?.let { raw -> lastEnergy?.let { (raw-it).coerceAtLeast(0.0) } ?: 0.0 }
         val strokeDelta=m.strokes?.let { raw -> lastStrokes?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
@@ -61,12 +70,20 @@ class TelemetryTotals(initial: Metrics = Metrics()) {
         val virtual=if(protocol in setOf(Protocol.V1,Protocol.V2)) Estimates.legacySpeed(m.cadence,machine) else null
         if(distanceDelta!=null) distanceM=(distanceM ?: 0.0)+distanceDelta
         else (m.speedMps ?: virtual)?.let { distanceM=(distanceM ?: 0.0)+it*interval/1000; distanceEstimated=true }
-        if(energyDelta!=null) caloriesKcal=(caloriesKcal ?: 0.0)+energyDelta
+        if(energyDelta!=null) { caloriesKcal=(caloriesKcal ?: 0.0)+energyDelta; source("device") }
+        else if(protocol==Protocol.V1 && m.powerEstimated && machine in setOf(Machine.BIKE,Machine.ELLIPTICAL)) {
+            // Unknown/stale model input stays unknown; do not silently switch to constant MET.
+            if(m.cadence!=null && m.powerW!=null) {
+                caloriesKcal=(caloriesKcal ?: 0.0)+if(m.cadence>0) Estimates.legacyKcal(legacyWatts ?: m.powerW,weightKg,interval) else 0.0
+                caloriesEstimated=true; source("legacy-v1")
+            }
+        }
         else {
             val moving=(m.cadence ?: m.stepRate ?: 0.0)>0 || (m.speedMps ?: 0.0)>0
             if(m.cadence!=null || m.stepRate!=null || m.speedMps!=null) {
                 caloriesKcal=(caloriesKcal ?: 0.0)+if(moving) Estimates.kcal(met,weightKg,interval) else 0.0
                 caloriesEstimated=true
+                source("met")
             }
         }
         strokeDelta?.let { strokes=(strokes ?: 0)+it }; stepDelta?.let { steps=(steps ?: 0)+it }

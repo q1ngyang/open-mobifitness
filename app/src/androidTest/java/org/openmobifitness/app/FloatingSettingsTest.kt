@@ -13,12 +13,13 @@ class FloatingSettingsTest {
         val c = (compose.activity.application as OpenMobiApp).controller
         compose.waitUntil(30_000) { c.state.value.ready }
         compose.runOnUiThread {
+            c.dismissResult(); compose.activity.settingsSection.value="floating"
             c.display.floating(true); c.display.automaticFloating(true)
             compose.activity.focusTraining.value = false; compose.activity.page.value = 3
         }
         val auto = compose.activity.getString(R.string.auto_floating)
         val master = compose.activity.getString(R.string.floating_enabled)
-        compose.onNodeWithTag("settings-list").performScrollToNode(hasContentDescription(auto))
+        compose.onNodeWithContentDescription(auto).performScrollTo()
         compose.onNodeWithContentDescription(auto).assertIsDisplayed().assertIsOn()
         compose.onNodeWithContentDescription(master).assertIsOn()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -30,7 +31,7 @@ class FloatingSettingsTest {
         compose.onNodeWithContentDescription(auto).performClick().assertIsOff()
         assertFalse(DisplayPreferences(c.prefs).autoFloating.value)
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithTag("settings-list").performScrollToNode(hasContentDescription(auto))
+        compose.onNodeWithContentDescription(auto).performScrollTo()
         compose.onNodeWithContentDescription(auto).assertIsOff()
         compose.onNodeWithContentDescription(master).performClick()
         compose.onNodeWithContentDescription(auto).assertIsNotEnabled()

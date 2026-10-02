@@ -51,7 +51,7 @@ object Protocols {
         }
         return ResistanceRange(1.0,max.toDouble())
     }
-    fun v1Metrics(data: ByteArray): Metrics? = runCatching {
+    fun v1Metrics(data: ByteArray,truncatePower: Boolean=true): Metrics? = runCatching {
         require(isV1State(data) && data[3].u() in 10..11)
         val interval = (7..10).fold(0L) { acc,i -> (acc shl 8) or data[i].u().toLong() }
         val magneticElliptical=data[3].u()==11 && data[4].u()==17
@@ -60,7 +60,7 @@ object Protocols {
         val resistance=if(data.size>13) data[13].u().toDouble().takeIf { range==null || range.contains(it) } else null
         Metrics(cadence = rpm.takeIf { it <= 300 },resistance = resistance,
             heartBpm=if(magneticElliptical && data.size>14) data[14].u().takeIf { it>0 } else null,
-            powerW=Estimates.legacyPower(rpm,resistance,range,magneticElliptical),powerEstimated=range!=null)
+            powerW=Estimates.legacyPower(rpm,resistance,range,magneticElliptical,truncatePower),powerEstimated=range!=null)
     }.getOrNull()
     fun v2Metrics(data: ByteArray): Metrics? = runCatching {
         require(data.size in listOf(9,11,13))

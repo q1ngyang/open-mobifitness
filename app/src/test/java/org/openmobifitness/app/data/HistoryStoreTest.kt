@@ -24,7 +24,8 @@ class HistoryStoreTest {
         repo.save(s)
         val before=repo.history.overview(HistoryQuery())
         repo.setArchived(s.id,true)
-        assertEquals(0,repo.history.page(HistoryQuery()).count)
+        assertEquals(1,repo.history.page(HistoryQuery()).count) // Old archive flags no longer hide records.
+        assertEquals(0,repo.history.page(HistoryQuery(archive=0)).count)
         assertEquals(s.id,repo.history.page(HistoryQuery(archive=1)).rows.single().id)
         assertEquals(before,repo.history.overview(HistoryQuery()))
         repo.setArchived(s.id,false)
@@ -79,4 +80,24 @@ class HistoryStoreTest {
         prefs.edit().clear().commit(); assertTrue(DisplayPreferences(prefs).packets.value)
         DisplayPreferences(prefs).packetLogs(false); assertFalse(DisplayPreferences(prefs).packets.value)
     }
+    @Test fun sixCalendarMonthsAndYearMonthFiltersIncludeOldArchivedData()=runBlocking {
+        val zone=ZoneId.of("Europe/Berlin"); val today=LocalDate.of(2026,10,2)
+        val recent=RecordDates.recent(today,zone)
+        val first=Instant.ofEpochMilli(recent.first).atZone(zone).toLocalDate()
+        assertEquals(LocalDate.of(2026,5,1),first)
+        val rows=listOf(
+            Session(start=Instant.ofEpochMilli(recent.first-1).toString(),status="completed"),
+            Session(start=Instant.ofEpochMilli(recent.first).toString(),status="completed",archived=true),
+            Session(start=Instant.ofEpochMilli(recent.second-1).toString(),status="completed"),
+            Session(start=Instant.ofEpochMilli(recent.second).toString(),status="completed"))
+        rows.forEach { repo.save(it) }
+        assertEquals(2,repo.history.page(HistoryQuery(recent.first,recent.second)).count)
+        assertEquals(4,repo.history.page(HistoryQuery()).count)
+        val may=RecordDates.selected(2026,5,zone)
+        assertEquals(rows[1].id,repo.history.page(HistoryQuery(may.first,may.second)).rows.single().id)
+        val year=RecordDates.selected(2026,0,zone)
+        assertEquals(4,repo.history.page(HistoryQuery(year.first,year.second)).count)
+        assertEquals(0L to Long.MAX_VALUE,RecordDates.selected(0,0,zone))
+    }
+
 }

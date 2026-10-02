@@ -13,7 +13,6 @@ import org.openmobifitness.core.*
 import android.os.SystemClock
 import java.time.Instant
 import java.util.Locale
-import kotlin.math.sin
 
 class OpenMobiApp : Application() {
     lateinit var controller: Controller; private set
@@ -37,6 +36,7 @@ class Controller(val app: Application) {
     val ble=BleClient(app,scope)
     val heart=BleClient(app,scope)
     val state=MutableStateFlow(ExerciseState())
+    val finishedSession=MutableStateFlow(app.getSharedPreferences("preferences",Context.MODE_PRIVATE).getString("finished_detail_id",null))
     val prefs=app.getSharedPreferences("preferences",Context.MODE_PRIVATE)
     val theme=MutableStateFlow(prefs.getString("theme","system") ?: "system")
     val imperial=MutableStateFlow(prefs.getBoolean("imperial",false))
@@ -51,17 +51,18 @@ class Controller(val app: Application) {
     private var manualControl: Job?=null
     var serviceStarted=false
     init {
-        scope.launch { try { repo.load(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
+        scope.launch { try { repo.load(); if(finishedSession.value!=null && repo.history.session(finishedSession.value!!)==null) dismissResult(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
         scope.launch {
             while(isActive) { delay(1000); sessionLock.withLock { tick() } }
         }
     }
     fun error(id: Int?,row: Int?=null) { if(id!=null) org.openmobifitness.app.data.AppLog.event("ui_error",app.resources.getResourceEntryName(id)); state.value=state.value.copy(error=id,errorRow=row) }
+    fun dismissResult() { finishedSession.value=null; prefs.edit().remove("finished_detail_id").apply() }
     fun setTheme(value: String) { prefs.edit().putString("theme",value).apply(); theme.value=value }
     fun setImperial(value: Boolean) { prefs.edit().putBoolean("imperial",value).apply(); imperial.value=value }
     fun select(workout: Workout?) { if(state.value.session==null) state.value=state.value.copy(selected=workout) }
     fun setDemo(enabled: Boolean,machine: Machine=Machine.ELLIPTICAL) {
-        if(state.value.session!=null) return
+        if(!BuildConfig.DEBUG || state.value.session!=null) return
         ble.disconnect(); heart.disconnect(); demoResistance=1.0; demoStrokes=0.0
         state.value=state.value.copy(demo=enabled,demoMachine=machine,metrics=if(enabled) Metrics(cadence=0.0,resistance=1.0,distanceM=0.0,strokes=if(machine==Machine.ROWER) 0 else null) else Metrics())
     }
@@ -81,6 +82,7 @@ class Controller(val app: Application) {
         if(state.value.selected?.steps?.any { (it.condition==Condition.DISTANCE && state.value.metrics.distanceM==null) || (it.condition==Condition.STROKES && state.value.metrics.strokes==null) }==true) {
             error(R.string.sensor_required); return@withLock
         }
+        dismissResult()
         val s=Session(device=if(state.value.demo) "OpenMOBI Demo" else ble.state.value.name,
             machine=if(state.value.demo) state.value.demoMachine else ble.state.value.machine,
             protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=display.weight.value,met=display.met.value,workoutId=state.value.selected?.id ?: "free",workoutTitle=state.value.selected?.let { app.localized().workoutName(it) } ?: app.localized().getString(R.string.free_training))
@@ -111,6 +113,8 @@ class Controller(val app: Application) {
         try { repo.save(s.copy(end=Instant.now().toString(),status=if(state.value.done) "completed" else "stopped")) }
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); return@withLock }
         org.openmobifitness.app.data.AppLog.event("session_finish","duration_ms=${s.elapsedMs}")
+        prefs.edit().putString("finished_detail_id",s.id).apply()
+        finishedSession.value=s.id
         state.value=state.value.copy(session=null,pendingResistance=null,paused=false,done=false,stage=0,progress=0f,remainingMs=null); engine=null
     } } }
     fun automaticControl(enabled: Boolean) {
@@ -150,14 +154,9 @@ class Controller(val app: Application) {
         val old=state.value
         val current=old.session
         var metrics=if(old.demo) {
-            val moving=current!=null && !old.paused
-            val cadence=if(moving) (if(old.demoMachine==Machine.ROWER) 24 else 62)+sin((current!!.elapsedMs)/7000.0)*6 else 0.0
-            if(moving) demoStrokes+=cadence*delta/60000
-            Metrics(cadence,demoResistance,if(moving) 2.0 else 0.0,
-                (old.metrics.distanceM ?: 0.0)+if(moving) delta/500.0 else 0.0,if(moving) 115+(cadence/10).toInt() else null,if(moving) 60+demoResistance*3 else 0.0,
-                strokes=if(old.demoMachine==Machine.ROWER) demoStrokes.toInt() else null,
-                inclinePercent=if(old.demoMachine==Machine.TREADMILL) 2.0 else null,forceN=if(old.demoMachine==Machine.ROWER) 180.0 else null,
-                stepRate=if(old.demoMachine==Machine.TREADMILL) cadence*2 else null,strideM=if(old.demoMachine==Machine.TREADMILL) 0.72 else null)
+            val sample=DemoTelemetry.sample(old,delta,demoResistance,demoStrokes)
+            demoStrokes=sample.second
+            sample.first
         } else {
             val link=ble.state.value
             link.metrics.copy(cadence=link.metrics.cadence.takeIf { now-link.motionAt<5000 },speedMps=link.metrics.speedMps.takeIf { now-link.motionAt<5000 },
@@ -171,10 +170,10 @@ class Controller(val app: Application) {
             if(!old.paused) state.value=state.value.copy(paused=true,error=R.string.connection_lost)
             return
         }
-        totals.update(metrics,delta,!old.paused,current.machine,current.protocol,current.weightKg ?: 70.0,current.met ?: 5.0)
+        totals.update(metrics,delta,!old.paused,current.machine,current.protocol,current.weightKg ?: 70.0,current.met ?: 5.0,if(metrics.cadence!=null) ble.legacyEnergyPower() else null)
         if(old.paused) return
         val session=current.copy(elapsedMs=current.elapsedMs+delta,distanceM=totals.distanceM ?: current.distanceM,
-            caloriesKcal=totals.caloriesKcal,caloriesEstimated=totals.caloriesEstimated,distanceEstimated=totals.distanceEstimated)
+            caloriesKcal=totals.caloriesKcal,energyModel=totals.energyModel,caloriesEstimated=totals.caloriesEstimated,distanceEstimated=totals.distanceEstimated)
         val training=engine
         val previousStage=training?.index
         training?.tick(session.elapsedMs,totals.distanceM,totals.strokes)

@@ -30,14 +30,6 @@
     <string name="previous_period">上一时段</string>
     <string name="next_period">下一时段</string>
     <string name="workout_count">训练次数</string>
-    <string name="stats_include_archive">统计包含归档记录。</string>
-    <string name="archive_records">归档</string>
-    <string name="archive_action">归档记录</string>
-    <string name="restore_record">恢复记录</string>
-    <string name="archive_bulk">归档筛选出的记录</string>
-    <string name="archive_confirmation">将当前筛选出的 %1$d 条记录归档？记录仍参与统计，且随时可以恢复，不会删除数据。</string>
-    <string name="record_scope">列表范围</string>
-    <string name="recent_records">未归档</string>
     <string name="source_data">数据来源</string>
     <string name="real_data">真实设备</string>
     <string name="machine_type">设备类型</string>
@@ -45,7 +37,6 @@
     <string name="workout_detail">训练详情</string>
     <string name="average_value">平均</string>
     <string name="maximum_value">最大</string>
-    <string name="minimum_value">最小</string>
     <string name="metric_average">平均%1$s</string>
     <string name="metric_maximum">最大%1$s</string>
     <string name="steps_total">总步数</string>
@@ -64,14 +55,10 @@
     <string name="sample_count">采样数量</string>
     <string name="loading">加载中…</string>
     <string name="chart_minutes">运动分钟</string>
-    <string name="favorite_first">收藏优先显示</string>
-    <string name="current_period">当前时段</string>
     <string name="stats_partial">部分记录未采集热量，合计仅包含已有数值。</string>
     <string name="plan_unrecorded">方案未记录</string>
     <string name="previous_page">上一页</string>
     <string name="next_page">下一页</string>
     <string name="stats_demo_count">含 %1$d 次演示训练。</string>
     <string name="export_exchange">导出原始 CSV（可导入）</string>
-    <string name="show_trend">展开趋势</string>
-    <string name="hide_trend">收起趋势</string>
 </resources>

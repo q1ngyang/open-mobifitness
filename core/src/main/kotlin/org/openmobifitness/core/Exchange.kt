@@ -42,14 +42,15 @@ object Exchange {
     private val samplesHeader = "schema,session_id,elapsed_ms,cadence_rpm,resistance,speed_mps,distance_m,heart_bpm,power_w,strokes".split(',')
     private val sessionsV2 = sessionsHeader + listOf("calories_kcal","calories_estimated","distance_estimated","weight_kg","met")
     private val sessionsV4 = sessionsV2 + listOf("workout_id","workout_title","archived")
+    private val sessionsV5 = sessionsV4 + "energy_model"
     private val samplesV2 = samplesHeader + listOf("calories_kcal","incline_percent","stride_m","force_n","step_rate","step_count","target_cadence")
     private val samplesV3 = samplesV2 + "power_estimated"
     private val workoutsHeader = "schema,workout_id,title,step_index,condition,target,resistance_percent".split(',')
     private fun text(v: String) = "'$v" // Always escape text, including an original leading apostrophe; reversible.
     private fun untext(v: String) = v.removePrefix("'")
     private fun Any?.cell() = this?.toString() ?: ""
-    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV4) + items.map {
-        listOf("4",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString())
+    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV5) + items.map {
+        listOf("5",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString(),it.energyModel)
     })
     fun samples(items: List<Sample>) = Csv.write(listOf(samplesV3) + items.map { s -> s.metrics.let {
         listOf("3",s.sessionId,s.elapsedMs.toString(),it.cadence.cell(),it.resistance.cell(),it.speedMps.cell(),it.distanceM.cell(),it.heartBpm.cell(),it.powerW.cell(),it.strokes.cell(),it.caloriesKcal.cell(),it.inclinePercent.cell(),it.strideM.cell(),it.forceN.cell(),it.stepRate.cell(),it.stepCount.cell(),it.targetCadence.cell(),it.powerEstimated.toString())
@@ -60,25 +61,25 @@ object Exchange {
     fun parse(content: String): Archive {
         val rows=Csv.read(content); if(rows.isEmpty()) throw ImportProblem(1,"header")
         val header=rows.first()
-        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,samplesV2,samplesV3,workoutsHeader)) throw ImportProblem(1,"header")
+        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,sessionsV5,samplesV2,samplesV3,workoutsHeader)) throw ImportProblem(1,"header")
         val sessions=mutableListOf<Session>(); val samples=mutableListOf<Sample>()
         val sessionIds=HashSet<String>()
         val steps=linkedMapOf<String,Pair<String,MutableList<Step>>>()
         rows.drop(1).forEachIndexed { index,r ->
             try {
-                require(r.size==header.size && r[0]==when(header) { sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
+                require(r.size==header.size && r[0]==when(header) { sessionsV5 -> "5"; sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
                 fun number(i: Int,max: Double,min: Double=0.0): Double? = r[i].takeIf { it.isNotEmpty() }?.toDouble()?.also { require(it.isFinite() && it in min..max) }
                 fun integer(i: Int,max: Int): Int? = r[i].takeIf { it.isNotEmpty() }?.toInt()?.also { require(it in 0..max) }
                 fun bool(i: Int): Boolean { require(r[i] in listOf("true","false")); return r[i].toBoolean() }
                 fun ms(i: Int) = r[i].toLong().also { require(it in 0..604800000L) }
                 when(header) {
-                    sessionsHeader,sessionsV2,sessionsV4 -> {
+                    sessionsHeader,sessionsV2,sessionsV4,sessionsV5 -> {
                         UUID.fromString(r[1]); Instant.parse(r[2]); if(r[3].isNotEmpty()) Instant.parse(r[3]); ZoneId.of(r[4])
                         require(r[10] in listOf("true","false") && r[11] in listOf("active","completed","interrupted","stopped"))
                         val s=Session(r[1],r[2],r[3],r[4],untext(r[5]),Machine.valueOf(r[6]),Protocol.valueOf(r[7]),ms(8),number(9,10_000_000.0),r[10].toBoolean(),r[11],
-                            if(header in listOf(sessionsV2,sessionsV4)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4) && bool(13),header in listOf(sessionsV2,sessionsV4) && bool(14),
-                            if(header in listOf(sessionsV2,sessionsV4)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4)) number(16,20.0,1.0) else null,
-                            if(header==sessionsV4) untext(r[17]) else "",if(header==sessionsV4) untext(r[18]) else "",header==sessionsV4 && bool(19))
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4,sessionsV5) && bool(13),header in listOf(sessionsV2,sessionsV4,sessionsV5) && bool(14),
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(16,20.0,1.0) else null,
+                            if(header in listOf(sessionsV4,sessionsV5)) untext(r[17]) else "",if(header in listOf(sessionsV4,sessionsV5)) untext(r[18]) else "",header in listOf(sessionsV4,sessionsV5) && bool(19),if(header==sessionsV5) r[20].also { require(it in setOf("","device","legacy-v1","met","mixed")) } else "")
                         require(s.workoutId.length<=80 && s.workoutTitle.length<=120 && s.device.length<=120 && sessionIds.add(s.id)); sessions.add(s)
                     }
                     samplesHeader,samplesV2,samplesV3 -> {

@@ -42,4 +42,25 @@ class LegacyPowerTest {
         assertFalse(Exchange.parse(legacy).samples.single().metrics.powerEstimated)
         assertEquals(235.0,Exchange.parse(legacy).samples.single().metrics.powerW!!,0.0)
     }
+    @Test fun officialEnergyRateRespondsToActualPowerAndStopsOnPauseOrMissingPackets() {
+        val t=TelemetryTotals()
+        val m=Protocols.v1Metrics(frame(500,1))!! // Official integer display: 66 W at 60 rpm, level 1.
+        fun tick(value: Metrics=m,active: Boolean=true)=t.update(value,1000,active,Machine.ELLIPTICAL,Protocol.V1,70.0,20.0,Estimates.legacyPower(value.cadence,value.resistance,ResistanceRange(1.0,24.0),true,truncate=false))
+        repeat(60) { tick() }
+        val low=Protocols.v1Metrics(frame(500,1),truncatePower=false)!!.powerW!!
+        assertEquals((70.0/3600+low/1000)*60,t.caloriesKcal!!,1e-9)
+        assertEquals("legacy-v1",t.energyModel)
+        val before=t.caloriesKcal
+        tick(active=false); tick(m.copy(cadence=null,powerW=null)); tick(m.copy(cadence=0.0,powerW=0.0))
+        assertEquals(before,t.caloriesKcal)
+        tick(Protocols.v1Metrics(frame(500,12))!!)
+        assertEquals(before!!+70.0/3600+Protocols.v1Metrics(frame(500,12),truncatePower=false)!!.powerW!!/1000,t.caloriesKcal!!,1e-9)
+        assertTrue(t.caloriesEstimated)
+        // The raw v4 interchange stays readable and the new provenance survives v5.
+        val session=Session(energyModel=t.energyModel,caloriesKcal=t.caloriesKcal,caloriesEstimated=true)
+        assertEquals(session,Exchange.parse(Exchange.sessions(listOf(session))).sessions.single())
+        val v4=Csv.read(Exchange.sessions(listOf(session))).mapIndexed { i,row -> row.take(20).toMutableList().apply { if(i>0) this[0]="4" } }
+        assertEquals(session.copy(energyModel=""),Exchange.parse(Csv.write(v4)).sessions.single())
+    }
+
 }

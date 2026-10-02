@@ -7,8 +7,8 @@ import org.json.JSONObject
 import org.openmobifitness.core.*
 import java.time.*
 
-/** Archive affects list visibility only. Overview always includes archived workouts. */
-data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val machine: String="", val search: String="", val source: Int=0, val archive: Int=0, val machineWords: String="") {
+/** Legacy archive flags remain backup-compatible; current UI selects all flags by date. */
+data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val machine: String="", val search: String="", val source: Int=0, val archive: Int=2, val machineWords: String="") {
     fun encode()=JSONObject().put("from",from).put("until",until).put("machine",machine).put("search",search).put("source",source).put("archive",archive).put("machineWords",machineWords).toString()
     companion object { fun decode(text: String?)=runCatching { JSONObject(text!!).let { HistoryQuery(it.getLong("from"),it.getLong("until"),it.getString("machine"),it.getString("search"),it.getInt("source"),it.getInt("archive"),it.optString("machineWords","")) } }.getOrDefault(HistoryQuery()) }
 }
@@ -62,6 +62,11 @@ class HistoryStore(private val db: MobiDatabase) {
         }
         result=HistoryOverview(count,elapsed,kcal,meters,estimated,days.toList(),present,demos); result
     }
+    suspend fun years(): List<Int> = withContext(Dispatchers.IO) {
+        db.query(SimpleSQLiteQuery("SELECT DISTINCT strftime('%Y',startEpoch/1000,'unixepoch','localtime') FROM sessions WHERE status!='active' ORDER BY 1 DESC")).use { cursor ->
+            buildList { add(LocalDate.now().year); while(cursor.moveToNext()) cursor.getString(0)?.toIntOrNull()?.let(::add) }.distinct().sortedDescending()
+        }
+    }
     suspend fun reportIds(q: HistoryQuery): List<String> = withContext(Dispatchers.IO) {
         val (where,args)=where(q)
         db.query(SimpleSQLiteQuery("SELECT id FROM sessions WHERE $where ORDER BY startEpoch DESC,id DESC",args.toTypedArray())).use { cursor -> buildList { while(cursor.moveToNext()) add(cursor.getString(0)) } }
@@ -78,5 +83,18 @@ class HistoryStore(private val db: MobiDatabase) {
         val (where,args)=where(q.copy(archive=0))
         val stmt=db.openHelper.writableDatabase.compileStatement("UPDATE sessions SET archived=1 WHERE $where")
         return stmt.use { args.forEachIndexed { i,a -> if(a is Number) it.bindLong(i+1,a.toLong()) else it.bindString(i+1,a.toString()) }; it.executeUpdateDelete() }
+    }
+}
+
+/** Six calendar months including the current month. Queries use an exclusive upper bound. */
+object RecordDates {
+    fun recent(today: LocalDate=LocalDate.now(),zone: ZoneId=ZoneId.systemDefault()): Pair<Long,Long> =
+        today.withDayOfMonth(1).minusMonths(5).atStartOfDay(zone).toInstant().toEpochMilli() to today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+    fun selected(year: Int,month: Int,zone: ZoneId=ZoneId.systemDefault()): Pair<Long,Long> {
+        require(month in 0..12)
+        if(year==0) return 0L to Long.MAX_VALUE
+        val start=LocalDate.of(year,month.coerceAtLeast(1),1)
+        val end=if(month==0) start.plusYears(1) else start.plusMonths(1)
+        return start.atStartOfDay(zone).toInstant().toEpochMilli() to end.atStartOfDay(zone).toInstant().toEpochMilli()
     }
 }
