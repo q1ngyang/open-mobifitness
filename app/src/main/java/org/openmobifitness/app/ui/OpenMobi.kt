@@ -37,7 +37,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-private val Pink=Color(0xFFD64C86)
 private val Blue=Color(0xFF527CE8)
 private val Yellow=Color(0xFFF3C64E)
 private val Ink=Color(0xFF192538)
@@ -80,11 +79,16 @@ private val lightColors=lightColorScheme(
                         labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({ Text(stringResource(id)) }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
-                        if(!shortLayout || !rail) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
-                            if(!rail) { BrandMark(dark,Modifier.size(36.dp)); Spacer(Modifier.width(10.dp)) }
-                            Text("OpenMOBI",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
-                            Spacer(Modifier.weight(1f))
-                            BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
+                        if(!shortLayout || !rail) FlowRow(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                            Row(Modifier.padding(end=12.dp).heightIn(min=36.dp),verticalAlignment=Alignment.CenterVertically) {
+                                if(!rail) { BrandMark(dark,Modifier.size(36.dp)); Spacer(Modifier.width(10.dp)) }
+                                BasicText("OpenMOBI",Modifier.weight(1f,fill=false),style=MaterialTheme.typography.titleLarge.copy(color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.ExtraBold),maxLines=1,
+                                    autoSize=TextAutoSize.StepBased(minFontSize=18.sp,maxFontSize=22.sp,stepSize=1.sp))
+                                BrandSignature(Modifier.padding(start=10.dp))
+                            }
+                            Box(Modifier.heightIn(min=36.dp),contentAlignment=Alignment.Center) {
+                                BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
+                            }
                         }
                         if(state.error!=null) Surface(color=MaterialTheme.colorScheme.errorContainer,modifier=Modifier.fillMaxWidth().padding(horizontal=20.dp),shape=RoundedCornerShape(16.dp)) {
                             Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) {

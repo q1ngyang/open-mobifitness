@@ -1,0 +1,29 @@
+name: "功能建议 / Suggest an improvement"
+description: "哪里不顺手，或希望增加什么？ / Tell us what would make the app more useful."
+body:
+  - type: markdown
+    attributes:
+      value: |
+        可以只用中文或英文填写。请先搜一下已有问题，看看是否有人提过相同建议。
+        Write in Chinese or English. Please check existing issues for a similar suggestion first.
+        如果功能出错了，请使用「问题反馈」表单。For something that is broken, use “Report a problem”.
+  - type: textarea
+    id: need
+    attributes:
+      label: "使用时遇到了什么不便？ / What is difficult today?"
+      description: "描述使用场景就好，不需要给出技术方案。 / Describe when this matters to you; no technical solution needed."
+      placeholder: "例如：在平板边看视频边运动时…… / For example: while watching a video on my tablet during a workout…"
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: "你希望怎样改进？ / What would help?"
+      description: "可以附草图或参考截图，分享前请遮住个人信息。 / Sketches or reference screenshots are welcome; hide personal details first."
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: "器材与手机／平板（选填） / Equipment and phone/tablet (optional)"
+      placeholder: "例如 / e.g. MB-EP 椭圆机 / elliptical · 小米 14 / Xiaomi 14"

@@ -81,6 +81,7 @@ class LibraryHistoryTest {
     @Test fun libraryHistoryAndDetailVisualAudit() {
         compose.onNodeWithTag("plan-library").assertExists()
         screenshot("library")
+        scrollTo("plan-library",hasTestTag("plan-search"))
         compose.onNodeWithTag("plan-search").performTextInput("UI custom")
         compose.onNodeWithTag("plan-search").performImeAction()
         scrollTo("plan-library",hasTestTag("plan-$customId"))

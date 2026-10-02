@@ -13,7 +13,7 @@ data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val ma
     companion object { fun decode(text: String?)=runCatching { JSONObject(text!!).let { HistoryQuery(it.getLong("from"),it.getLong("until"),it.getString("machine"),it.getString("search"),it.getInt("source"),it.getInt("archive"),it.optString("machineWords","")) } }.getOrDefault(HistoryQuery()) }
 }
 data class HistoryPage(val rows: List<Session>, val count: Int)
-data class HistoryOverview(val count: Int=0, val elapsedMs: Long=0, val calories: Double?=null, val distanceM: Double?=null, val estimated: Boolean=false, val days: List<Pair<LocalDate,Long>> = emptyList(), val caloriesPresent: Int=0, val demoCount: Int=0)
+data class HistoryOverview(val count: Int=0, val elapsedMs: Long=0, val calories: Double?=null, val distanceM: Double?=null, val estimated: Boolean=false, val days: List<Pair<LocalDate,Long>> = emptyList(), val caloriesPresent: Int=0, val demoCount: Int=0, val distanceEstimated: Boolean=false, val distancePresent: Int=0)
 class HistoryStore(private val db: MobiDatabase) {
     private fun where(q: HistoryQuery, includeArchive: Boolean=false): Pair<String,List<Any>> {
         val clauses=mutableListOf("status!='active'","startEpoch>=?","startEpoch<?")
@@ -49,18 +49,18 @@ class HistoryStore(private val db: MobiDatabase) {
         val (where,args)=where(q,true)
         var result=HistoryOverview()
         // Read metadata only. Never load sample time series into the overview or list.
-        val days=sortedMapOf<LocalDate,Long>(); var count=0; var demos=0; var present=0; var elapsed=0L; var kcal: Double?=null; var meters: Double?=null; var estimated=false
-        db.query(SimpleSQLiteQuery("SELECT startEpoch,elapsedMs,caloriesKcal,distanceM,caloriesEstimated,demo FROM sessions WHERE $where",args.toTypedArray())).use { cursor ->
+        val days=sortedMapOf<LocalDate,Long>(); var count=0; var demos=0; var present=0; var elapsed=0L; var kcal: Double?=null; var meters: Double?=null; var estimated=false; var distanceEstimated=false; var distancePresent=0
+        db.query(SimpleSQLiteQuery("SELECT startEpoch,elapsedMs,caloriesKcal,distanceM,caloriesEstimated,demo,distanceEstimated FROM sessions WHERE $where",args.toTypedArray())).use { cursor ->
             while(cursor.moveToNext()) {
                 count++; if(cursor.getInt(5)!=0) demos++; val ms=cursor.getLong(1); elapsed+=ms
                 val date=Instant.ofEpochMilli(cursor.getLong(0)).atZone(zone).toLocalDate()
                 days[date]=(days[date] ?: 0L)+ms
                 if(!cursor.isNull(2)) { present++; kcal=(kcal ?: 0.0)+cursor.getDouble(2) }
-                if(!cursor.isNull(3)) meters=(meters ?: 0.0)+cursor.getDouble(3)
-                estimated=estimated || cursor.getInt(4)!=0
+                if(!cursor.isNull(3)) { distancePresent++; meters=(meters ?: 0.0)+cursor.getDouble(3) }
+                estimated=estimated || cursor.getInt(4)!=0; distanceEstimated=distanceEstimated || cursor.getInt(6)!=0
             }
         }
-        result=HistoryOverview(count,elapsed,kcal,meters,estimated,days.toList(),present,demos); result
+        result=HistoryOverview(count,elapsed,kcal,meters,estimated,days.toList(),present,demos,distanceEstimated,distancePresent); result
     }
     suspend fun years(): List<Int> = withContext(Dispatchers.IO) {
         db.query(SimpleSQLiteQuery("SELECT DISTINCT strftime('%Y',startEpoch/1000,'unixepoch','localtime') FROM sessions WHERE status!='active' ORDER BY 1 DESC")).use { cursor ->
@@ -88,6 +88,8 @@ class HistoryStore(private val db: MobiDatabase) {
 
 /** Six calendar months including the current month. Queries use an exclusive upper bound. */
 object RecordDates {
+    fun today(today: LocalDate=LocalDate.now(),zone: ZoneId=ZoneId.systemDefault()): Pair<Long,Long> =
+        today.atStartOfDay(zone).toInstant().toEpochMilli() to today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     fun recent(today: LocalDate=LocalDate.now(),zone: ZoneId=ZoneId.systemDefault()): Pair<Long,Long> =
         today.withDayOfMonth(1).minusMonths(5).atStartOfDay(zone).toInstant().toEpochMilli() to today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     fun selected(year: Int,month: Int,zone: ZoneId=ZoneId.systemDefault()): Pair<Long,Long> {

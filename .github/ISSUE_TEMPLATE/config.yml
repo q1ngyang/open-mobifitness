@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "连接帮助与日志指引 / Connection help and logs"
+    url: https://github.com/q1ngyang/open-mobifitness/blob/main/docs/HELP.md
+    about: "先试简单排查，再按步骤导出日志。 / Try simple checks, then follow the log-export steps."
+  - name: "下载普通版 / Download the regular app"
+    url: https://github.com/q1ngyang/open-mobifitness/releases/latest
+    about: "日常使用请选择不带 debug 的 APK。 / For everyday use, choose the APK without debug in its name."

@@ -82,19 +82,10 @@ import org.openmobifitness.core.*
         val compact=maxHeight<440.dp
         val columns=if(maxWidth>=780.dp) 2 else 1
         LazyColumn(Modifier.fillMaxSize().testTag("plan-library"),contentPadding=PaddingValues(if(compact) 12.dp else 16.dp),verticalArrangement=Arrangement.spacedBy(if(compact) 8.dp else 12.dp)) {
+            item { FreeTrainingCard(activity,c,state,link,compact) }
             item { Row(verticalAlignment=Alignment.CenterVertically) {
                 Text(stringResource(R.string.library),style=if(compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f),maxLines=1,overflow=TextOverflow.Ellipsis)
                 IconButton(onClick={ editor=Workout(title=newTitle,steps=listOf(Step(target=60.0))) }) { Icon(Icons.Default.Add,stringResource(R.string.new_workout)) }
-                if(compact) Button(onClick={ c.select(null); activity.startTraining() },contentPadding=PaddingValues(horizontal=12.dp)) { Text(stringResource(R.string.free_training),maxLines=1) }
-            } }
-            if(!compact) item { Surface(color=MaterialTheme.colorScheme.primaryContainer,shape=RoundedCornerShape(14.dp)) {
-                Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    Column(Modifier.weight(1f).clickable { activity.page.value=2 }.padding(4.dp)) {
-                        Text(if(state.demo) stringResource(R.string.demo) else link.name.ifBlank { stringResource(R.string.devices) },fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis)
-                        Text(stringResource(if(state.demo || link.phase=="ready") R.string.connected else R.string.connect),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
-                    }
-                    Button(onClick={ c.select(null); activity.startTraining() },contentPadding=PaddingValues(horizontal=16.dp)) { Text(stringResource(R.string.free_training)) }
-                }
             } }
             item { Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 SearchBox(search,{ search=it },stringResource(R.string.search_plans),Modifier.weight(1f),"plan-search")

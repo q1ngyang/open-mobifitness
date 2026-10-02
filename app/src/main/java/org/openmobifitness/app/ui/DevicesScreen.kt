@@ -58,6 +58,7 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                             HorizontalDivider()
                             CapabilityLine(stringResource(R.string.motion_data),stringResource(if(fresh) R.string.receiving_data else R.string.waiting_motion),fresh)
                             CapabilityLine(stringResource(R.string.resistance_control),stringResource(if(link.controlTimedOut) R.string.feedback_timeout else if(link.writable && link.range!=null) R.string.control_available else R.string.read_only),link.writable && link.range!=null && !link.controlTimedOut)
+                            if(link.metrics.heartBpm!=null && link.heartAt>0 && now-link.heartAt<10000) CapabilityLine(stringResource(R.string.heart_rate),stringResource(R.string.heart_from_equipment,link.metrics.heartBpm!!),true)
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                                 Text(link.range?.let { stringResource(R.string.range_format,org.openmobifitness.app.service.WorkoutService.number(it.min),org.openmobifitness.app.service.WorkoutService.number(it.max)) }.orEmpty(),Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 OutlinedButton(onClick=activity::disconnect) { Text(stringResource(R.string.disconnect)) }
@@ -71,10 +72,14 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                         }
                     }
                 }
-                SettingsGroup("") {
-                    Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                if(heart.phase!="disconnected") SettingsGroup(stringResource(R.string.heart_device)) {
+                    Row(Modifier.fillMaxWidth().testTag("heart-accessory").padding(16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                         Icon(Icons.Default.Favorite,null,tint=MaterialTheme.colorScheme.error)
-                        Column(Modifier.weight(1f)) { Text(heart.name.ifBlank { stringResource(R.string.heart_device) },fontWeight=FontWeight.Medium); Text(stringResource(connectionStatus(heart)),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                        Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                            Text(heart.name.ifBlank { stringResource(R.string.heart_device) },fontWeight=FontWeight.Medium)
+                            Text(stringResource(connectionStatus(heart)),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(heart.metrics.heartBpm?.takeIf { heart.heartAt>0 && now-heart.heartAt<10000 }?.let { "$it bpm" } ?: stringResource(R.string.waiting_heart),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                         if(heart.phase!="disconnected") IconButton(onClick={ c.heart.disconnect() }) { Icon(Icons.Default.Close,stringResource(R.string.disconnect)) }
                     }
                 }
@@ -118,6 +123,8 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
         Column(Modifier.fillMaxWidth().heightIn(max=600.dp).verticalScroll(rememberScrollState()).padding(horizontal=20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.connection_help),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             TroubleshootingSteps(false)
+            Text(stringResource(R.string.heart_source_help_title),style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
+            Text(stringResource(R.string.heart_source_help),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(R.string.check_feedback),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             Button(onClick={ help=false; activity.openDiagnostics() },modifier=Modifier.fillMaxWidth().testTag("open-diagnostics")) { Text(stringResource(R.string.open_diagnostics)) }
             OutlinedButton(onClick=activity::feedback,modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.feedback)) }

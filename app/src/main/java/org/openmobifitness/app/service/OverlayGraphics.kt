@@ -39,7 +39,7 @@ internal class OverlayIcon(var glyph: OverlayGlyph,private val ink: Int): Drawab
 
 internal class OverlayBrand(context: Context): View(context) {
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
-    private val colors=intArrayOf(0xFFECA2C5.toInt(),0xFFDF535D.toInt(),0xFFF0C84B.toInt(),0xFF5888DB.toInt())
+    private val colors=org.openmobifitness.app.BrandPalette.accents.toIntArray()
     init { importantForAccessibility=IMPORTANT_FOR_ACCESSIBILITY_NO }
     override fun onDraw(canvas: Canvas) {
         val unit=width/4f

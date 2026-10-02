@@ -9,8 +9,8 @@ android {
         applicationId = "org.openmobifitness.app"
         minSdk = 29
         targetSdk = 37
-        versionCode = 7
-        versionName = "0.1.0-alpha.7"
+        versionCode = 8
+        versionName = "0.1.1"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         javaCompileOptions { annotationProcessorOptions { arguments["room.schemaLocation"] = "$projectDir/schemas" } }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

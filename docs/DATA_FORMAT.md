@@ -1,76 +1,103 @@
-# OpenMOBI 数据报告与交换格式
+# CSV 与备份格式 / CSV and backup formats
 
-以下小节按版本记录原始数据交换格式的演进；当前格式见文末 alpha.7 小节。
+[文档目录](README.md) · [English](#english)
 
-UTF-8（导出含 BOM），逗号分隔，双引号按 RFC 4180 规则转义；导出使用 CRLF，导入兼容 LF。字段名与界面语言无关。版本字段 `schema` 为 `1`。
+## 普通用户怎么选？
 
-## sessions.csv
+- **导出统计 CSV**：用 Excel 等软件阅读，一次运动一行，有日期、器材、时长、距离、热量、平均／峰值与数据来源。列名含单位，跟随 App 语言。导出当前筛选结果，或详情中的单次训练。
+- **导出完整备份**：换设备或重装时使用 ZIP，包含训练记录、逐秒采样和自定义方案，可重新导入。
+- **原始 CSV**：供需要进一步分析或交换数据的人使用。统计 CSV 不能当作原始 CSV 导入。
 
-`schema,session_id,start_utc,end_utc,time_zone,device,machine,protocol,elapsed_ms,distance_m,simulated,status`
+导入会先显示预览。完全相同的记录跳过；同一 ID 的内容冲突会取消整次导入，不覆盖本机内容。大备份可按单次训练分别导出。卸载前请保留好原文件。
 
-- `session_id` 是 UUID；时间为 ISO 8601 UTC，时区是 IANA 时区标识。
-- `machine` 为 ELLIPTICAL / BIKE / ROWER / TREADMILL / HEART / UNKNOWN。
-- `protocol` 为 V1 / V2 / FTMS / HUANTONG / DEMO / UNKNOWN。
-- `elapsed_ms` 是累计有效运动时间，暂停不计入；距离单位米。
-- `simulated` 为 true / false，演示记录始终明确标注。
-- `status` 为 active / completed / interrupted / stopped；恢复或导入活动记录会标为 interrupted，不自动开始运动。
+## 当前原始格式
 
-## samples.csv
+UTF-8（导出含 BOM），逗号分隔，按 CSV 规则转义双引号，导出 CRLF、导入也接受 LF。空单元格表示未知，不等于零。字段名不随界面语言改变。
 
-`schema,session_id,elapsed_ms,cadence_rpm,resistance,speed_mps,distance_m,heart_bpm,power_w,strokes`
+| 文件 | 当前版本 | 说明 |
+| --- | --- | --- |
+| `sessions.csv` | 5 | 每次训练的摘要和估算来源 |
+| `samples.csv` | 3 | 有效训练时间上的采样，通常约 1 Hz |
+| `workouts.csv` | 1 | 每行一个训练阶段 |
+| `manifest.txt` | 5 | 内容为 `OpenMOBI backup 5\n` |
 
-会话 UUID 与有效运动时间组成唯一键。采样正常频率约 1 Hz，后台调度延迟可能形成间隔，不插值伪造测量。距离／桨数在记录中相对当前训练计算，暂停期间的累计变化不用于完成训练阶段。未知指标为空。
+ZIP 不向文件系统解压。继续支持备份 v1–v4、会话 v1/v2/v4、采样 v1/v2，缺失字段使用旧版兼容默认值。本地数据库为 Room v5，v1–v4 迁移保留历史数据。
 
-`power_w` 按 FTMS 有符号功率保留，允许 −32768 至 32767 W；不会在 CSV 往返时丢弃负值。
+### 字段
 
-## workouts.csv
+`sessions.csv`：
 
-`schema,workout_id,title,step_index,condition,target,resistance_percent`
+```csv
+schema,session_id,start_utc,end_utc,time_zone,device,machine,protocol,elapsed_ms,distance_m,simulated,status,calories_kcal,calories_estimated,distance_estimated,weight_kg,met,workout_id,workout_title,archived,energy_model
+```
 
-同一训练的行连续排列，`step_index` 从 0 递增。`condition` 为 TIME（秒）、DISTANCE（米）、STROKES（次数）。`resistance_percent` 为 0–100 或空值；它映射到设备报告或已知 profile 的阻力范围及增量，不代表功率百分比。每套训练 1–200 阶段。
+`samples.csv`：
 
-文本字段 `device`、`title` 总是增加一个前导单引号，以避免电子表格把内容解释为公式。OpenMOBI 导入去掉恰好一个该前缀；原文本本身以单引号开头时可以正确往返。手工制作 CSV 可采用同一约定。
+```csv
+schema,session_id,elapsed_ms,cadence_rpm,resistance,speed_mps,distance_m,heart_bpm,power_w,strokes,calories_kcal,incline_percent,stride_m,force_n,step_rate,step_count,target_cadence,power_estimated
+```
 
-## ZIP 备份与事务
+`workouts.csv`：
 
-备份包含 `manifest.txt`（内容为 `OpenMobi backup 1\n`）和以上三份 CSV。解析在内存完成，不把 ZIP 路径解压到文件系统。
+```csv
+schema,workout_id,title,step_index,condition,target,resistance_percent
+```
 
-导入先预览，再事务提交。相同 ID、相同内容跳过；冲突取消整次导入。采样必须引用已有或同次导入的会话，时间不能超出会话长度。错误提示尽可能提供 CSV 行号。
+- 训练 ID 为 UUID，开始／结束时间为 ISO 8601 UTC，时区使用 IANA 名称。有效时长不含暂停；距离与桨数是本次有效训练的累计值。
+- 器材类型：ELLIPTICAL / BIKE / ROWER / TREADMILL / HEART / UNKNOWN；协议：V1 / V2 / FTMS / HUANTONG / DEMO / UNKNOWN。
+- 状态为 active / completed / interrupted / stopped。恢复或导入活动记录会标为 interrupted，不会自动开始运动。
+- `energy_model` 为 device / legacy-v1 / met / mixed，旧记录可能为空。估算标记为 true/false。
+- `archived` 仅用于兼容旧数据；当前界面没有归档操作，默认包含所有标记的记录。
+- `cadence_rpm` 为历史字段名，划船机表示桨频，部分跑步机表示步频，请结合器材类型解读。
+- 测量功率允许 −32768–32767 W；估算功率允许 0–50000 W 以便模型边界值能往返导入，不表示正常运动功率范围。拉力也允许协议中的有符号值。
+- 方案每套 1–200 阶段，序号从 0 递增；TIME 为秒、DISTANCE 为米、STROKES 为次数；阻力为 0–100% 或空值，按器材档位范围换算。
+- 设备名、方案 ID／名称等文本用一个前导单引号避免表格公式执行；导入仅去掉一个该前缀，因此原有单引号可往返保留。
 
-当前解析器限制单文件／解压后总内容 32 MiB、单 CSV 200,000 数据行、单字段 4,096 字符，防止异常输入耗尽手机内存。单次运动详情中可以单独导出该次完整备份（内含样本 CSV），适合分批归档。首个 alpha 的超大归档仍需进一步实现流式分页；不要删除原始备份。官方旧 App 的私有缓存和已关闭云端记录不在此格式承诺内。
+### 大小和统计约定
 
-## Schema 2（alpha.2）
+输入与解压后总内容上限 32 MiB，单 CSV 最多 200000 数据行，单字段最多 4096 字符。采样必须引用已有或同批会话，时间不得超出会话有效长度；异常时整批回滚。
 
-导出的 sessions.csv 和 samples.csv 使用 schema=2；仍接受 schema=1 的原有列头。workouts.csv 继续使用 schema=1。ZIP manifest version=2，读取器同时接受 version=1 和 2。
+统计平均值按有效采样时间加权，单个读数最多覆盖前 5 秒。心率 0 为缺测，零速度／功率有效；曲线最多绘制 240 点并保留端点与极值。日期按当前设备时区分组。统计 CSV 显示本地日期及 UTC 偏移、带单位列名和 `—` 缺测标记，不用于原始数据往返。
 
-`sessions.csv` 在旧字段后增加：`calories_kcal,calories_estimated,distance_estimated,weight_kg,met`。布尔值为 true／false；空读数仍为空单元格，不等于零。热量与距离估算标记指本次累计中含有估算部分。
+完整备份用于训练数据与方案迁移，**不承诺复制所有界面偏好或收藏设置**。官方 App 缓存及停服后的云端记录不属于此格式。
 
-`samples.csv` 增加：`calories_kcal,incline_percent,stride_m,force_n,step_rate,step_count,target_cadence`。距离、热量和桨数均为本次有效训练的相对累计值。沿用的 cadence_rpm 字段在划船机上表示桨频，在相应跑步机协议中表示步频；请结合 session.machine 解读，不能跨器材直接比较。force_n 与 power_w 允许设备协议中的有符号值。
+## English
 
-本地 Room 数据库从版本 1 无损迁移到 2，旧记录的新读数为 null、估算标记为 false，不回填虚构热量。升级与双版本导入均有自动化测试。旧版 OpenMOBI 无法读取 schema=2 导出；请用 alpha.2 或更新版。
+### Which export should I use?
 
-## alpha.4：样本 v3 与备份 v3
+- **Export summary CSV:** for reading in a spreadsheet. One workout per row, including date, equipment, duration, distance, energy, averages/peaks and data sources. Localized headings include units. Exports the current filter or a single workout from its details.
+- **Export full backup:** a ZIP for moving devices or reinstalling, containing sessions, samples and custom plans. It can be imported again.
+- **Raw CSV:** for data analysis and exchange. Summary CSV cannot be imported as raw data.
 
-摘要仍用 v2，训练方案仍用 v1。样本 CSV 的 `schema` 改为 `3`，在 v2 字段末尾追加 `power_estimated`（true / false）。它标记 `power_w` 是否由旧版计算模型估算，随 Room v3、CSV 与 ZIP 备份保存。V1 支持的椭圆机／单车使用实际回传踏频与档位计算，不使用待确认的调阻目标；设备直接上报的功率为 false。设备测量值仍限制为 FTMS 的有符号范围；v3 中标记为估算的功率允许 0–50,000 W，以保证模型在最高可解析频率边界的导出也可原样导入，这不是正常运动功率范围。
+Import shows a preview first. Identical records are skipped; different content with the same ID cancels the whole import without overwriting local data. Individual workout backups help split large exports. Keep original files before uninstalling.
 
-v1 / v2 样本仍可导入，缺失标记按 false 读取。备份清单现在是 `OpenMOBI backup 3`，仍接受历史 `OpenMobi backup 1` 和 `OpenMobi backup 2`。数据库从 v1 或 v2 升级均保留原训练和样本；仅新增默认 false 的功率来源字段。
+### Current raw format
 
-v3 样本和备份需用 alpha.4 或更新版读取；跨设备传输时，两端应使用支持该格式的版本。
+UTF-8 with a BOM on export, comma-separated, CSV quote escaping, CRLF on export and LF accepted on import. Empty cells mean unknown, not zero. Raw column names do not depend on interface language.
 
+| File | Current schema | Contents |
+| --- | --- | --- |
+| `sessions.csv` | 5 | Workout summaries and estimate sources |
+| `samples.csv` | 3 | Samples on active workout time, usually around 1 Hz |
+| `workouts.csv` | 1 | One stage per row |
+| `manifest.txt` | 5 | Literal `OpenMOBI backup 5\n` |
 
-## alpha.6：可读统计报告、会话 v4 与备份 v4
+ZIPs are parsed without extracting paths to disk. Backup versions 1–4, session schemas 1/2/4 and sample schemas 1/2 remain readable with compatibility defaults. Room v5 migrates v1–v4 without replacing historical values. Exact CSV headers are listed in the Chinese section above; field names are identical in every language.
 
-默认「导出统计 CSV」面向阅读，每个训练一行，列头随 App 语言显示。包括带 UTC 偏移的本地日期、设备类型、方案与设备名称、有效运动时长（HH:MM:SS）、距离和热量、五类指标的平均／峰值、步数／桨数、估算来源、演示与归档标记。单位写入列名，缺失值显示 `—`。数字采用所选语言小数格式，文本按 CSV 转义并防止公式执行。报告按当前筛选范围导出；详情页只导出当前训练。先固定记录 ID 集合，再逐条计算并写入，不在导出期间锁住整个记录库。
+- Session IDs are UUIDs; start/end use ISO 8601 UTC and IANA time-zone names. Active duration excludes pauses. Distance/strokes are relative to this workout's active time.
+- Machines: ELLIPTICAL / BIKE / ROWER / TREADMILL / HEART / UNKNOWN. Protocols: V1 / V2 / FTMS / HUANTONG / DEMO / UNKNOWN.
+- Status: active / completed / interrupted / stopped. Recovered/imported active records become interrupted; they never start a workout automatically.
+- `energy_model`: device / legacy-v1 / met / mixed, or empty for older data. Estimate flags are true/false.
+- `archived` preserves legacy round trips only. There is no archive action in the current UI; normal queries include every flag value.
+- The historical `cadence_rpm` name also represents rowing cadence or step rate on some treadmills. Interpret it with the machine type.
+- Measured power accepts −32768–32767 W; estimated power accepts 0–50000 W so model boundary values can round-trip. This is not a normal exercise range. Force also preserves signed protocol values.
+- Plans have 1–200 stages with indices starting at zero. TIME is seconds, DISTANCE meters and STROKES counts. Resistance is 0–100% or empty, mapped to equipment levels.
+- Device names, plan IDs/titles and similar text receive one leading apostrophe to prevent spreadsheet formula execution. Import removes exactly one, preserving original apostrophes.
 
-统计报告不是可导入的原始备份。记录菜单也保留「导出原始 CSV（可导入）」；详情菜单保留原始采样导出。完整迁移时使用 ZIP，仍包含 `sessions.csv`、`samples.csv`、`workouts.csv` 与 `manifest.txt`，清单为 `OpenMOBI backup 4\n`。旧 v1–v3 备份继续支持。样本保持 v3，方案保持 v1；会话改为 v4，在 v2 字段末尾追加 `workout_id,workout_title,archived`。两个名称字段采用可逆单引号文本转义；归档标记为 true／false。旧记录没有方案名称时标为未记录，不推断其训练类型。新自由运动保存明确的 `free` ID 与本地名称。
+### Limits and statistics
 
-Room v4 无损迁移 v1–v3；新增索引用时间戳、归档标记与方案元数据。归档仅改变显示状态，不删除样本。重复导入相同运动内容时保留本机归档状态；其他内容冲突仍整批回滚。
+Input and total uncompressed contents are limited to 32 MiB, each CSV to 200000 data rows, and each field to 4096 characters. Samples must reference an existing or same-import session and cannot exceed its active duration. Validation failure rolls back the whole import.
 
-平均值按有效采样时间加权，每个读数最多覆盖前 5 秒。心率 0 视为未测得；有效的零功率／零速度仍计入平均。最大值使用全部有效样本，图表最多显示 240 个保留端点与极值的点。速度缺失的 V1／V2 数据可按已实现的官方速度模型生成趋势；估算来源仍与本次距离来源一起说明。统计页在当前设备时区分组，按本地日历处理周、月、年和夏令时边界。归档记录始终计入概览；演示记录有标记并可独立筛选。
+Averages are time-weighted, with each sample covering at most the preceding five seconds. Zero heart rate is missing; zero speed/power is valid. Charts retain endpoints/extremes with at most 240 points. Dates use the current device time zone. Summary CSV uses local dates with UTC offsets, unit-bearing headings and `—` for missing data; it is not a round-trip backup format.
 
-
-## alpha.7：会话 v5 与能量来源
-
-Room 升级至 v5，仅追加 `energyModel`，兼容 v1–v4 升级并保留历史数据。会话 CSV v5 在 v4 末尾追加 `energy_model`，取值为空（旧数据未知）、`device`、`legacy-v1`、`met`、`mixed`。样本仍为 v3，方案仍为 v1；备份清单为 `OpenMOBI backup 5\n`，继续读取备份 v1–v4。
-
-当前界面不再展示归档操作；旧 `archived` 值为兼容往返保留，但默认查询包括所有标记。最近六个月按当前月与之前五个月查询，全部记录支持年份、月份及分页。可读 CSV 用「热量计算来源」替代旧归档列，现有报告本来就不用于原始数据导入。
+A full backup transfers workout data and plans, **not necessarily every display preference or favorite setting**. Original-app caches and unavailable cloud history are outside this format.

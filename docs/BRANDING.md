@@ -1,30 +1,39 @@
-# OpenMOBI 品牌素材
+# 品牌与素材说明 / Branding and credits
 
-alpha.3 按用户要求使用提供的 MOBI FITNESS 官方字标，在上方添加较小的 Open 胶囊，并用粉、红、黄、蓝四段细线作为装饰。它表示独立 OpenMOBI 项目，不表示原公司的官方发行或背书。Apache-2.0 适用于本项目新增代码，不授予原字标的商标权。
+[文档目录](README.md) · [English](#english)
 
-## 已落地素材
+OpenMOBI 是独立项目，与原厂没有隶属或授权背书关系。应用图标以用户提供的 MOBI FITNESS 字标为基础，加上 Open 标识，并提供浅色和深色版本。原字标及商标权利归其所有者；项目的 Apache-2.0 代码许可不授予这些商标权利。
 
-- `app/src/main/res/drawable-nodpi/brand_light.png`：白底黑字，用于浅色应用内品牌区和普通启动器图标。
-- `app/src/main/res/drawable-nodpi/brand_dark.png`：深灰底白字，用于深色应用内品牌区及系统夜间图标资源。
-- `drawable/ic_launcher_foreground.xml` / `drawable-night/ic_launcher_foreground.xml`：适应 Android 图标遮罩的安全留白。
-- `drawable/ic_notification.xml`：状态栏使用的 Open＋MOBI 单色矢量；展开通知同时显示完整品牌位图。
-- `drawable/ic_brand_monochrome.xml`：Android 单色主题图标，替代已删除的初版 `ic_mark.xml`。
+应用内品牌图与桌面图标使用 `brand_light.png`、`brand_dark.png`。通知、状态栏与系统单色图标使用统一的 Open／MOBI／FITNESS 三行矢量，旧图标资源已删除。启动器如何选择和刷新浅深色图标，取决于系统及启动器。
 
-应用内品牌随 OpenMOBI 的浅色／深色设置变化；桌面图标由启动器和系统夜间资源选择决定，不保证所有厂商启动器会立即刷新，也不更换组件或创建第二个桌面入口。
+四色仅用于装饰与今日运动图标，普通控件使用正常的主题色。色值参考《孤独摇滚》四位主角的发色，不在应用或仓库中分发角色图片：
 
-## 生成与选择记录
+| 顺序 | 颜色 | 色值 |
+| --- | --- | --- |
+| 1 | 粉 | `#F2A9BA` |
+| 2 | 红 | `#CD5849` |
+| 3 | 黄 | `#F1D87D` |
+| 4 | 蓝 | `#47669C` |
 
-使用内置 image_gen 编辑工具，以用户提供的 480 × 480 官方字标为编辑目标。两次透明底试稿出现纹理或透明度问题，未采用。最终采用完全不透明、无纹理的浅色版本，再以该版本生成对应深色版本；检查文字、居中、装饰色和应用实际显示后复制入上述资源路径。未调用外部图像 API 或另写图像编辑脚本。
+同心圆由内向外、标题色条由左向右均按这个顺序排列，使用纯色。桌面及应用内品牌位图保持已确认的版本。
 
-浅色最终提示词：
+通知文字轮廓使用 DejaVu Sans Bold；[字体许可](../app/src/main/assets/licenses/DejaVu.txt)同时随 APK 打包。设计试稿、生成提示词和调试截图留在本地，公开仓库仅保留选定的[应用截图](SCREENSHOTS.md)。
 
-> Edit the supplied MOBI FITNESS wordmark. Preserve the clean black MOBI and FITNESS letter shapes, hierarchy and spacing. Solid opaque pure white background. Add a small rounded black Open capsule with white text above MOBI, with a fine underline of four equal pink, red, yellow and blue segments. Center the stack, with the mark within x 15–85% and y 25–75% of a square canvas, ample margin. Open must be smaller than MOBI. Flat crisp artwork. No distress, texture, grain, gradient, shadow or mockup.
+## English
 
-深色最终提示词：
+OpenMOBI is independent and is not affiliated with or endorsed by the original manufacturer. Its icon is based on the user-provided MOBI FITNESS wordmark with an added Open label, in light and dark versions. Rights to the original wordmark/trademarks remain with their owners; the code's Apache-2.0 license does not grant trademark rights.
 
-> Make the exact matching dark version of this light artwork. Change only colors: background to flat #111318, MOBI FITNESS letters to #F6F7F9, Open capsule to #2A2E36 with white text. Retain the four accent colors and the same positions and canvas. Fully opaque, clean flat edges. No textures, grain, gradients or artifacts.
+In-app and launcher artwork uses `brand_light.png` and `brand_dark.png`. Notifications, the status bar and themed monochrome icons share the three-line Open/MOBI/FITNESS vector. Obsolete icon resources have been removed. Launcher handling and refresh of light/dark icons depends on the device.
 
-提示词记录描述本次约束与迭代意图；生成式输出并非确定性构建步骤。发行包直接使用版本控制中的最终 PNG，构建过程无需重新生成图片。
+The four colors decorate the interface and today's activity icons; normal controls retain their theme colors. They are inspired by the hair colors of the four Bocchi the Rock! protagonists. No character images are distributed in the app or repository.
 
+| Order | Color | Value |
+| --- | --- | --- |
+| 1 | Pink | `#F2A9BA` |
+| 2 | Red | `#CD5849` |
+| 3 | Yellow | `#F1D87D` |
+| 4 | Blue | `#47669C` |
 
-Alpha 7：删除初版 `ic_mark.xml`。通知使用 `ic_notification.xml`，系统主题图标使用 `ic_brand_monochrome.xml`，均为新版 Open 胶囊＋MOBI 字形的单色简化；展开通知仍使用已批准的 `brand_light` 完整图。启动图标的浅／深色位图未改动。轮廓字体许可位于 `design/alpha7/DejaVu-license.txt`。
+Rings follow this order from inside to outside, and title accents from left to right, using solid colors. The approved launcher and in-app brand bitmaps are unchanged.
+
+Notification lettering uses DejaVu Sans Bold; the [font license](../app/src/main/assets/licenses/DejaVu.txt) is also packaged in the APK. Design drafts, generation prompts and debugging captures stay local. Only selected [app screenshots](SCREENSHOTS.md) are published.

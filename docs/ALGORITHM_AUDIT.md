@@ -1,41 +1,89 @@
-# Alpha 7：V1 功率与热量复核
+# 功率与热量计算 / Power and energy calculations
 
-本次直接复核用户提供的国际版 2.1.14 与中国版 4.5.16.1 APK 的反编译调用链及关键 Smali。未发布官方反编译源代码。用户当前提供的是主观体感反馈，没有新的完整训练报文；所以结论是实现与原算法的对照，不代表仪器标定或真实人体能耗验证。
+[训练说明](TRAINING.md) · [English](#english)
 
-## 功率
+## 结论
 
-国际版 `FitnessBaseImpl.getCaloriesCalculateType()` 在 Smali 中固定返回 0。中国版调用 `SharedPreferencesUtil` 的相同选项，默认也是 0，另有可配置的 type-1 算法，因此不能把所有中国版安装状态都当成同一种模型。
+已知 V1 单车／椭圆机使用国际版 2.1.14 的默认功率和热量模型，参考中国版 4.5.16.1 交叉核对。**实现与旧算法一致，不代表数值已经过功率计或人体能耗测试。** 原 APK 与完整反编译源码不随仓库发布。
 
-`SportStateMachineToolKt.calculatePower()` 的 type-0 是六系数指数多项式：令 `x = exp(rpm / 100)`、`y = exp(level × 32 / maximum / 10)`，对组合结果取非负数。`ToolsKt.elliptical0B11()` 对 0B11（设备 11、子类型 17）额外乘 1.5；`MotionData.setRPM()` 最后转为整数瓦。当前实现的系数、指数单位、最高档位 24、1.5 修正以及截断方式均与该路径一致。
+国际版默认使用 type-0；中国版默认也是 type-0，但存在可配置的 type-1，不能假设所有中国版安装状态都相同。支持的 V2／FTMS 直接功率读数不使用 V1 模型。
 
-`V1Handler` 将 7–10 字节解释为毫秒周期，用 `60000 / interval` 换算；0B11 再除以 2。当前解析与该路径一致，没有发现把双脉冲频率直接当转速的翻倍错误。
+## V1 功率
 
-| 0B11 合成参考输入 | 1 档 | 12 档 | 24 档 |
+type-0 使用六系数指数多项式，变量为 `x = exp(rpm / 100)`、`y = exp(level × 32 / maximum / 10)`，结果不小于零。0B11 椭圆机额外乘以 1.5，最后截断为整数瓦显示。当前实现的系数、最高档位 24、型号修正和取整已与原调用链及 Smali 核对。
+
+V1 毫秒周期换算为 `60000 / interval`；0B11 每圈两个脉冲，再除以 2。以下是合成输入的计算结果，不是实测功率：
+
+| 0B11 输入 | 1 档 | 12 档 | 24 档 |
 | --- | ---: | ---: | ---: |
-| 周期 1000 ms → 30 rpm | 20 W | 85 W | 211 W |
-| 周期 500 ms → 60 rpm | 66 W | 235 W | 900 W |
+| 1000 ms → 30 rpm | 20 W | 85 W | 211 W |
+| 500 ms → 60 rpm | 66 W | 235 W | 900 W |
 
-这也说明官方模型在高档位给出的功率可能很高。未经实测标定，没有依据任意乘一个降低系数。OpenMOBI 保留「功率 ≈」，它是厂商模型估算，不是功率计读数。设备上报的 V2 / FTMS 功率不套用此模型。
+原模型在高档位会给出较高数值。没有实测校准依据时，不任意乘降低系数，界面继续标记 `≈`。
 
-有意的可靠性差异：官方 `getAvgResistanceInQueue()` 实际返回目标档位；OpenMOBI 使用设备回报的实际档位，避免尚未确认的调阻请求立即改变显示功率。异常频率、无效档位、未知型号和过期数据不会生成新功率。
+一个有意的差异：旧 App 的相关函数会使用目标档位，OpenMOBI 使用实际反馈档位，避免请求尚未执行就改变功率。未知型号、无效档位、异常或过期数据不产生新的估算。
 
-## 热量
+## V1 热量
 
-此前 OpenMOBI 对缺少设备累计热量的器材统一使用固定 MET：`MET × 3.5 × kg / 200 × minutes`。它无法随实际频率和档位变化，所以低强度时可能显得偏高；此前并非官方 V1 算法。
+使用未截断的模型功率，按有效运动时间累加：
 
-国际版 type-0 每秒增量为：
-
-```
-功率 = 0 时，增量 = 0
-否则，kcal/s = 体重 kg / 3600 + 功率 W / 1000
+```text
+功率为 0 时，不增加热量
+否则：kcal/s = 体重 kg / 3600 + 功率 W / 1000
 ```
 
-官方从用户资料读取体重，资料缺失时回退 60 kg。OpenMOBI 保留用户自己的体重设置，未设置时仍为先前版本的 70 kg，避免升级悄悄改动参数。要逐值对比官方，必须使用相同体重、实际档位和频率。
+旧 App 在没有用户体重时回退 60 kg。OpenMOBI 保留用户设置，未设置时为 70 kg，升级不会暗中更改体重。70 kg、60 rpm、1 档时约为 5.13 kcal/分钟；固定 5 MET 约为 6.125 kcal/分钟。高档位下 V1 模型也可能高于固定 MET，不能保证所有情况都降低。
 
-Alpha 7 对已知 V1 单车／椭圆机采用上述能量模型，随实际反馈变化；按有效间隔累加，暂停、断连与缺失数据不补算，长间隔最多外推 5 秒。显示功率按官方截断为整数，热量则使用同一份反馈计算的未截断功率，以免把显示舍入误差累积进能量。以 70 kg、60 rpm、1 档为例约 **5.13 kcal/分钟**，之前 5 MET 为 **6.125 kcal/分钟**；高档位可能比固定 MET 更高，不能保证所有场景都降低热量。
+优先顺序：设备累计热量 → 已知 V1 模型 → 其他设备 MET 备用模型。已知 V1 缺少参数时不临时切换 MET。暂停、断连或缺失数据不补算，长采样间隔最多外推 5 秒。历史记录保留原值，新记录保存计算来源。
 
-优先级为：器材直接累计热量 → 已知 V1 模型 → 其他设备固定 MET 备用估算。V1 参数缺失时不临时切换到固定 MET。MET 不影响已知 V1 的官方估算。新的训练保存 `energyModel`，详情来源和可读 CSV 区分器材上报、官方 V1、MET 与混合来源。历史训练保留原值和旧估算来源，不重新计算。
+## 备用 MET 模型与统计
 
-## 回归依据
+备用公式为 `MET × 3.5 × 体重 kg ÷ 200 × 分钟`，仅在有效训练且有运动反馈时累计。默认 5 MET 参考 [2024 成人活动代谢当量汇编的椭圆机项目](https://pacompendium.com/conditioning-exercise/)。这是含静息部分的总能量近似，固定 MET 不会精确反映每个人的用力。
 
-`LegacyPowerTest` 检查上述功率参考点、实际反馈与目标隔离、无效输入、热量对档位变化的响应、暂停／缺包／零频率以及 v4/v5 CSV 兼容。`TelemetryTest` 保留直接设备热量优先、计数重置、断连和 MET 备用路径测试。真实器材仍需同频率、同档位、同体重的记录进行对照。
+平均值按有效采样时间加权，每个读数最多覆盖前 5 秒。心率 0 作为缺测，有效的零速度／零功率计入平均；图表保留端点与极值，并限制绘制点数。
+
+`LegacyPowerTest` 和 `TelemetryTest` 检查参考功率、实际与请求档位分离、无效输入、暂停、缺包、零频率、设备值优先与导入兼容。要继续核验实机，请提供相同体重、实际档位和频率下的记录及日志。
+
+## English
+
+### Findings
+
+Known V1 bikes/ellipticals use the default power and energy model from international app 2.1.14, cross-checked against Chinese app 4.5.16.1. **Matching the old algorithm does not establish accuracy against a power meter or measured personal energy expenditure.** Official APKs and complete decompiled source are not distributed.
+
+The international app uses type-0 by default. The Chinese app also defaults to type-0 but has a configurable type-1 path, so installations can differ. Supported V2/FTMS direct power readings bypass the V1 model.
+
+### V1 power
+
+Type-0 is a six-coefficient exponential polynomial with `x = exp(rpm / 100)` and `y = exp(level × 32 / maximum / 10)`, clamped to nonnegative output. The 0B11 elliptical adds a 1.5 multiplier; display power is truncated to integer watts. Coefficients, the 24-level maximum, model correction and truncation were checked against the original call chain and Smali.
+
+V1 milliseconds per pulse convert to `60000 / interval`; 0B11 divides by two for two pulses per revolution. These are synthetic reference inputs, not measured power:
+
+| 0B11 input | Level 1 | Level 12 | Level 24 |
+| --- | ---: | ---: | ---: |
+| 1000 ms → 30 rpm | 20 W | 85 W | 211 W |
+| 500 ms → 60 rpm | 66 W | 235 W | 900 W |
+
+The original model can produce high values at high resistance. Without calibration evidence, no arbitrary reduction factor is applied; `≈` remains visible.
+
+One intentional difference: where the original path uses a target level, OpenMOBI uses actual equipment feedback so an unexecuted request cannot immediately change power. Unknown models, invalid resistance and abnormal/stale readings do not produce new estimates.
+
+### V1 energy
+
+Untruncated model power is accumulated over active workout time:
+
+```text
+When power is zero, energy does not increase.
+Otherwise: kcal/s = weight_kg / 3600 + power_W / 1000
+```
+
+The original app falls back to 60 kg when no user weight exists. OpenMOBI preserves the user's setting, defaulting to 70 kg; updates do not silently change it. At 70 kg, 60 rpm and level 1, the result is about 5.13 kcal/min, versus 6.125 kcal/min with fixed 5 MET. At high resistance the V1 model can exceed fixed-MET energy, so values do not always decrease.
+
+Priority is equipment energy → known V1 model → MET fallback for other devices. Missing V1 parameters do not cause a temporary switch to MET. Pauses, disconnections and missing data are not filled in; a long sample interval is extrapolated for at most five seconds. Existing history keeps its original values; new records preserve the calculation source.
+
+### MET fallback and statistics
+
+The fallback is `MET × 3.5 × weight_kg ÷ 200 × minutes`, accumulated only during active workouts with movement feedback. The 5 MET default references the elliptical entry in the [2024 Adult Compendium](https://pacompendium.com/conditioning-exercise/). It approximates total energy, including resting expenditure; fixed MET cannot precisely reflect an individual's effort.
+
+Averages are weighted by valid sample time, with each sample covering at most the preceding five seconds. Zero heart rate means missing data; valid zero speed/power is included. Charts retain endpoints and extremes while limiting plotted points.
+
+`LegacyPowerTest` and `TelemetryTest` cover reference power, actual versus requested resistance, invalid inputs, pauses, packet gaps, zero cadence, direct-reading priority and import compatibility. Further hardware comparisons require the same body weight, actual resistance and cadence, with records and diagnostic logs.

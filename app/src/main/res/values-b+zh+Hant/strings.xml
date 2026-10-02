@@ -70,7 +70,6 @@
     <string name="minimize">縮小為懸浮視窗</string>
     <string name="open_app">開啟運動畫面</string>
     <string name="overlay_permission">請允許「顯示在其他應用程式上層」，然後返回即可使用懸浮控制面板。</string>
-    <string name="notification_title">OpenMOBI 運動服務</string>
     <string name="notification_channel">器材連接與訓練</string>
     <string name="export_samples">匯出明細 CSV</string>
     <string name="export_workouts">匯出訓練方案 CSV</string>
@@ -144,7 +143,7 @@
     <string name="metric_selection_help">最多選擇 %1$d 項，用箭頭調整順序。運動畫面可左右滑動翻頁。≈ 為估算，— 為無資料。</string>
     <string name="move_up">向前移</string>
     <string name="move_down">向後移</string>
-    <string name="estimation_settings">熱量估算與目標</string>
+    <string name="estimation_settings">熱量估算</string>
     <string name="body_mass">體重 · kg</string>
     <string name="estimate_met">估算強度 · MET</string>
     <string name="estimate_help">優先使用器材熱量讀數。已知 V1 單車／橢圓機按官方功率與體重模型估算；其他裝置備用體重與固定 MET（預設 70 kg、5 MET）。估算並非實測，MET 不影響 V1 熱量。修改從下次訓練生效。</string>
@@ -253,7 +252,7 @@
     <string name="waiting_motion">等待運動回報</string>
     <string name="control_available">可用</string>
     <string name="feedback_timeout">未收到檔位確認</string>
-    <string name="heart_device">心率裝置</string>
+    <string name="heart_device">藍牙心率配件</string>
     <string name="connection_help">連線遇到問題？</string>
     <string name="nearby_devices">附近裝置</string>
     <string name="stop_scan">停止掃描</string>
@@ -267,4 +266,19 @@
     <string name="energy_met">體重與固定 MET（估算）</string>
     <string name="energy_mixed">多種來源</string>
     <string name="energy_unknown">來源未記錄</string>
+    <string name="today_activity">今日運動</string>
+    <string name="today_time">時長</string>
+    <string name="today_count">次數</string>
+    <string name="minute_unit">分鐘</string>
+    <string name="session_unit">次</string>
+    <string name="summary_unavailable">暫無法讀取</string>
+    <string name="heart_from_equipment">器材 · %1$d bpm</string>
+    <string name="waiting_heart">等待心率資料</string>
+    <string name="heart_source_help_title">心率來自哪裡？</string>
+    <string name="heart_source_help">器材回報的心率隨器材連線接收，不需要另行連線。獨立藍牙心率帶是選用配件，可在附近裝置中選擇；只在連線過程中或已連線時顯示卡片。有新的配件心率時優先使用。</string>
+    <string name="notification_active">OpenMOBI · 運動中</string>
+    <string name="notification_paused">OpenMOBI · 已暫停</string>
+    <string name="notification_ready">OpenMOBI · 已連線</string>
+    <string name="notification_connecting">OpenMOBI · 正在連線</string>
+    <string name="notification_disconnected">OpenMOBI · 連線已中斷</string>
 </resources>

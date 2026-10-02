@@ -70,7 +70,6 @@
     <string name="minimize">フローティングパネル</string>
     <string name="open_app">トレーニング画面へ</string>
     <string name="overlay_permission">他のアプリの上に表示を許可し、この画面に戻ってください。</string>
-    <string name="notification_title">OpenMOBI トレーニング</string>
     <string name="notification_channel">器具の接続とトレーニング</string>
     <string name="export_samples">詳細 CSV を出力</string>
     <string name="export_workouts">メニュー CSV を出力</string>
@@ -144,7 +143,7 @@
     <string name="metric_selection_help">最大 %1$d 項目。矢印で並べ替え、運動画面は左右にスワイプ。≈ は推定値、— は未取得です。</string>
     <string name="move_up">前へ移動</string>
     <string name="move_down">後ろへ移動</string>
-    <string name="estimation_settings">カロリー推定と目標</string>
+    <string name="estimation_settings">消費カロリーの推定</string>
     <string name="body_mass">体重 · kg</string>
     <string name="estimate_met">推定強度 · MET</string>
     <string name="estimate_help">機器の消費カロリーを優先します。既知のV1機器は公式の出力・体重モデル、それ以外は固定MET（初期値70 kg・5 MET）で推定します。実測ではありません。METはV1に影響せず、変更は次の運動から有効です。</string>
@@ -253,7 +252,7 @@
     <string name="waiting_motion">動作データ待ち</string>
     <string name="control_available">利用可能</string>
     <string name="feedback_timeout">負荷の確認応答なし</string>
-    <string name="heart_device">心拍センサー</string>
+    <string name="heart_device">Bluetooth心拍センサー</string>
     <string name="connection_help">接続でお困りですか？</string>
     <string name="nearby_devices">近くの機器</string>
     <string name="stop_scan">停止</string>
@@ -267,4 +266,19 @@
     <string name="energy_met">体重と固定MET（推定）</string>
     <string name="energy_mixed">複数の算出元</string>
     <string name="energy_unknown">算出元の記録なし</string>
+    <string name="today_activity">今日の運動</string>
+    <string name="today_time">時間</string>
+    <string name="today_count">回数</string>
+    <string name="minute_unit">分</string>
+    <string name="session_unit">回</string>
+    <string name="summary_unavailable">読み込み不可</string>
+    <string name="heart_from_equipment">運動器具 · %1$d bpm</string>
+    <string name="waiting_heart">心拍データを待機中</string>
+    <string name="heart_source_help_title">心拍数の取得元</string>
+    <string name="heart_source_help">運動器具が送信する心拍数は器具との接続で取得します。別のBluetooth心拍センサーは任意で、近くのデバイスから選択できます。接続中または接続済みの場合のみカードが表示され、新しいセンサーの測定値が優先されます。</string>
+    <string name="notification_active">OpenMOBI · 運動中</string>
+    <string name="notification_paused">OpenMOBI · 一時停止</string>
+    <string name="notification_ready">OpenMOBI · 接続済み</string>
+    <string name="notification_connecting">OpenMOBI · 接続中</string>
+    <string name="notification_disconnected">OpenMOBI · 未接続</string>
 </resources>

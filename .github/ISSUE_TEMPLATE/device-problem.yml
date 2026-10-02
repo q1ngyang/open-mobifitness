@@ -1,34 +1,80 @@
-name: Problem report / 问题反馈
-description: Report connection, workout or interface problems in OpenMOBI.
-title: "[Feedback] "
+name: "问题反馈 / Report a problem"
+description: "连接、调阻、运动数据或界面出错？请从这里反馈。 / Connection, resistance, readings or screen problems."
 body:
   - type: markdown
     attributes:
       value: |
-        请在 OpenMOBI「设置 → 设备诊断」保持协议报文记录开启，复现后及时导出日志。报文自动清理，分享前请检查可能含运动和心率值的内容；界面问题可以只附截图。
-        Keep protocol recording enabled under Settings → Device diagnostics, reproduce the issue and export promptly. Logs rotate automatically and may contain live movement and heart-rate values. Review before sharing. For interface issues, screenshots may suffice.
+        ## 先说发生了什么 / Tell us what happened
+        可以只用中文或英文填写，不必翻译。标题写清现象，例如「椭圆机已连接，但频率一直为 —」。
+        Write in Chinese or English; no translation needed. Use a specific title, e.g. “Elliptical connects but cadence stays blank”.
+
+        蓝牙问题请尽量附日志；界面问题附截图即可。不知道协议名称也没关系。
+        For Bluetooth issues, a log helps; for screen issues, a screenshot is enough. You do not need to know the protocol.
+  - type: dropdown
+    id: category
+    attributes:
+      label: "1. 哪里出了问题？ / What went wrong?"
+      options:
+        - "搜不到或连不上器材 / Cannot find or connect equipment"
+        - "连接后无数据、调阻无效或掉线 / Missing readings, resistance failure or disconnection"
+        - "运动数据不合理 / Readings seem wrong"
+        - "界面、悬浮窗或操作问题 / Screen, floating panel or controls"
+        - "运动记录、导入或导出 / History, import or export"
+        - "闪退或其他问题 / Crash or another problem"
+    validations:
+      required: true
   - type: input
     id: equipment
     attributes:
-      label: Equipment model / 器材型号
-      description: Product or label model; use N/A for interface-only issues. Do not include a Bluetooth address or serial number.
+      label: "2. 器材型号 / Equipment model"
+      description: "看机身铭牌或商品名称；不涉及器材可填「无」。请勿填写序列号或蓝牙地址。 / Use its label or product name, or N/A for screen-only issues. No serial number or Bluetooth address."
+      placeholder: "例如 / e.g. 莫比白色经典款椭圆机，MB-EP"
     validations:
       required: true
   - type: input
     id: environment
     attributes:
-      label: App version, phone/tablet model, Android version / 测试环境
+      label: "3. App 和手机／平板版本 / App and phone/tablet versions"
+      description: "App 版本在「设置 → 关于 → OpenMOBI」；Android 版本在系统设置中。不知道的项目写「不清楚」即可。 / Find the app version under Settings → About → OpenMOBI, and Android in system settings. Write “unknown” if needed."
+      placeholder: "例如 / e.g. OpenMOBI 0.1.1 普通版 / regular · iQOO Pad 2 Pro · Android 16"
     validations:
       required: true
   - type: textarea
     id: behavior
     attributes:
-      label: Steps, expected behavior, actual behavior / 复现与结果
-      description: Include whether it occurs in full-screen or floating mode; note last working app version if known.
+      label: "4. 做了什么，出现了什么？ / Steps and what happened"
+      description: "写出操作步骤、实际现象，以及你期待的结果。有错误提示请原样写下。 / Include steps, actual and expected results, and any exact error message."
+      placeholder: |
+        操作步骤 / Steps:
+        1.
+        2.
+        实际现象 / What happened:
+        期待结果 / What you expected:
+        每次都出现吗？ / Does it happen every time?
     validations:
       required: true
-  - type: textarea
-    id: log
+  - type: markdown
     attributes:
-      label: Exported log and optional screenshots / 日志与截图
-      description: Drag OpenMOBI-diagnostics.txt here. Do not post keys, official APKs, or private workout backups.
+      value: |
+        ## 蓝牙日志怎么取？ / How to get a Bluetooth log
+        ①「设置 → 设备诊断」确认开启「记录蓝牙协议报文」。
+        ② 重新连接并复现问题（可以轻踩约 15 秒，或尝试相邻档位）。
+        ③ 尽快回到同一页，点「导出诊断日志」，把 TXT 附在下面。
+
+        ① Settings → Device diagnostics → turn on Record Bluetooth packets.
+        ② Reconnect and reproduce the issue (move gently for about 15 seconds, or try one resistance step).
+        ③ Return promptly, choose Export diagnostic log, and attach the TXT below.
+
+        日志会自动清理，请在问题出现后及时导出。若导出失败，写明情况即可。
+        Logs clear automatically; export soon after the problem. If export fails, just tell us.
+  - type: textarea
+    id: attachments
+    attributes:
+      label: "5. 日志或截图 / Log or screenshots"
+      description: "拖入文件，或点附件按钮。日志可能含实时运动和心率读数，分享前请检查。不要上传完整运动备份、官方 APK 或个人信息。 / Drop files here or use the attachment button. Logs may contain live movement and heart-rate readings; review before sharing. No full workout backups, official APKs or personal details."
+      placeholder: "OpenMOBI-diagnostics.txt；界面问题请附截图 / For layout issues, attach a screenshot."
+  - type: textarea
+    id: extra
+    attributes:
+      label: "补充信息（选填） / Anything else? (optional)"
+      description: "例如：之前哪个版本正常、横／竖屏、分屏、放大字体、调阻前后的档位。 / For example: last working version, orientation, split screen, enlarged fonts, or resistance before/after."

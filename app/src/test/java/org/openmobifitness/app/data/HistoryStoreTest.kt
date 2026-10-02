@@ -100,4 +100,16 @@ class HistoryStoreTest {
         assertEquals(0L to Long.MAX_VALUE,RecordDates.selected(0,0,zone))
     }
 
+    @Test fun todaySummaryUsesLocalCalendarAndOnlySavedRealWorkouts()=runBlocking {
+        val zone=ZoneId.of("Europe/Berlin")
+        val range=RecordDates.today(LocalDate.of(2026,3,29),zone)
+        assertEquals(23*3600000L,range.second-range.first)
+        fun row(at: Long,demo: Boolean=false,status: String="completed")=Session(start=Instant.ofEpochMilli(at).toString(),status=status,demo=demo,elapsedMs=60000,caloriesKcal=10.0,distanceM=100.0,distanceEstimated=true)
+        listOf(row(range.first-1),row(range.first),row(range.second-1).copy(archived=true),row(range.second),row(range.first+1000,true),row(range.first+2000,status="active")).forEach { repo.save(it) }
+        val summary=repo.history.overview(HistoryQuery(range.first,range.second,source=1),zone)
+        assertEquals(2,summary.count); assertEquals(0,summary.demoCount)
+        assertEquals(120000L,summary.elapsedMs); assertEquals(20.0,summary.calories!!,0.0001)
+        assertEquals(200.0,summary.distanceM!!,0.0001); assertTrue(summary.distanceEstimated)
+    }
+
 }

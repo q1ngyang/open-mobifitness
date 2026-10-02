@@ -45,7 +45,8 @@ class WorkoutService : Service() {
         return START_NOT_STICKY // Never reconnect or replay a control after process death.
     }
     private fun openIntent() = Intent(this,MainActivity::class.java).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP).putExtra("training",true)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        .putExtra("training",controller.state.value.session!=null).putExtra("devices",controller.state.value.session==null)
     private val notificationBrand by lazy {
         android.graphics.BitmapFactory.decodeResource(resources,R.drawable.brand_light,android.graphics.BitmapFactory.Options().apply { inSampleSize=8 })
     }
@@ -53,8 +54,17 @@ class WorkoutService : Service() {
         val c=localized(); val s=controller.state.value
         val content=PendingIntent.getActivity(this,1,openIntent(),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val toggle=PendingIntent.getService(this,2,Intent(this,WorkoutService::class.java).setAction(PAUSE),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val text=if(s.session!=null) "${elapsed(s.session.elapsedMs)} · ${c.getString(if(s.paused) R.string.paused else R.string.active)}" else c.getString(R.string.connected)
-        return NotificationCompat.Builder(this,"training").setSmallIcon(R.drawable.ic_notification).setLargeIcon(notificationBrand).setContentTitle(c.getString(R.string.notification_title))
+        val link=controller.ble.state.value
+        val accessory=controller.heart.state.value
+        val connection=if(link.phase!="disconnected") link else accessory
+        val title=when {
+            s.session!=null -> if(s.paused) R.string.notification_paused else R.string.notification_active
+            connection.phase=="ready" -> R.string.notification_ready
+            connection.phase=="disconnected" -> R.string.notification_disconnected
+            else -> R.string.notification_connecting
+        }
+        val text=if(s.session!=null) "${elapsed(s.session.elapsedMs)} · ${s.session.device}" else connection.name.ifBlank { c.getString(R.string.devices) }
+        return NotificationCompat.Builder(this,"training").setSmallIcon(R.drawable.ic_openmobi_status).setLargeIcon(notificationBrand).setContentTitle(c.getString(title))
             .setContentText(text).setContentIntent(content).setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
             .apply { if(s.session!=null) addAction(0,c.getString(if(s.paused) R.string.resume else R.string.pause),toggle) }.build()
     }

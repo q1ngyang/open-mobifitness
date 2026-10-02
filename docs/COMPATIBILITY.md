@@ -1,38 +1,81 @@
-# 协议与兼容性
+# 设备支持 / Device support
 
-状态描述遵循三个层次：识别代码、实现协议、真实器材验证。alpha.3 已有用户提供的真实报文回放验证，机械调阻尚待新版实机复测。
+[首页](../README.md) · [English](#english)
 
-| 路径 | 已实现 | 当前边界 |
-|---|---|---|
-| Mobi V2 / 8800 | 设备类别、阻力能力、磁铁数、8811 踏频、8812 阻力、8813 聚合数据；88FF 本地握手与 880F 阻力写入 | 需要读到合法范围和反馈；不驱动跑步机电机；水阻划船机脉冲的专有功率算法未迁移 |
-| Mobi V1 / FFE0 | AB 04 状态包、椭圆机／单车踏频和阻力；保留原状态字节的 FFE3 阻力命令 | 只对有证据的子型号开放范围；旧划船机算法和跑步机控制未迁移 |
-| FTMS / 1826 | 2ACE、2AD2、2AD1、2ACD 数据解析；功能位、阻力范围、控制权和 indication 响应；SINT16 阻力命令 | 标准路径；特定厂商非标准 flags 变体尚未实测；跑步机仅监测 |
-| HuanTong / FFF0 | 服务识别、订阅、诊断 | 尚未开放控制；需完善型号范围与握手验证，不能把原代码默认值当实测能力 |
-| BLE 心率 / 180D | 8/16 位心率；作为第二条独立 BLE 连接 | 需要广播含心率服务，过期值不继续显示为实时心率 |
+## 安装要求
 
-首个目标器材是白色经典款莫比智能椭圆机 `MB-EP` 系列。用户的 iQOO Pad 2 Pro 日志（实际 Android 16 / API 36）确认它使用 FFE0 服务、FFE3 写入、FFE4 通知。34 条真实 `AB 04` 状态报文显示设备类别 11、子类型 17、当前阻力 1，并带脉冲间隔、计数和心率字段。alpha.3 的离线回放全部通过，范围识别为 1–24 档。名称本身仍不能决定其他器材的协议。
+Android 10 或以上，64 位设备（arm64；另提供 x86_64 以便模拟器测试）。界面支持简体中文、繁体中文、英语、日语、韩语、德语。
 
-已知 V1 范围映射来自原应用的子类型分支：椭圆机 17、19 为 24 档，18 为 8 档；单车 18、21、23 为 24 档，19、20、22 为 32 档。其他 V1 子型号保持只读。椭圆机子类型 17 的踏频按每圈两次脉冲换算。
+## 哪些器材可以使用？
 
-两版原 APK 的设备枚举和主要处理器类型一致，未发现中国版独有的完整协议类别。后续适配应根据真实服务和数据包增加 profile，而非按应用版本号推断。
+**目前只有莫比 MB-EP 系列 V1 椭圆机有用户实机反馈。** “代码已支持”不等于每个型号都试过，连接成功也不等于已收到运动数据。请先确认数据更新与相邻档位调节。
 
-## 控制原则
+| 器材或连接方式 | 当前情况 |
+| --- | --- |
+| 白色经典款 MB-EP 椭圆机，V1 | 根据用户实机日志修复数据接收和调阻，支持频率、阻力、心率及功率等估算；功率与热量未经仪器标定 |
+| 其他 V1 单车／椭圆机 | 已实现部分已知型号的数据与调阻，待实机验证；未知子型号不开放调阻 |
+| Mobi V2 器材 | 已实现设备能力、运动数据和受支持的调阻，待实机验证；部分型号的距离／热量仍缺少可靠换算 |
+| FTMS 标准蓝牙器材 | 已实现标准数据与阻力控制流程，待逐型号验证 |
+| 旧款 V1 划船机、HuanTong 器材 | 支持有限；部分数据、握手和控制尚未恢复 |
+| 跑步机 | 仅接收已支持的数据，不启动电机，也不控制速度或坡度 |
+| 独立蓝牙心率带 | 支持标准 BLE 心率服务；需设备广播该服务，待更多实机验证 |
 
-- GATT 读写／订阅串行执行；操作超时断开，避免迟到回调匹配下一条写入。
-- FTMS 先订阅 indication，再获取控制权，匹配请求操作码与结果码。
-- V1 必须先收到匹配的状态模板；配置字段在本次连接内保留，让停止踩踏时仍可调阻。断开后清空模板，重连必须重新收到状态；不修改工厂校准字段。
-- V2 保留原实现的数值十进制位数字段：阻力 5 为 `02 01 05`，12 为 `02 02 0C`。该兼容性行为仍需实际设备复核。
-- 自动训练每两秒最多变化一个设备增量；手动调节立即退出自动模式。
-- 断连暂停训练；不自动重连，不重放断线队列。
-- 缺少距离／桨数测量时不能启动依赖该条件的阶段。未提供的实测值保留为空。可推算的距离与热量单独标记为估算，不能替代距离阶段要求的设备累计读数。
-- 写入成功与机械执行成功是不同状态。UI 保留目标请求与设备反馈的区别，5 秒未收到对应反馈会显示未确认提示。
+连接椭圆机不需要另配心率带。器材若提供心率，会在设备卡片中注明来源。独立心率设备只在连接过程中或已连接时显示，未连接时不会多出一个“未连接”提示。
 
-原始研究在本地单独保存，未发布原 APK、完整反编译文件、用户原始日志和心率样本。仓库回归测试使用按真实报文结构构造、重新设置传感器值的 synthetic 示例。真实的 34 条报文仅用于本地离线回放。图标例外使用用户指定的官方字标衍生素材，见 [品牌素材](BRANDING.md)。
+手机／平板横竖屏、深色模式和放大字体经过模拟器检查。折叠窗口经过布局测试，**尚未使用真实折叠屏设备验证**。不同厂商的后台限制也可能影响长时间悬浮训练。
 
-alpha.2 扩展了 V2 热量，以及 FTMS 热量、坡度、步频、牵引力字段；加入本地累计与估算层。按指标的能力和限制见 [训练说明](TRAINING.md)。
+## 第一次连接怎么确认？
 
-## alpha.3 接收故障修正
+轻踩或拉动几秒，观察频率／档位是否更新，再尝试相邻一档。不能调阻、数值不动、掉线时，请按[日志指引](HELP.md)反馈；无需自己判断协议。断连会暂停训练，重连后不会重放断线前的控制指令。
 
-alpha.2 将 V1 运动状态头误判为 `AC 04`，因此虽然 BLE 已连接且收到 `AB 04` 通知，解析结果仍为空，范围与调阻能力无法启用。核对中国版处理器和国际版 Smali 后确认状态头为 `AB`（有符号字节 -85）；国际版反编译 Java 的嵌套分支还原不可靠。alpha.3 改为验证 `AB 04`，拒绝 `AC` 事件和 `AB 03` 控制回显。
+## 协议信息（供排查使用）
 
-同版增加订阅结果、回调类型、接收／解析计数和首包信息；未收到有效数据时显示“等待器材数据”，不再提前显示可训练。Robolectric 测试覆盖 FFE3 / FFE4 拓扑、两种 Android 回调、订阅失败、无数据和迟到回调。这些测试及真实报文回放均不能替代设备机械执行验证。
+| 路径 | 识别与限制 |
+| --- | --- |
+| V1 / FFE0 | FFE3 写入、FFE4 通知；运动状态头为 AB 04。椭圆机子型 17/19 为 24 档、18 为 8 档；单车子型 18/21/23 为 24 档、19/20/22 为 32 档。0B11 每圈两次脉冲 |
+| V2 / 8800 | 读取类别、阻力范围和磁铁数；处理 8811/8812/8813，88FF 握手及 880F 调阻；部分私有型号字段尚待核实 |
+| FTMS / 1826 | 处理 2ACE/2AD2/2AD1/2ACD；先订阅控制响应，再请求控制权，按能力与范围发送阻力命令 |
+| HuanTong / FFF0 | 识别、订阅及诊断；不开放控制 |
+| 心率 / 180D | 8/16 位心率，独立 BLE 连接；新数据中断 10 秒后不再显示旧值为实时读数 |
+
+自动调阻每两秒最多变化一个设备增量。当前档位始终以设备反馈为准；发送成功不代表器材已执行，反馈超时会提示未确认。没有测量距离／桨数时，不启动依赖这些读数的阶段。完整指标来源见[训练说明](TRAINING.md)。
+
+## English
+
+### Requirements
+
+Android 10 or later on a 64-bit device (arm64; x86_64 is also included for emulators). Interface languages: Simplified Chinese, Traditional Chinese, English, Japanese, Korean and German.
+
+### Which equipment works?
+
+**User hardware feedback currently covers Mobi MB-EP ellipticals using V1 only.** Implemented code does not mean every model has been tested. A connection alone does not prove readings are arriving: check live readings and a one-level resistance change first.
+
+| Equipment or connection | Current status |
+| --- | --- |
+| White classic MB-EP elliptical, V1 | Data reception and resistance fixes based on user logs; cadence, resistance, heart rate and model-based estimates supported. Power and energy have not been calibrated against instruments |
+| Other V1 bikes/ellipticals | Data and resistance implemented for some known submodels; awaiting hardware tests. Unknown submodels remain read-only |
+| Mobi V2 | Capabilities, readings and supported resistance control implemented; awaiting hardware tests. Some models lack confirmed distance/energy scaling |
+| Standard FTMS equipment | Standard data and resistance control implemented; model-by-model testing needed |
+| Older V1 rowers and HuanTong equipment | Limited support; some readings, handshakes and controls remain unavailable |
+| Treadmills | Supported readings only; no motor start, speed or incline commands |
+| Separate Bluetooth heart-rate straps | Standard BLE heart-rate service supported when advertised; more hardware testing needed |
+
+An elliptical does not require a separate heart-rate strap. Equipment-provided heart rate is labeled on its device card. A separate accessory appears only while connecting or connected.
+
+Phone/tablet orientations, dark mode and enlarged fonts have been checked in an emulator. Foldable-sized windows were tested, but **physical foldable devices have not been verified**. Manufacturer background restrictions may affect long floating workouts.
+
+### First connection
+
+Move gently for a few seconds, check cadence/resistance feedback, then try one resistance step. If control fails, readings freeze or the connection drops, follow the [log guide](HELP.md#english); you do not need to identify the protocol. Disconnection pauses the workout. Reconnecting does not replay queued commands.
+
+### Protocol details for troubleshooting
+
+| Path | Identification and limits |
+| --- | --- |
+| V1 / FFE0 | FFE3 writes, FFE4 notifications; AB 04 status header. Elliptical subtypes 17/19: 24 levels; 18: 8 levels. Bike subtypes 18/21/23: 24 levels; 19/20/22: 32 levels. 0B11 uses two pulses per revolution |
+| V2 / 8800 | Reads type, resistance range and magnet count; handles 8811/8812/8813, 88FF handshake and 880F resistance writes. Some proprietary fields still need confirmation |
+| FTMS / 1826 | Handles 2ACE/2AD2/2AD1/2ACD; subscribes to responses before requesting control, and gates resistance commands on capabilities/range |
+| HuanTong / FFF0 | Identification, subscription and diagnostics; no control |
+| Heart rate / 180D | 8/16-bit heart rate on a separate BLE connection; stale values disappear after 10 seconds |
+
+Automatic resistance changes by at most one equipment increment every two seconds. Current resistance always comes from feedback; a successful write does not prove mechanical execution, and missing confirmation is shown. Distance/stroke-based stages require measured cumulative readings. See [workout notes](TRAINING.md#english) for metric sources.

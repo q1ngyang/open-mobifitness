@@ -54,7 +54,7 @@ import org.openmobifitness.app.ble.LinkState
 import org.openmobifitness.app.service.WorkoutService
 import org.openmobifitness.core.*
 
-internal val brandColors = listOf(Color(0xFFECA2C5), Color(0xFFDF535D), Color(0xFFF0C84B), Color(0xFF5888DB))
+internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Color(it) }
 @Composable internal fun BrandSignature(modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         brandColors.forEach { color ->

@@ -70,7 +70,6 @@
     <string name="minimize">Schwebendes Bedienfeld</string>
     <string name="open_app">Trainingsansicht öffnen</string>
     <string name="overlay_permission">Anzeige über anderen Apps erlauben und anschließend hierher zurückkehren.</string>
-    <string name="notification_title">OpenMOBI Training</string>
     <string name="notification_channel">Geräteverbindung und Training</string>
     <string name="export_samples">Messwerte als CSV</string>
     <string name="export_workouts">Trainingspläne als CSV</string>
@@ -144,7 +143,7 @@
     <string name="metric_selection_help">Bis zu %1$d Werte; Pfeile ändern die Reihenfolge. Trainingskarten seitlich wischen. ≈ bedeutet geschätzt, — nicht verfügbar.</string>
     <string name="move_up">Nach vorne</string>
     <string name="move_down">Nach hinten</string>
-    <string name="estimation_settings">Energieschätzung &amp; Ziele</string>
+    <string name="estimation_settings">Kalorienschätzung</string>
     <string name="body_mass">Körpergewicht · kg</string>
     <string name="estimate_met">Geschätzte Intensität · MET</string>
     <string name="estimate_help">Gerätewerte haben Vorrang. Bekannte V1-Geräte nutzen das offizielle Leistungs-/Gewichtsmodell, andere festen MET (Standard 70 kg, 5 MET). Schätzungen sind keine Messungen. MET beeinflusst V1 nicht. Änderungen gelten ab dem nächsten Training.</string>
@@ -253,7 +252,7 @@
     <string name="waiting_motion">Warte auf Bewegung</string>
     <string name="control_available">Verfügbar</string>
     <string name="feedback_timeout">Keine Stufenbestätigung</string>
-    <string name="heart_device">Herzfrequenzsensor</string>
+    <string name="heart_device">Bluetooth-Pulssensor</string>
     <string name="connection_help">Verbindungsprobleme?</string>
     <string name="nearby_devices">Geräte in der Nähe</string>
     <string name="stop_scan">Stoppen</string>
@@ -267,4 +266,19 @@
     <string name="energy_met">Gewicht und fester MET-Wert (Schätzung)</string>
     <string name="energy_mixed">Mehrere Quellen</string>
     <string name="energy_unknown">Quelle nicht erfasst</string>
+    <string name="today_activity">Heute</string>
+    <string name="today_time">Zeit</string>
+    <string name="today_count">Einheiten</string>
+    <string name="minute_unit">Min.</string>
+    <string name="session_unit">Einheiten</string>
+    <string name="summary_unavailable">Nicht verfügbar</string>
+    <string name="heart_from_equipment">Trainingsgerät · %1$d bpm</string>
+    <string name="waiting_heart">Warte auf Herzfrequenz</string>
+    <string name="heart_source_help_title">Woher kommt die Herzfrequenz?</string>
+    <string name="heart_source_help">Vom Trainingsgerät gemeldete Pulswerte werden über dessen Verbindung empfangen. Ein separater Bluetooth-Pulssensor ist optional und unter Geräte in der Nähe auswählbar. Seine Karte erscheint nur beim Verbinden oder bei bestehender Verbindung. Aktuelle Sensorwerte haben Vorrang.</string>
+    <string name="notification_active">OpenMOBI · Training</string>
+    <string name="notification_paused">OpenMOBI · Pausiert</string>
+    <string name="notification_ready">OpenMOBI · Verbunden</string>
+    <string name="notification_connecting">OpenMOBI · Verbinden</string>
+    <string name="notification_disconnected">OpenMOBI · Getrennt</string>
 </resources>

@@ -10,3 +10,10 @@ local.properties
 *.p12
 dist/
 docs/research/
+# Local design drafts, prompts and per-run QA evidence / 本地设计试稿、提示词和逐轮检查记录
+docs/design/
+docs/images/
+docs/UI_DESIGN.md
+docs/OVERLAY_DESIGN.md
+docs/TESTING.md
+docs/DEVICE_TEST_CHECKLIST.md

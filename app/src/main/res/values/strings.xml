@@ -70,7 +70,6 @@
     <string name="minimize">Floating panel</string>
     <string name="open_app">Open training screen</string>
     <string name="overlay_permission">Allow display over other apps to use the floating controls. Return here afterward.</string>
-    <string name="notification_title">OpenMOBI training</string>
     <string name="notification_channel">Equipment connection</string>
     <string name="export_samples">Export samples CSV</string>
     <string name="export_workouts">Export workout CSV</string>
@@ -144,7 +143,7 @@
     <string name="metric_selection_help">Select up to %1$d fields; arrows change their order. Swipe the training cards for more. ≈ means estimated; — means unavailable.</string>
     <string name="move_up">Move earlier</string>
     <string name="move_down">Move later</string>
-    <string name="estimation_settings">Energy estimate &amp; targets</string>
+    <string name="estimation_settings">Energy estimates</string>
     <string name="body_mass">Body mass · kg</string>
     <string name="estimate_met">Estimated effort · MET</string>
     <string name="estimate_help">Device energy readings take priority. Known V1 bikes/ellipticals use the official power-and-weight estimate; other devices fall back to weight and fixed MET (default 70 kg, 5 MET). Estimates are not measurements. MET does not change V1 estimates. Changes apply to the next workout.</string>
@@ -253,7 +252,7 @@
     <string name="waiting_motion">Awaiting movement</string>
     <string name="control_available">Available</string>
     <string name="feedback_timeout">No level confirmation</string>
-    <string name="heart_device">Heart-rate accessory</string>
+    <string name="heart_device">Bluetooth heart-rate accessory</string>
     <string name="connection_help">Connection problem?</string>
     <string name="nearby_devices">Nearby devices</string>
     <string name="stop_scan">Stop</string>
@@ -267,4 +266,19 @@
     <string name="energy_met">Body weight and fixed MET (estimated)</string>
     <string name="energy_mixed">Multiple sources</string>
     <string name="energy_unknown">Source not recorded</string>
+    <string name="today_activity">Today’s activity</string>
+    <string name="today_time">Time</string>
+    <string name="today_count">Workouts</string>
+    <string name="minute_unit">min</string>
+    <string name="session_unit">sessions</string>
+    <string name="summary_unavailable">Unavailable</string>
+    <string name="heart_from_equipment">Equipment · %1$d bpm</string>
+    <string name="waiting_heart">Waiting for heart rate</string>
+    <string name="heart_source_help_title">Where does heart rate come from?</string>
+    <string name="heart_source_help">Heart rate reported by your equipment is received through the equipment connection. A separate Bluetooth heart-rate accessory is optional: select it under Nearby devices. Its card appears only while connecting or connected. A fresh accessory reading takes priority.</string>
+    <string name="notification_active">OpenMOBI · Training</string>
+    <string name="notification_paused">OpenMOBI · Paused</string>
+    <string name="notification_ready">OpenMOBI · Connected</string>
+    <string name="notification_connecting">OpenMOBI · Connecting</string>
+    <string name="notification_disconnected">OpenMOBI · Disconnected</string>
 </resources>

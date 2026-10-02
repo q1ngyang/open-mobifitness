@@ -94,12 +94,15 @@ class MainActivity : ComponentActivity() {
         page.value=savedInstanceState?.getInt("page") ?: 0
         settingsSection.value=savedInstanceState?.getString("settingsSection") ?: ""
         focusTraining.value=savedInstanceState?.getBoolean("focusTraining") ?: false
-        if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }
+        if(savedInstanceState==null) {
+            if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } else if(intent.getBooleanExtra("devices",false)) { page.value=2; focusTraining.value=false }
+        }
+        intent.removeExtra("training"); intent.removeExtra("devices")
         metricScope.value=runCatching { DisplayScope.valueOf(savedInstanceState?.getString("metrics_scope") ?: intent.getStringExtra("metrics_scope") ?: "") }.getOrNull()
         setContent { OpenMobi(this,controller) }
     }
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("settingsSection",settingsSection.value); outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true }; metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } else if(intent.getBooleanExtra("devices",false)) { page.value=2; focusTraining.value=false }; intent.removeExtra("training"); intent.removeExtra("devices"); metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
         externalNavigation=false
@@ -177,5 +180,5 @@ class MainActivity : ComponentActivity() {
     fun openDiagnostics() { focusTraining.value=false; page.value=3; settingsSection.value="diagnostics" }
     fun feedback() { openUrl(org.openmobifitness.app.data.Updates.REPOSITORY+"/issues/new?template=device-problem.yml") }
     fun openUrl(url: String) { externalNavigation=true; runCatching { startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url))) }.onFailure { externalNavigation=false; controller.error(R.string.network_unavailable) } }
-    fun disconnect() { controller.ble.disconnect(); if(controller.state.value.session==null) stopService(Intent(this,WorkoutService::class.java)) }
+    fun disconnect() { controller.ble.disconnect(); if(controller.state.value.session==null && controller.heart.state.value.phase=="disconnected") stopService(Intent(this,WorkoutService::class.java)) }
 }

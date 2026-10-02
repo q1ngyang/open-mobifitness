@@ -1,83 +1,91 @@
-# 训练与指标
+# 训练与数据说明 / Workouts and readings
 
-OpenMOBI 的训练页独立全屏显示。手机突出计时和当前阶段，暂停／结束／悬浮操作固定在底部，内容空间不足时可以滚动；指标按可用宽度分页。横向大窗口采用分栏，折叠屏使用 Android WindowManager 提供的分隔区域避开铰链。折叠屏支持目前未经真实折叠屏验证。
+[首页](../README.md) · [English](#english)
 
-运动页右上角「显示设置」或「设置 → 显示内容」中的三个入口可以选择并排序：主训练页最多 12 项，小悬浮窗最多 2 项，大悬浮窗最多 4 项。三份配置分别保存。小窗只显示信息，点击展开，拖动移动；大窗提供阻力加减、暂停计时、收起和返回运动页，顶部调节图标可直接打开大窗的配置。运动页增加阻力滑块，拖动时预览目标档位和百分比，松手后提交；当前档位仍以器材反馈为准。
+## 选择训练方案
 
-## 与官方运动页字段的对应关系
+内置 21 套离线方案，包含热身、恢复、稳态、耐力、渐进和多种间歇训练。可以搜索、按时长等条件筛选、收藏，或复制后修改。它们是 OpenMOBI 制作的方案，不是已停服的官方在线课程。
 
-两份 APK 的 `SportDataModelEnum` 都包含下列 15 个非空字段。OpenMOBI 已提供对应显示项，并额外提供 500 米配速、平均速度。**显示项完整不意味着所有设备都会提供全部传感器数据。** 缺失读数显示 `—`；不从其他型号的校准表编造测量值。
+| 方案示例 | 时长 | 安排 |
+| --- | --- | --- |
+| 轻度训练 | 20 分钟 | 热身 5 分钟，低阻力 10 分钟，冷身 5 分钟 |
+| 中度训练 | 30 分钟 | 热身 5 分钟，持续训练 20 分钟，冷身 5 分钟 |
+| 有氧进阶 | 40 分钟 | 10% → 35% → 50% → 60% → 45% → 10%，每段分别 5／5／10／10／5／5 分钟 |
+| HIIT 递进 | 30 分钟 | 热身与冷身各 5 分钟，中间 10 组「工作 1 分钟＋恢复 1 分钟」；工作段目标逐步变化 |
+| HIIT 长间歇 | 40 分钟 | 热身后进入较长工作段，每组 3 分钟工作、2 分钟恢复，最后降低阻力冷身 |
 
-| 官方字段 | OpenMOBI 指标 | 数据来源和边界 |
-|---|---|---|
-| TIME | 运动时长 | 本地有效训练时间；暂停／断连暂停不累计 |
-| DISTANCE | 距离 | V2／FTMS 累计读数差；只有速度时积分估算；旧 V1 椭圆机／单车使用官方虚拟速度换算 |
-| CALORIE | 热量 | 优先设备热量；已知 V1 使用官方功率与体重模型，其余设备使用体重与 MET 备用估算 |
-| BPM | 心率 | 器材心率或独立 BLE 心率带，失去新读数 10 秒后清空 |
-| SPEED | 速度 | 设备速度；旧 V1 椭圆机／单车虚拟速度显示 `≈` |
-| RES | 阻力 | 设备反馈档位，同时显示其在已确认档位范围中的百分比 |
-| STEFREQUENCY | 频率 | 单车／椭圆机转速；不把划船或跑步频率标成 rpm |
-| SPM | 桨频 | 划船机 cadence，单位 spm |
-| SPMCOUNT | 划桨次数 | V2／FTMS 支持的桨数，按本次有效训练累计 |
-| TENSION | 拉力 | 当前可解析 FTMS treadmill force；旧私有划船协议拉力仍待设备日志验证，不替代为阻力档位 |
-| SLOPE | 坡度 | FTMS 坡度；私有协议存在型号映射差异，暂不猜测 |
-| STRIDE | 步频 | FTMS cross trainer、V2 跑步机频率 |
-| STEPDISTANCE | 步幅 | V2 跑步机速度／步频推算（估算），不宣称直接测量 |
-| TARGET_SPM | 目标桨频 | 用户在设置中配置的训练目标，默认 24 spm |
-| POWER | 功率 | 已知 V1 单车／椭圆机的官方模型估算，或支持的 V2／FTMS 上报字段；未知机型不套用校准曲线 |
+阻力百分比按官方 App 的方式计算：`档位 ÷ 最高档位 × 100%`，显示时四舍五入。24 档设备的 1 档是 4%、12 档是 50%。方案会换算到器材支持的实际档位，并保留最低档；这不是心率或个人运动强度百分比。
 
-V2 部分跑步机的距离和热量有十倍缩放差异，需设备型号确认，当前保留为空。HuanTong 和旧 V1 划船机仍有未恢复的专有字段；用协议日志推进兼容性，不把演示模式结果当作硬件证明。完整协议范围见 [兼容性](COMPATIBILITY.md)。
+方案中的热量只作参考。例如 40 分钟有氧进阶以 70 kg、平均 6–8 MET 估算约 294–392 kcal，不能保证每个人消耗 300–400 kcal。实际记录不会为了符合这个参考值而提高热量。可以按体感调低阻力、暂停或复制修改方案。
 
-## 估算与百分比
+## 哪些指标可以显示？
 
-以下描述为 alpha.2–alpha.6 的备用模型；alpha.7 已知 V1 模型见文末。热量采用 `MET × 3.5 × 体重 kg ÷ 200 × 分钟`，仅在有效训练且传感器显示运动时累计。默认 70 kg、5 MET；5 MET 取自 2024 成人活动代谢当量汇编的中等强度椭圆机项目 02048。该公式为总能量的近似估计，含运动期间静息消耗，不是医疗或体重变化预测。固定 MET 无法自动反映每个人的实际用力。
+在「显示设置」选择和排序：主运动页最多 12 项，小窗 2 项，大窗 4 项，分别保存。全部可选项有时长、距离、热量、心率、速度、平均速度、阻力、频率、桨频、划桨次数、拉力、坡度、步频、步幅、目标桨频、功率、500 米配速。
 
-在「设置 → 热量估算与目标」修改体重和 MET；下一次训练生效。每次训练保存使用的参数与估算标记。设备直接提供热量时优先使用设备累计值。暂停、断连、设备累计计数重置均不会把暂停期间的变化加入本次训练。
+能否显示取决于器材有没有对应数据。缺失显示 `—`；`≈` 表示估算，不是传感器实测。
 
-旧版椭圆机虚拟速度使用 `rpm / 2.68 / 4 / 3.6` 米／秒，单车不除以 4；来自国际版 `MotionData` 的换算，并非真实地面移动距离。积分得到的距离标记 `≈`。传感器过期或长时间调度停顿时，不无限延长最后一次速度。
+| 指标 | 主要来源 |
+| --- | --- |
+| 时长 | 本地有效训练时间；暂停与断连暂停不累计 |
+| 频率 | 器材反馈，按类型使用 rpm／spm |
+| 阻力 | 器材回报的档位，不把尚未确认的请求当成当前档位 |
+| 心率 | 器材或独立蓝牙心率设备；有新数据时优先使用独立设备，过期数据不继续显示 |
+| 功率 | 支持的 V2／FTMS 设备上报，或已知 V1 单车／椭圆机的原厂模型估算 |
+| 距离、速度 | 设备读数；缺少距离时可能由速度积分估算，旧 V1 使用原厂虚拟速度模型 |
+| 热量 | 优先设备累计值；其次为已知 V1 的功率＋体重模型，其他设备使用体重＋MET 备用估算 |
+| 桨数、步频、步幅、坡度、拉力 | 仅显示已支持且数据可用的字段；未知机型不套用其他型号的换算 |
 
-阻力百分比按官方 App 为 `round(档位 / 最高档位 × 100%)`。例如 1–24 档设备，1 档显示 4%，12 档显示 50%，24 档显示 100%；50% 方案目标为 12 档。目标量化到设备支持的档位，并保持最低档保护。它表示设备档位比例，**不等同于心率、功率或个人运动强度百分比**。只有设备回报才作为当前档位，请求值单独提示。
+旧 V1 椭圆机的速度为 `rpm ÷ 2.68 ÷ 4` km/h，单车不除以 4。它是虚拟运动距离，并非实际向前移动的距离。依靠距离／桨数结束的阶段需要器材累计读数，不能用虚拟估算替代。
 
-## 内置方案
+## 为什么功率、热量可能与体感不同？
 
-复核中国版 `/workout_list`、`/workout_info` 等调用后，完整官方预设目录仍需要已停服的后端。OpenMOBI 因此提供原创、可复制编辑的离线方案，未将原创方案描述成恢复的官方课程。
+V1 功率采用官方旧版的数学模型，不是功率计读数，部分高档位会算出较高结果。已知 V1 的热量按功率和体重累计，MET 不影响这一路径；其他无热量读数的器材才用固定 MET 估算。
 
-本版共有 21 个方案：热身、恢复、稳态、耐力、短／中／长间歇、金字塔、渐进、冷身，以及以下明确命名的入门选择。
+请在「设置 → 热量估算」填写自己的体重。新参数从下一次训练生效；旧记录不会重新计算。默认体重 70 kg，备用 MET 为 5。要和官方 App 比较，需要相同体重、实际档位与频率，单看一个瞬间不容易判断。
 
-| 方案 | 总时长 | 结构（分钟 @ 阻力范围百分比） |
-|---|---:|---|
-| 轻度训练 | 20 | 5@5 → 10@15 → 5@5 |
-| 中度训练 | 30 | 5@10 → 20@30 → 5@5 |
-| 进阶训练 | 30 | 5@10 → 5@40 → 10@65 → 5@40 → 5@10 |
-| 肌耐力训练 | 22 | 5@10 → (2@55 → 2@15) → (2@60 → 2@15) → (2@65 → 2@15) → 5@5 |
-| 体重管理 | 40 | 5@10 → 10@35 → 10@45 → 10@35 → 5@5 |
-| HIIT 入门 | 20 | 5@10 → 5 × (1 分钟工作 @45/50/55/60/65 → 1@15) → 5@5 |
-| 有氧进阶 | 40 | 5@10 → 5@35 → 10@50 → 10@60 → 5@45 → 5@10 |
-| HIIT 递进 | 30 | 5@10 → 10 × (1 分钟工作 @55/60/60/65/65/70/70/75/70/60 → 1@20) → 5@10 |
-| HIIT 长间歇 | 40 | 5@10 → 5@35 → 4 × (3 分钟工作 @65/70/75/80 → 2@25) → 5@40 → 5@10 |
+详细公式与复核依据见[算法说明](ALGORITHM_AUDIT.md)。尚未完成仪器功率标定或个人热量测量。
 
-上述入门方案与新增方案保留 5 分钟热身和 5 分钟冷身。间歇方案参考交替工作／恢复的结构，阻力档位是本项目选择的可编辑起点，**没有把研究中的心率储备百分比转换成设备阻力百分比**。现有的短间歇模板可以在独立热身后使用。
+## English
 
-40 分钟有氧进阶的详情给出**参考热量**：按设置中的体重、全程平均 6–8 MET 计算；70 kg 时约 294–392 kcal。6–8 是介于汇编椭圆机中等 5 MET 与较大强度 9 MET 之间的设计假设，不能通过档位证明，热身与冷身也计入全程平均。实际消耗可能明显不同，不保证一次消耗 300–400 kcal。运动记录优先使用设备热量，其次为已知 V1 官方模型，其他设备才使用本次训练保存的 MET（默认 5）；不会为了符合计划参考值而提高记录热量。
+### Choose a plan
 
-“肌耐力”是有氧器材上的阻力训练辅助，不保证增肌；“体重管理”提供较长的稳态运动安排，不保证减重。用户可按体感减少阻力或复制修改。跑步机在本版本中不自动控制电机、速度或坡度。
+There are 21 offline plans covering warm-up, recovery, steady work, endurance, progressive work and several interval formats. Search, filter by duration and other options, save favorites, or copy and edit a plan. These are OpenMOBI plans, not recovered official online courses.
 
-参考来源：
+| Example | Duration | Structure |
+| --- | --- | --- |
+| Light workout | 20 min | 5 min warm-up, 10 min low resistance, 5 min cool-down |
+| Moderate workout | 30 min | 5 min warm-up, 20 min steady work, 5 min cool-down |
+| Advanced aerobic | 40 min | 10% → 35% → 50% → 60% → 45% → 10%, lasting 5/5/10/10/5/5 minutes |
+| Progressive HIIT | 30 min | 5 min warm-up and cool-down, with ten 1-minute work/1-minute recovery pairs; work targets vary progressively |
+| Long-interval HIIT | 40 min | Warm-up, longer work intervals of 3 min with 2 min recovery, then easier work and cool-down |
 
-- [2024 Adult Compendium: Conditioning Exercise](https://pacompendium.com/conditioning-exercise/)：MET 参考值。
-- [American Heart Association: Warm Up, Cool Down](https://www.heart.org/en/healthy-living/exercise-and-physical-activity/fitness-basics/warm-up-cool-down)：5–10 分钟逐渐热身与冷身。
-- [开放获取的间歇与稳态训练原始研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC6104631/)：交替工作和恢复的训练结构；不用于推断本项目阻力档位的生理强度。
-- [Android 自适应布局指南](https://developer.android.com/design/ui/mobile/guides/layout-and-content/adapt-layout)：紧凑窗口与展开窗口的布局原则。
+Resistance percentage follows the original app: `level ÷ maximum level × 100%`, rounded for display. On 24-level equipment, level 1 is 4% and level 12 is 50%. Plan targets map to supported levels and never fall below the equipment minimum. This is not heart-rate or personal exercise-intensity percentage.
 
-## alpha.4：功率与训练显示
+Plan energy figures are only references. The 40-minute aerobic plan assumes 70 kg and an average of 6–8 MET for roughly 294–392 kcal, not a guaranteed 300–400 kcal for everyone. Recorded energy is not increased to match this reference. Lower resistance, pause, or copy and edit a plan to suit your effort.
 
-V1 已知阻力范围的椭圆机／单车恢复国际版 2.1.14 的 type-0 功率模型，依据器材回传的踏频和实际档位计算。`0B11` 磁控椭圆机使用 24 档与 1.5 倍型号修正，结果按官方方式截断为整数瓦。零踏频显示 0 W；初始化的 0 档、缺失／异常输入或未知型号不生成估算。此值仍是旧版模型的**估算功率**，以「功率 ≈」标记，并非功率传感器测量。V2 / FTMS 的直接上报不经过该模型。
+### Available metrics
 
-运动页直接显示当前阶段附近三段及分段进度条。点击阶段预览可查看全部阶段；大屏另显示同一区域内的全部阶段入口。运动页只保留右上角一个显示配置入口。暂停、结束并保存、悬浮操作固定在底部。空间不足时内容可滚动，窄屏每页最多四项，宽屏每页最多六项，其余指标可滑动或通过箭头翻页。通用指标名称为「频率」，单位依器材为 rpm／spm；专用桨频、步频仍可另选。自动调阻开关跟随计划；手动改档后关闭，可再次开启。中央档位始终显示实际反馈，滑块显示待确认目标。已知器材范围时，阶段卡片显示按增量取整后的档位及对应百分比；方案内部保留原百分比，便于跨器材使用。运动页前台可见期间保持屏幕常亮，离开运动页后恢复系统休眠策略。
+Use Display settings to choose and order up to 12 workout-screen metrics, 2 compact-panel metrics and 4 expanded-panel metrics, saved separately. Choices include duration, distance, energy, heart rate, speed, average speed, resistance, cadence, stroke rate, stroke count, force, incline, step rate, stride length, target stroke rate, power and 500 m pace.
 
-设置 → 悬浮窗可分别关闭悬浮功能或自动显示，二者默认开启。先授予悬浮权限；运动期间回桌面／切换应用后显示小窗，回到 App 后隐藏。锁屏、旋转、应用自身的文件选择和权限页面不会触发自动显示。alpha.5 的小窗为 236×128 dp，大窗为 312×368 dp；遇到低矮屏幕时只滚动大窗的信息区，调阻／暂停／返回操作保持可见。数字使用等宽字体、单行自动缩放，估算符号放在标题后，单位和档位百分比单独排版。小窗默认时长、阻力与阶段进度，已有自选指标保留；详细设计见 [悬浮面板](OVERLAY_DESIGN.md)。
+Availability depends on equipment data. `—` means unavailable; `≈` means estimated rather than directly measured.
 
+| Metric | Main source |
+| --- | --- |
+| Duration | Local active workout time; excludes pauses and disconnection pauses |
+| Cadence | Equipment feedback, using rpm/spm as appropriate |
+| Resistance | Reported level; unconfirmed requests are not displayed as current feedback |
+| Heart rate | Equipment or a separate BLE accessory; fresh accessory readings take priority, stale values are cleared |
+| Power | Supported V2/FTMS readings or the original model for known V1 bikes/ellipticals |
+| Distance/speed | Equipment readings; distance may be integrated from speed. Older V1 uses the original virtual-speed model |
+| Energy | Equipment total first, then known V1 power-and-weight calculation, otherwise weight-and-MET estimation |
+| Stroke/step data, stride, incline and force | Only implemented fields with available data; unknown models do not inherit another model's calibration |
 
-## alpha.7：官方模型复核与热量来源
+Older V1 ellipticals use `rpm ÷ 2.68 ÷ 4` km/h; bikes omit the division by four. This represents virtual distance, not ground travel. Distance/stroke-ended stages require measured cumulative readings, not virtual estimates.
 
-已知 V1 单车／椭圆机改用官方 type-0「功率＋体重」能量估算；设备累计热量仍优先，其他无热量设备继续用 MET 备用模型。MET 不影响这类 V1 估算。设置 → 训练 → 热量估算与目标可调整体重，下一次训练生效；不要通过 MET 修正 V1 数据。旧训练保留原始数值。公式、与官方的细微差异及验证点见 [算法复核](ALGORITHM_AUDIT.md)。功率公式没有任意缩放，仍以 ≈ 标注。
+### Why might power or energy feel too high?
+
+V1 power comes from the original app's mathematical model, not a power meter. It can produce high values at high resistance. Known V1 energy uses power and body weight; MET does not affect it. Other devices without energy readings use the fixed-MET fallback.
+
+Set your weight in Settings → Energy estimates. Changes apply to the next workout and do not recalculate history. Defaults are 70 kg and 5 MET for the fallback. Compare with the original app using the same weight, actual level and cadence; a single moment is rarely enough.
+
+See [calculation details](ALGORITHM_AUDIT.md#english). These estimates have not been calibrated against measured mechanical power or personal energy expenditure.
