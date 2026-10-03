@@ -1,0 +1,8 @@
+{"op":"commands","handler":"V1Handler","command":7,"value":0,"folded":0}
+{"op":"commands","handler":"V1Handler","command":7,"value":0,"folded":1}
+{"op":"commands","handler":"V1Handler","command":7,"value":0,"folded":2}
+{"op":"commands","handler":"V1Handler","command":7,"value":0,"folded":255}
+{"op":"commands","handler":"V2Handler","command":7,"value":0,"folded":0}
+{"op":"commands","handler":"V2Handler","command":7,"value":0,"folded":1}
+{"op":"commands","handler":"V2Handler","command":7,"value":0,"folded":2}
+{"op":"commands","handler":"V2Handler","command":7,"value":0,"folded":255}

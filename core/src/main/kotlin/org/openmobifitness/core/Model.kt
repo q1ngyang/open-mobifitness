@@ -5,7 +5,7 @@ import java.time.ZoneId
 import java.util.UUID
 import kotlin.math.roundToInt
 
-enum class Machine { ELLIPTICAL, BIKE, ROWER, TREADMILL, HEART, UNKNOWN }
+enum class Machine { ELLIPTICAL, BIKE, ROWER, TREADMILL, HEART, UNKNOWN, JUMP_ROPE, DUMBBELL }
 enum class Protocol { V1, V2, FTMS, HUANTONG, DEMO, UNKNOWN }
 data class ResistanceRange(val min: Double, val max: Double, val increment: Double = 1.0) {
     init { require(min.isFinite() && max.isFinite() && increment.isFinite() && min >= 0 && max >= min && max <= 3276.7 && increment > 0) }
@@ -24,13 +24,19 @@ data class Metrics(
     val distanceM: Double? = null, val heartBpm: Int? = null, val powerW: Double? = null, val strokes: Int? = null,
     val caloriesKcal: Double? = null, val inclinePercent: Double? = null, val strideM: Double? = null,
     val forceN: Double? = null, val stepRate: Double? = null, val stepCount: Int? = null, val targetCadence: Double? = null,
-    val powerEstimated: Boolean = false
+    val powerEstimated: Boolean = false,
+    val jumpCount: Int? = null, val continuousJumps: Int? = null, val jumpInterruptions: Int? = null,
+    val repetitions: Int? = null, val loadKg: Double? = null, val deviceDurationSec: Int? = null,
+    val dumbbellFewActions: Int? = null, val dumbbellActionNumber: Int? = null
 ) {
     fun merge(new: Metrics) = Metrics(new.cadence ?: cadence, new.resistance ?: resistance, new.speedMps ?: speedMps,
         new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, if(new.powerEstimated) new.powerW else new.powerW ?: powerW, new.strokes ?: strokes,
         new.caloriesKcal ?: caloriesKcal,new.inclinePercent ?: inclinePercent,new.strideM ?: strideM,
         new.forceN ?: forceN,new.stepRate ?: stepRate,new.stepCount ?: stepCount,new.targetCadence ?: targetCadence,
-        if(new.powerW!=null || new.powerEstimated) new.powerEstimated else powerEstimated)
+        if(new.powerW!=null || new.powerEstimated) new.powerEstimated else powerEstimated,
+        new.jumpCount ?: jumpCount,new.continuousJumps ?: continuousJumps,new.jumpInterruptions ?: jumpInterruptions,
+        new.repetitions ?: repetitions,new.loadKg ?: loadKg,new.deviceDurationSec ?: deviceDurationSec,
+        new.dumbbellFewActions ?: dumbbellFewActions,new.dumbbellActionNumber ?: dumbbellActionNumber)
 }
 data class Session(
     val id: String = UUID.randomUUID().toString(), val start: String = Instant.now().toString(),

@@ -24,6 +24,15 @@ adb shell appops set org.openmobifitness.app.debug SYSTEM_ALERT_WINDOW allow
 
 测试覆盖协议、调阻反馈、训练阶段、导入事务、数据迁移、统计、悬浮窗及响应式界面。模拟测试不证明真实蓝牙链路、器材电机、人体热量估算或厂商后台策略正确。
 
+V0.2.0 的窗口、字体、语言和主题覆盖见[验证记录](V020_VALIDATION.md#界面与实际操作)。`V020ExperienceTest` 检查仅控制与记录切换、分页指标、单行累计数值、键盘操作和备份预览；`V020OverlayTest` 使用真实悬浮窗口进行拖动、旋转和模式切换。截图必须逐张阅读，不能只依据测试断言判断外观。
+
+耗时测试需要显式参数，普通 instrumentation 不会自动执行。先将测试备份复制到专用模拟器的 Downloads，再分别运行；长时测试使用 Debug 合成读数，不建立真实 GATT 链路。
+
+```sh
+adb shell am instrument -w -e class org.openmobifitness.app.V020BackupUiTest -e large_backup v020-large.zip org.openmobifitness.app.debug.test/androidx.test.runner.AndroidJUnitRunner
+adb shell am instrument -w -e class org.openmobifitness.app.V020BackgroundTest -e soak_ms 3600000 org.openmobifitness.app.debug.test/androidx.test.runner.AndroidJUnitRunner
+```
+
 ## 发行
 
 `app/build.gradle.kts` 定义版本。发行签名从环境读取 `OPENMOBI_KEYSTORE`、`OPENMOBI_STORE_PASSWORD`、`OPENMOBI_KEY_PASSWORD`，alias 为 `openmobi`。不提供时只生成未签名 release；CI 不生成替代发行密钥。
@@ -35,6 +44,10 @@ adb shell appops set org.openmobifitness.app.debug SYSTEM_ALERT_WINDOW allow
 发行前检查旧版覆盖升级、包名和签名、64 位库的 16 KiB 对齐，并确认普通版无演示入口。GitHub Release 同时提供普通 APK、Debug APK 和 SHA-256 校验文件；普通版列在前面。发布正文中英文合计不超过 16 行，详细说明放在 `docs/releases/` 并链接到对应标签下的文件。
 
 更新检查按版本号选择：正式版本（含同版本 Debug 包）只检查较新的正式发行，alpha 版本也检查较新的预发布。更新检查只打开 GitHub 发布页，不自动下载或安装。
+
+## 官方 DEX 对照
+
+设备协议改动使用[可复现 oracle](../tools/protocol-oracle/README.md)和[协议验证说明](PROTOCOL_VERIFICATION.md)。期望表来自原 APK 执行结果；修改解析后先定位差异、回查有歧义的 Smali，不能让新实现自行生成自己的期望值。
 
 ## 提交内容
 
@@ -58,6 +71,10 @@ Debug uses `org.openmobifitness.app.debug`, includes simulated equipment and coe
 
 Tests cover protocols, resistance feedback, stages, import transactions, migrations, statistics, floating panels and responsive layouts. Simulation cannot validate real Bluetooth links, motors, personal energy estimates or vendor background policies.
 
+See the [V0.2.0 validation record](V020_VALIDATION.md#english) for windows, font scales, languages and themes. `V020ExperienceTest` covers control/record transitions, metric pages, single-row totals, keyboard actions and backup previews. `V020OverlayTest` exercises actual overlay dragging, rotation and mode transitions. Read the resulting screenshots as well as checking assertions.
+
+The explicit commands above enable the long-running backup and background tests; ordinary instrumentation skips them. Place the backup fixture in the dedicated emulator's Downloads directory first. The background test uses Debug synthetic readings without a real GATT connection.
+
 ### Releases
 
 Versions are defined in `app/build.gradle.kts`. Release signing reads `OPENMOBI_KEYSTORE`, `OPENMOBI_STORE_PASSWORD` and `OPENMOBI_KEY_PASSWORD`, using alias `openmobi`. Without them, release output is unsigned; CI never creates a replacement release key.
@@ -65,6 +82,10 @@ Versions are defined in `app/build.gradle.kts`. Release signing reads `OPENMOBI_
 Before publishing, verify in-place upgrades, package identity/signature, 16 KiB alignment of 64-bit libraries, and absence of demo entry points in the regular app. A release provides regular/Debug APKs and SHA-256 checksums, with the regular app first. Keep the bilingual release body within 16 lines total; link detailed notes from `docs/releases/` at the release tag.
 
 Update checks follow the version number: stable versions (including matching Debug builds) see newer stable releases only; alpha versions also check newer prereleases. The checker opens GitHub's release page and does not automatically download or install.
+
+### Original DEX comparisons
+
+Use the [reproducible oracle](../tools/protocol-oracle/README.md) and [verification notes](PROTOCOL_VERIFICATION.md) for protocol changes. Expected values come from original APK execution. Resolve differences and check ambiguous Smali; do not generate expected values with the implementation under test.
 
 ### What belongs in Git
 

@@ -21,7 +21,7 @@ class CoreTest {
         // Synthetic FTMS bike: cadence + resistance + power + heart; includes speed.
         val frame=byteArrayOf(0x64,2,0x10,0x0e,120,0,0x78,0,100,0,140.toByte())
         val parsed=Protocols.ftmsData("2ad2",frame)!!
-        assertEquals(60.0,parsed.cadence!!,0.0); assertEquals(12.0,parsed.resistance!!,0.0)
+        assertEquals(60.0,parsed.cadence!!,0.0); assertEquals(120.0,parsed.resistance!!,0.0) // Bike resistance field has resolution 1; cross-trainer uses 0.1.
         assertEquals(140,parsed.heartBpm); assertNull(parsed.distanceM)
         for(n in 0 until frame.size) assertNull(Protocols.ftmsData("2ad2",frame.copyOf(n)))
         assertEquals(200,Protocols.heart(byteArrayOf(1,200.toByte(),0)))

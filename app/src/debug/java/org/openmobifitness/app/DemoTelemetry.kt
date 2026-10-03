@@ -3,8 +3,8 @@ import org.openmobifitness.core.*
 import kotlin.math.sin
 internal object DemoTelemetry {
     fun sample(old: ExerciseState,delta: Long,resistance: Double,strokes: Double): Pair<Metrics,Double> {
-        val current=old.session; val moving=current!=null && !old.paused
-        val cadence=if(moving) (if(old.demoMachine==Machine.ROWER) 24 else 62)+sin(current!!.elapsedMs/7000.0)*6 else 0.0
+        val current=old.session; val moving=old.inUse
+        val cadence=if(moving) (if(old.demoMachine==Machine.ROWER) 24 else 62)+sin((current?.elapsedMs ?: android.os.SystemClock.elapsedRealtime())/7000.0)*6 else 0.0
         val count=strokes+if(moving) cadence*delta/60000 else 0.0
         return Metrics(cadence,resistance,if(moving) 2.0 else 0.0,
             (old.metrics.distanceM ?: 0.0)+if(moving) delta/500.0 else 0.0,

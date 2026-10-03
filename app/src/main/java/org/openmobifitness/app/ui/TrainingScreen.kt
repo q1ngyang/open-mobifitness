@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +32,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -65,9 +68,11 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
 
 /** The workout owns a fixed action dock; only the instrument panels may scroll. */
 @Composable internal fun TrainingScreen(activity: MainActivity, c: Controller, state: ExerciseState, link: LinkState) {
+    if(state.selected==null) { FreeDashboard(activity,c,state,link); return }
     var picker by remember { mutableStateOf(false) }
     var finish by remember { mutableStateOf(false) }
     var stages by remember { mutableStateOf(false) }
+    var editPresets by rememberSaveable { mutableStateOf(false) }
     val focused by activity.focusTraining
     val floating by c.display.floatingEnabled.collectAsStateWithLifecycle()
     DisposableEffect(activity) {
@@ -119,7 +124,7 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
                         Spacer(Modifier.height(gapY))
                         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(outer), verticalArrangement = Arrangement.spacedBy(gap)) {
                             MetricPages(c, state, Modifier.fillMaxWidth(), false, short)
-                            ResistanceControls(activity, c, state, link, Modifier.fillMaxWidth(), false, short)
+                            ResistanceControls(activity, c, state, link, Modifier.fillMaxWidth(), false, short) { editPresets=true }
                         }
                     }
                     square -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(outer), verticalArrangement = Arrangement.spacedBy(gap)) {
@@ -127,8 +132,8 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
                         TrainingProgress(c, state, Modifier.fillMaxWidth().height(progressHeight), true, false) { stages = true }
                         val lowerHeight = (available - gap - progressHeight).coerceAtLeast(230.dp + (fontExtra * 100).dp)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                            MetricPages(c, state, Modifier.weight(1f).height(lowerHeight), true, false)
-                            ResistanceControls(activity, c, state, link, Modifier.weight(1f).heightIn(min = lowerHeight), true, false)
+                            MetricPages(c, state, Modifier.weight(1f).heightIn(min=lowerHeight), true, false)
+                            ResistanceControls(activity, c, state, link, Modifier.weight(1f).heightIn(min = lowerHeight), true, false) { editPresets=true }
                         }
                     }
                     wide -> Row(Modifier.fillMaxSize().padding(vertical = outer)) {
@@ -139,66 +144,62 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
                         if (vertical) Spacer(Modifier.width(gapX))
                         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = if (vertical) outer else gap / 2, end = outer), verticalArrangement = Arrangement.spacedBy(gap)) {
                             val metricHeight = ((available - gap) * .5f).coerceAtLeast((if (short) 102 else 224).dp + (fontExtra * 120).dp)
-                            MetricPages(c, state, Modifier.fillMaxWidth().height(metricHeight), !short, short)
-                            ResistanceControls(activity, c, state, link, Modifier.fillMaxWidth().heightIn(min = (available - gap - metricHeight).coerceAtLeast(if (short) 94.dp else 220.dp)), !short, short)
+                            MetricPages(c, state, Modifier.fillMaxWidth().heightIn(min=metricHeight), !short, short)
+                            ResistanceControls(activity, c, state, link, Modifier.fillMaxWidth().heightIn(min = (available - gap - metricHeight).coerceAtLeast(if (short) 94.dp else 220.dp)), !short, short) { editPresets=true }
                         }
                     }
                     else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(outer), verticalArrangement = Arrangement.spacedBy(gap)) {
                         val progressHeight = if (portraitTablet) ((available - gap * 2) * .53f).coerceAtLeast(390.dp + (fontExtra * 180).dp) else Dp.Unspecified
                         val metricHeight = if (portraitTablet) ((available - gap * 2) * .23f).coerceAtLeast(218.dp + (fontExtra * 100).dp) else Dp.Unspecified
                         TrainingProgress(c, state, if (portraitTablet) Modifier.height(progressHeight) else Modifier, portraitTablet, false) { stages = true }
-                        MetricPages(c, state, if (portraitTablet) Modifier.height(metricHeight) else Modifier, portraitTablet, false)
-                        ResistanceControls(activity, c, state, link, if (portraitTablet) Modifier.heightIn(min = available - gap * 2 - progressHeight - metricHeight) else Modifier, portraitTablet, false)
+                        MetricPages(c, state, if (portraitTablet) Modifier.heightIn(min=metricHeight) else Modifier, portraitTablet, false)
+                        ResistanceControls(activity, c, state, link, if (portraitTablet) Modifier.heightIn(min = available - gap * 2 - progressHeight - metricHeight) else Modifier, portraitTablet, false) { editPresets=true }
                     }
                 }
             }
-            WorkoutDock(state, floating, tablet && !short, c::pauseResume, { finish = true }, activity::minimize)
+            WorkoutDock(state, floating, tablet && !short, short, c.canStart(), c::pauseResume, { finish = true }, activity::minimize)
         }
     }
     if (picker) MetricPicker(c) { picker = false }
+    if(editPresets) ResistancePresetEditor(c,state) { editPresets=false }
     if (stages) StageDialog(state, c) { stages = false }
-    if (finish) AlertDialog(onDismissRequest = { finish = false }, title = { Text(stringResource(R.string.finish)) }, text = { Text(stringResource(R.string.finish_note)) }, confirmButton = { TextButton(onClick = { c.finish(); finish = false }) { Text(stringResource(R.string.finish)) } }, dismissButton = { TextButton(onClick = { finish = false }) { Text(stringResource(R.string.cancel)) } })
+    if(finish) FormDialog(stringResource(R.string.finish),{ finish=false },{ c.finish(); finish=false },confirmLabel=stringResource(R.string.finish)) { Text(stringResource(R.string.finish_note)) }
 }
 
-@Composable private fun WorkoutHeader(state: ExerciseState, link: LinkState, tablet: Boolean, short: Boolean, back: () -> Unit, display: () -> Unit) {
-    val displayDescription = stringResource(R.string.choose_metrics)
-    Row(Modifier.fillMaxWidth().height(if (short) 48.dp else if (tablet) 72.dp else 56.dp).padding(horizontal = if (tablet) 16.dp else 2.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = back) { Icon(Icons.Default.ArrowBack, stringResource(R.string.back_to_app), Modifier.size(if (tablet) 26.dp else 20.dp)) }
-        if (tablet) { VerticalDivider(Modifier.height(32.dp).padding(horizontal = 10.dp)); Spacer(Modifier.width(12.dp)) }
-        Text(stringResource(R.string.app_name), fontSize = if (tablet) 28.sp else 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-.5).sp, maxLines = 1)
-        BrandSignature(Modifier.padding(start = if (tablet) 18.dp else 8.dp).scale(if (tablet) 1f else .7f))
-        VerticalDivider(Modifier.height(if (tablet) 34.dp else 26.dp).padding(horizontal = if (tablet) 20.dp else 6.dp))
-        Box(Modifier.size(if (tablet) 12.dp else 7.dp).background(if (state.demo) Color(0xFFC5901F) else if (link.phase == "ready") Color(0xFF0BB45D) else MaterialTheme.colorScheme.error, CircleShape))
-        val machine = state.session?.machine ?: link.machine
-        val equipment = stringResource(when (machine) { Machine.ELLIPTICAL -> R.string.machine_elliptical; Machine.BIKE -> R.string.machine_bike; Machine.ROWER -> R.string.machine_rower; Machine.TREADMILL -> R.string.machine_treadmill; else -> R.string.devices })
-        val status = stringResource(if (state.demo) R.string.demo else if (link.phase == "ready") R.string.connected else R.string.disconnected)
-        Column(Modifier.weight(1f).padding(start = if (tablet) 8.dp else 4.dp)) {
-            Text(if (tablet) "$equipment · $status" else "$status · $equipment", fontSize = if (tablet) 13.sp else 9.sp, lineHeight = if (tablet) 17.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(R.string.local_only), fontSize = if (tablet) 13.sp else 9.sp, lineHeight = if (tablet) 17.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+@Composable internal fun WorkoutHeader(state: ExerciseState, link: LinkState, tablet: Boolean, short: Boolean, back: () -> Unit, display: () -> Unit) {
+    val displayDescription=stringResource(R.string.choose_metrics)
+    Row(Modifier.fillMaxWidth().heightIn(min=if(short) 48.dp else if(tablet) 64.dp else 56.dp).padding(horizontal=if(tablet) 12.dp else 2.dp),verticalAlignment=Alignment.CenterVertically) {
+        IconButton(onClick=back) { Icon(Icons.Default.ArrowBack,stringResource(R.string.back_to_app)) }
+        Row(Modifier.weight(1f),verticalAlignment=Alignment.CenterVertically) {
+            Text("OpenMOBI",Modifier.weight(1f,false),style=if(tablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,fontWeight=FontWeight.ExtraBold,maxLines=1)
+            BrandSignature(Modifier.padding(start=8.dp))
         }
-        TextButton(onClick = display, modifier = Modifier.semantics { contentDescription = displayDescription }, contentPadding = PaddingValues(horizontal = if (tablet) 8.dp else 5.dp), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) {
-            WorkoutIcon(WorkoutGlyph.DISPLAY, Modifier.size(if (tablet) 24.dp else 18.dp))
-            Spacer(Modifier.width(if (tablet) 10.dp else 4.dp))
-            Text(stringResource(R.string.configure_display), fontSize = if (tablet) 16.sp else 11.sp, maxLines = 1)
+        if(short || !tablet && LocalDensity.current.fontScale>1.15f) IconButton(onClick=display,modifier=Modifier.semantics { contentDescription=displayDescription }) { WorkoutIcon(WorkoutGlyph.DISPLAY,Modifier.size(24.dp)) }
+        else TextButton(onClick=display,modifier=Modifier.semantics { contentDescription=displayDescription }) {
+            WorkoutIcon(WorkoutGlyph.DISPLAY,Modifier.size(20.dp)); Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.configure_display),style=MaterialTheme.typography.labelLarge)
         }
     }
 }
 
-@Composable private fun WorkoutDock(state: ExerciseState, floating: Boolean, large: Boolean, pause: () -> Unit, finish: () -> Unit, minimize: () -> Unit) {
+@Composable internal fun WorkoutDock(state: ExerciseState, floating: Boolean, large: Boolean, short: Boolean, ready: Boolean, pause: () -> Unit, finish: () -> Unit, minimize: () -> Unit) {
     val minimizeDescription = stringResource(R.string.minimize)
+    val finishDescription = stringResource(if(state.controlOnly) R.string.disconnect_exit else R.string.finish_save)
+    val density = LocalDensity.current
+    val compactLabels = density.fontScale>=1.2f && (short || LocalWindowInfo.current.containerSize.width / density.density < 600f)
     Surface(color = MaterialTheme.colorScheme.surface) {
         Column {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(Modifier.fillMaxWidth().padding(horizontal = if (large) 20.dp else 10.dp, vertical = if (large) 12.dp else 8.dp), horizontalArrangement = Arrangement.spacedBy(if (large) 12.dp else 8.dp)) {
-                val height = if (large) 68.dp else 48.dp
+            Row(Modifier.fillMaxWidth().padding(horizontal = if (large) 20.dp else 10.dp, vertical = if(short) 2.dp else if (large) 10.dp else 8.dp).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(if (large) 12.dp else 8.dp)) {
+                val height = if (large) 60.dp else 48.dp
                 val shape = RoundedCornerShape(if (large) 12.dp else 9.dp)
-                Button(onClick = pause, modifier = Modifier.weight(1f).height(height).testTag("pause"), shape = shape, contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    DockContent(if (state.paused) WorkoutGlyph.PLAY else WorkoutGlyph.PAUSE, stringResource(if (state.paused) R.string.resume else R.string.pause_short), large)
+                Button(onClick = pause, enabled=ready && !state.starting, modifier = Modifier.weight(if(state.controlOnly) 1.4f else 1f).fillMaxHeight().heightIn(min=height).testTag("pause"), shape = shape, contentPadding = PaddingValues(horizontal = 6.dp)) {
+                    DockContent(if (state.controlOnly || state.paused) WorkoutGlyph.PLAY else WorkoutGlyph.PAUSE, stringResource(if(state.controlOnly) R.string.start_recording else if (state.paused) R.string.resume_recording else R.string.pause_short), large)
                 }
-                OutlinedButton(onClick = finish, modifier = Modifier.weight(1.15f).height(height).testTag("finish"), shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    DockContent(WorkoutGlyph.STOP, stringResource(R.string.finish), large)
+                if(!state.controlOnly || large || short) OutlinedButton(onClick = finish, modifier = Modifier.weight(1.15f).fillMaxHeight().heightIn(min=height).testTag("finish").semantics { contentDescription = finishDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), contentPadding = PaddingValues(horizontal = 6.dp)) {
+                    DockContent(WorkoutGlyph.STOP, if(compactLabels && !state.controlOnly) stringResource(R.string.finish_compact) else finishDescription, large)
                 }
-                if (floating) OutlinedButton(onClick = minimize, modifier = Modifier.weight(1f).height(height).testTag("float").semantics { contentDescription = minimizeDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
+                if (floating) OutlinedButton(onClick = minimize, modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min=height).testTag("float").semantics { contentDescription = minimizeDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
                     DockContent(WorkoutGlyph.FLOAT, stringResource(R.string.float_short), large)
                 }
             }
@@ -206,10 +207,8 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
     }
 }
 @Composable private fun RowScope.DockContent(glyph: WorkoutGlyph, label: String, large: Boolean) {
-    WorkoutIcon(glyph, Modifier.size(if (large) 24.dp else 16.dp))
-    Spacer(Modifier.width(if (large) 14.dp else 5.dp))
-    BasicText(label, Modifier.weight(1f, false), style = MaterialTheme.typography.labelLarge.copy(color = LocalContentColor.current, fontWeight = FontWeight.Medium, letterSpacing = 0.sp, lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified, textAlign = androidx.compose.ui.text.style.TextAlign.Center), maxLines = if (glyph == WorkoutGlyph.STOP) 2 else 1,
-        autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = if (large) 19.sp else 13.sp, stepSize = 1.sp))
+    if(LocalDensity.current.fontScale<1.2f) { WorkoutIcon(glyph,Modifier.size(if(large) 24.dp else 16.dp)); Spacer(Modifier.width(if(large) 10.dp else 4.dp)) }
+    Text(label,Modifier.weight(1f,false).padding(vertical=6.dp),style=if(large) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelLarge,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
 }
 
 @Composable private fun InstrumentPanel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -231,7 +230,9 @@ private fun workoutClock(ms: Long): String {
     InstrumentPanel(modifier.testTag("training-progress")) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val broad = spacious && maxWidth >= 500.dp
-            val large = broad && maxHeight >= 400.dp
+            // The larger stage cards need room for both timer and remaining time.
+            // A small tablet can be wide enough while its progress panel is short.
+            val large = broad && maxHeight >= 500.dp + ((LocalDensity.current.fontScale - 1f).coerceAtLeast(0f) * 180).dp
             val showAllStages = spacious && maxHeight >= 400.dp
             val pad = if (large) 18.dp else if (dense) 8.dp else 10.dp
             Column(Modifier.padding(pad).then(if (spacious) Modifier.fillMaxHeight() else Modifier), verticalArrangement = Arrangement.spacedBy(if (large) 10.dp else if (dense) 4.dp else 6.dp)) {
@@ -341,31 +342,33 @@ private fun workoutClock(ms: Long): String {
 
 @Composable private fun MetricPages(c: Controller, state: ExerciseState, modifier: Modifier, spacious: Boolean, dense: Boolean) {
     val selections by c.display.selections.collectAsStateWithLifecycle()
+    val machineSelections by c.display.byMachine.collectAsStateWithLifecycle()
+    val link by c.ble.state.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val chosen = selections.getValue(DisplayScope.TRAINING)
+    val chosen = remember(selections,machineSelections,link.machine,state.demo,state.demoMachine,state.session?.machine,state.controlOnly) { c.display.selected(DisplayScope.TRAINING,c.displayMachine(),state.controlOnly) }
     InstrumentPanel(modifier) {
         BoxWithConstraints {
-            val columns = if (maxWidth >= 410.dp || dense) 3 else 2
+            val columns = if(maxWidth/LocalDensity.current.fontScale<260.dp) 1 else if(maxWidth/LocalDensity.current.fontScale>=640.dp) 3 else 2
             val pageSize = columns * 2
             val pages = chosen.chunked(pageSize)
             val pager = rememberPagerState { pages.size }
             val scope = rememberCoroutineScope()
             val rows = (minOf(chosen.size, pageSize) + columns - 1) / columns
-            val rowHeight = (if (dense) 38 else if (spacious) 76 else 50).dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
-            Column(Modifier.then(if (spacious || dense) Modifier.fillMaxHeight() else Modifier)) {
+            val rowHeight = (if (dense) 90 else 100).dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
+            Column {
                 Row(Modifier.fillMaxWidth().heightIn(min = if (dense) 24.dp else if (spacious) 40.dp else 30.dp).padding(start = if (spacious) 18.dp else 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.workout_metrics), Modifier.weight(1f), fontSize = if (spacious) 17.sp else 13.sp, lineHeight = if (spacious) 22.sp else 18.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                    Text(stringResource(R.string.workout_metrics), Modifier.weight(1f), fontSize = if (spacious) 17.sp else 13.sp, lineHeight = if (spacious) 22.sp else 18.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     if (pages.size > 1) {
                         Text("${pager.currentPage + 1} / ${pages.size}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                            IconButton(onClick = { scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) } }, enabled = pager.currentPage > 0, modifier = Modifier.size(30.dp)) { Icon(Icons.Default.KeyboardArrowLeft, stringResource(R.string.previous_metrics), Modifier.size(18.dp)) }
-                            IconButton(onClick = { scope.launch { pager.animateScrollToPage((pager.currentPage + 1).coerceAtMost(pages.lastIndex)) } }, enabled = pager.currentPage < pages.lastIndex, modifier = Modifier.size(30.dp)) { Icon(Icons.Default.KeyboardArrowRight, stringResource(R.string.next_metrics), Modifier.size(18.dp)) }
+                            IconButton(onClick = { scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) } }, enabled = pager.currentPage > 0, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.KeyboardArrowLeft, stringResource(R.string.previous_metrics), Modifier.size(18.dp)) }
+                            IconButton(onClick = { scope.launch { pager.animateScrollToPage((pager.currentPage + 1).coerceAtMost(pages.lastIndex)) } }, enabled = pager.currentPage < pages.lastIndex, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.KeyboardArrowRight, stringResource(R.string.next_metrics), Modifier.size(18.dp)) }
                         }
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                HorizontalPager(state = pager, modifier = if (spacious) Modifier.weight(1f) else Modifier.height(rowHeight * rows), verticalAlignment = Alignment.Top) { page ->
+                HorizontalPager(state = pager, modifier = Modifier.height(rowHeight * rows), verticalAlignment = Alignment.Top) { page ->
                     Column(Modifier.fillMaxSize()) {
                         repeat(rows) { row ->
                             if (row > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -385,21 +388,16 @@ private fun workoutClock(ms: Long): String {
     }
 }
 @Composable private fun MetricTile(r: MetricReading, modifier: Modifier, spacious: Boolean, dense: Boolean) {
-    Column(modifier.padding(horizontal = if (spacious) 18.dp else 10.dp, vertical = if (dense) 2.dp else 5.dp), verticalArrangement = Arrangement.Center) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicText(r.label, Modifier.weight(1f, false), style = TextStyle(color = MaterialTheme.colorScheme.onSurfaceVariant), maxLines = 1, autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = if (spacious) 15.sp else if (dense) 9.sp else 11.sp, stepSize = 1.sp))
-            if (r.estimated) Text(" ≈", fontSize = if (spacious) 13.sp else if (dense) 9.sp else 10.sp, lineHeight = if (spacious) 18.sp else if (dense) 11.sp else 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f))
-        }
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(if (spacious) 5.dp else 3.dp)) {
-            NumberText(r.value, if (spacious) 38 else if (dense) 19 else 25, Modifier.weight(1f, false))
-            if (r.unit.isNotEmpty()) Text(r.unit, Modifier.padding(bottom = if (spacious) 4.dp else 2.dp), fontSize = if (spacious) 17.sp else if (dense) 9.sp else 11.sp, lineHeight = if (spacious) 21.sp else if (dense) 12.sp else 14.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-        }
+    Column(modifier.padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.Center) {
+        Text(r.label+(if(r.estimated) " ≈" else ""),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        NumberText(r.value,if(spacious) 36 else 28,Modifier.fillMaxWidth())
+        if(r.unit.isNotEmpty()) Text(r.unit,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-@Composable private fun ResistanceControls(activity: MainActivity, c: Controller, state: ExerciseState, link: LinkState, modifier: Modifier, spacious: Boolean, dense: Boolean) {
+@Composable internal fun ResistanceControls(activity: MainActivity, c: Controller, state: ExerciseState, link: LinkState, modifier: Modifier, spacious: Boolean, dense: Boolean,editPresets: ()->Unit) {
     val range = c.range()
-    val can = state.demo || (link.writable && range != null && link.metrics.resistance != null && !link.busy && link.phase == "ready")
+    val can = !state.starting && (state.demo || (link.writable && range != null && c.controlResistance() != null && !link.busy && link.phase == "ready"))
     var sliding by remember { mutableStateOf<Float?>(null) }
     var help by remember { mutableStateOf(false) }
     val pending = state.pendingResistance ?: link.requested
@@ -407,27 +405,27 @@ private fun workoutClock(ms: Long): String {
     InstrumentPanel(modifier) {
         Column(Modifier.padding(horizontal = if (spacious) 18.dp else 12.dp, vertical = if (spacious) 12.dp else 4.dp), verticalArrangement = if (spacious) Arrangement.SpaceBetween else Arrangement.Top) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.resistance_control), Modifier.weight(1f), fontSize = if (spacious) 17.sp else 13.sp, lineHeight = if (spacious) 22.sp else 18.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(stringResource(if(link.resistanceFeedback || state.demo) R.string.resistance_control else R.string.resistance_commanded), Modifier.weight(1f), fontSize = if (spacious) 18.sp else 16.sp, lineHeight = if (spacious) 24.sp else 22.sp, fontWeight = FontWeight.Medium)
                 if (state.selected != null && !state.done) {
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                        Switch(checked = automatic, onCheckedChange = c::automaticControl, enabled = can, modifier = Modifier.width(44.dp).height(34.dp).scale(.7f).semantics { contentDescription = activity.getString(R.string.auto) })
+                        Switch(checked = automatic, onCheckedChange = c::automaticControl, enabled = can, modifier = Modifier.size(48.dp).semantics { contentDescription = activity.getString(R.string.auto) })
                     }
                     Column(Modifier.widthIn(max = if (spacious) 130.dp else 90.dp)) {
                         Text(stringResource(R.string.automatic_mode), fontSize = if (spacious) 12.sp else 10.sp, lineHeight = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (spacious) Text(stringResource(R.string.follows_plan), fontSize = 10.sp, lineHeight = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                     }
                 }
-                if (spacious) IconButton(onClick = { help = true }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Info, stringResource(R.string.resistance_feedback_help), Modifier.size(18.dp)) }
+                if (spacious) IconButton(onClick = { help = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.Info, stringResource(if(link.resistanceFeedback) R.string.resistance_feedback_help else R.string.resistance_commanded_help), Modifier.size(18.dp)) }
             }
             if (dense && range != null && range.max > range.min) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     ResistanceButton(false, can, false, activity) { c.adjust(-1) }
                     Column(Modifier.width(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        NumberText(WorkoutService.number(state.metrics.resistance), 20)
-                        Text(state.metrics.resistance?.let { "${range.percentage(it)}%" } ?: "—", fontSize = 10.sp, lineHeight = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        NumberText(WorkoutService.number(c.controlResistance()), 20)
+                        Text(c.controlResistance()?.let { "${range.percentage(it)}%" } ?: "—", fontSize = 10.sp, lineHeight = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Column(Modifier.weight(1f)) {
-                        val value = (sliding ?: (pending ?: state.metrics.resistance ?: range.min).toFloat()).coerceIn(range.min.toFloat(), range.max.toFloat())
+                        val value = (sliding ?: (pending ?: c.controlResistance() ?: range.min).toFloat()).coerceIn(range.min.toFloat(), range.max.toFloat())
                         ResistanceSlider(range, value, can, false, change = { sliding = it }, finish = { sliding?.let { c.adjustTo(it.toDouble()) }; sliding = null })
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(WorkoutService.number(range.min), fontSize = 9.sp, lineHeight = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -440,14 +438,15 @@ private fun workoutClock(ms: Long): String {
             Row(Modifier.fillMaxWidth().heightIn(min = if (spacious) 116.dp else if (dense) 52.dp else 60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
                 ResistanceButton(false, can, spacious, activity) { c.adjust(-1) }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    BasicText(stringResource(R.string.resistance_level, WorkoutService.number(state.metrics.resistance)), Modifier.padding(horizontal = 6.dp), maxLines = 1,
-                        style = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold), autoSize = TextAutoSize.StepBased(minFontSize = 15.sp, maxFontSize = if (spacious) 38.sp else 24.sp, stepSize = 1.sp))
-                    Text(state.metrics.resistance?.let { range?.percentage(it)?.let { p -> "$p%" } } ?: "—", fontSize = if (spacious) 21.sp else 14.sp, lineHeight = if (spacious) 27.sp else 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    BasicText(stringResource(R.string.resistance_level, WorkoutService.number(c.controlResistance())), Modifier.padding(horizontal = 6.dp), maxLines = 1,
+                        style = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold), autoSize = TextAutoSize.StepBased(minFontSize = 15.sp, maxFontSize = if (spacious) 38.sp else 32.sp, stepSize = 1.sp))
+                    Text((if(LocalDensity.current.fontScale<=1.3f) stringResource(if(link.resistanceFeedback || state.demo) R.string.actual_resistance else R.string.set_resistance)+" · " else "")+(c.controlResistance()?.let { range?.percentage(it)?.let { p -> "$p%" } } ?: "—"),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
                 }
                 ResistanceButton(true, can, spacious, activity) { c.adjust(1) }
             }
+            if(LocalDensity.current.fontScale>1.3f) Text(stringResource(if(link.resistanceFeedback || state.demo) R.string.actual_resistance else R.string.set_resistance),Modifier.fillMaxWidth(),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
             if (range != null && range.max > range.min) {
-                val value = (sliding ?: (pending ?: state.metrics.resistance ?: range.min).toFloat()).coerceIn(range.min.toFloat(), range.max.toFloat())
+                val value = (sliding ?: (pending ?: c.controlResistance() ?: range.min).toFloat()).coerceIn(range.min.toFloat(), range.max.toFloat())
                 ResistanceSlider(range, value, can, spacious, change = { sliding = it }, finish = { sliding?.let { c.adjustTo(it.toDouble()) }; sliding = null })
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(WorkoutService.number(range.min), fontSize = if (spacious) 12.sp else 10.sp, lineHeight = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -458,17 +457,18 @@ private fun workoutClock(ms: Long): String {
             }
             }
             if (link.controlTimedOut) Text(stringResource(R.string.control_no_feedback), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-            if (!can || pending != null) Text(if (pending != null) stringResource(R.string.control_pending, WorkoutService.number(pending)) else stringResource(R.string.control_unavailable), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!can || pending != null) Text(if (pending != null) stringResource(R.string.control_pending, WorkoutService.number(pending)) else stringResource(R.string.control_unavailable), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ResistancePresets(c,state,link,editPresets)
         }
     }
-    if (help) AlertDialog(onDismissRequest = { help = false }, title = { Text(stringResource(R.string.resistance_control)) }, text = { Text(stringResource(R.string.resistance_feedback_help)) }, confirmButton = { TextButton(onClick = { help = false }) { Text(stringResource(R.string.close)) } })
+    if (help) AlertDialog(onDismissRequest = { help = false }, title = { Text(stringResource(R.string.resistance_control)) }, text = { Text(stringResource(if(link.resistanceFeedback) R.string.resistance_feedback_help else R.string.resistance_commanded_help)) }, confirmButton = { TextButton(onClick = { help = false }) { Text(stringResource(R.string.close)) } })
 }
 @Composable private fun ResistanceSlider(range: ResistanceRange, value: Float, enabled: Boolean, spacious: Boolean, modifier: Modifier = Modifier, change: (Float) -> Unit, finish: () -> Unit) {
     val label = stringResource(R.string.resistance_slider)
     val fraction = ((value - range.min) / (range.max - range.min)).toFloat()
     val segments = (((range.max - range.min) / range.increment).toInt() + 1).coerceIn(2, 100)
     Slider(value = value, onValueChange = change, onValueChangeFinished = finish, valueRange = range.min.toFloat()..range.max.toFloat(), steps = (segments - 2).coerceAtLeast(0), enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(32.dp).semantics { contentDescription = label },
+        modifier = modifier.fillMaxWidth().heightIn(min=48.dp).semantics { contentDescription = label },
         thumb = {
             Box(Modifier.size(if (spacious) 30.dp else 24.dp).background(MaterialTheme.colorScheme.surface, CircleShape).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape).padding(4.dp).background(if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape))
         }, track = {
@@ -496,19 +496,28 @@ private fun workoutClock(ms: Long): String {
     }, confirmButton = { TextButton(onClick = close) { Text(stringResource(R.string.close)) } })
 }
 @Composable internal fun MetricPicker(c: Controller,initialScope: DisplayScope=DisplayScope.TRAINING,close: ()->Unit) {
+    val state by c.state.collectAsStateWithLifecycle()
+    val link by c.ble.state.collectAsStateWithLifecycle()
+    val machine=if(state.demo) state.demoMachine else link.machine.takeIf { it!=Machine.UNKNOWN } ?: state.session?.machine ?: Machine.UNKNOWN
     var selectedScope by remember(initialScope) { mutableStateOf(initialScope) }
-    val draft=remember { mutableStateMapOf<DisplayScope,List<MetricId>>().apply { putAll(c.display.selections.value) } }
+    val listState=remember(machine,selectedScope) { LazyListState() }
+    val draft=remember(machine) { mutableStateMapOf<DisplayScope,List<MetricId>>().apply { DisplayScope.entries.forEach { put(it,c.display.selected(it,machine,state.controlOnly,freeRecording=state.session!=null && state.selected==null)) } } }
     val labels=listOf(R.string.training_screen,R.string.compact_panel,R.string.expanded_panel)
     Dialog(onDismissRequest=close,properties=DialogProperties(usePlatformDefaultWidth=false)) {
-        Surface(Modifier.widthIn(max=560.dp).fillMaxWidth(.94f).fillMaxHeight(.9f),shape=RoundedCornerShape(28.dp)) {
+        Surface(Modifier.widthIn(max=560.dp).fillMaxWidth(.94f).fillMaxHeight(.9f).testTag("metric-picker"),shape=RoundedCornerShape(28.dp)) {
             Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.choose_metrics),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
-                FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) { DisplayScope.entries.forEachIndexed { i,scope ->
-                    FilterChip(selectedScope==scope,{ selectedScope=scope },label={ Text(stringResource(labels[i]),style=MaterialTheme.typography.labelMedium) })
-                } }
-                Text(stringResource(R.string.metric_selection_help,selectedScope.limit),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 val chosen=draft.getValue(selectedScope)
-                LazyColumn(Modifier.weight(1f)) {
+                LazyColumn(Modifier.weight(1f).testTag("metric-choices"),state=listState) {
+                    item(key="context") {
+                        Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                            Text(machineName(machine),style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary)
+                            FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) { DisplayScope.entries.forEachIndexed { i,scope ->
+                                FilterChip(selectedScope==scope,{ selectedScope=scope },label={ Text(stringResource(labels[i]),style=MaterialTheme.typography.labelMedium) })
+                            } }
+                            Text(stringResource(R.string.metric_selection_help,selectedScope.limit),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     items(chosen,key={ it.name }) { id -> val i=chosen.indexOf(id)
                         Row(verticalAlignment=Alignment.CenterVertically) {
                             Checkbox(true,{ if(chosen.size>1) draft[selectedScope]=chosen-id },enabled=chosen.size>1)
@@ -518,16 +527,16 @@ private fun workoutClock(ms: Long): String {
                         }
                     }
                     item { HorizontalDivider(Modifier.padding(vertical=8.dp)) }
-                    items(MetricId.entries.filter { it !in chosen },key={ it.name }) { id ->
+                    items(MetricCatalog.forMachine(machine).filter { it !in chosen },key={ it.name }) { id ->
                         Row(Modifier.fillMaxWidth().heightIn(min=48.dp).clickable(enabled=chosen.size<selectedScope.limit) { draft[selectedScope]=chosen+id },verticalAlignment=Alignment.CenterVertically) {
                             Checkbox(false,{ draft[selectedScope]=chosen+id },enabled=chosen.size<selectedScope.limit)
                             Text(stringResource(metricLabel(id)),style=MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
+                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
                     TextButton(onClick=close) { Text(stringResource(R.string.cancel)) }
-                    Button(onClick={ draft.forEach { (scope,values) -> c.display.save(scope,values) }; close() }) { Text(stringResource(R.string.save)) }
+                    Button(onClick={ draft.forEach { (scope,values) -> c.display.save(scope,values,machine) }; close() }) { Text(stringResource(R.string.save)) }
                 }
             }
         }

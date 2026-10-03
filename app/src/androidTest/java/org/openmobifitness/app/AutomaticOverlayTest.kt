@@ -69,7 +69,7 @@ class AutomaticOverlayTest {
             assertEquals(largeBounds,device.findObject(By.desc(expanded)).visibleBounds)
             device.findObject(By.desc(open)).click()
             awaitState { foreground()?.hasWindowFocus()==true }
-            assertNotNull(device.wait(Until.findObject(By.text(activity.getString(R.string.finish))),30_000))
+            assertNotNull(device.wait(Until.findObject(By.text(activity.getString(R.string.finish_save))),30_000))
             assertEquals(id,c.state.value.session!!.id)
             assertFalse(device.hasObject(By.desc(expand)))
             instrumentation.runOnMainSync { c.display.automaticFloating(false) }

@@ -173,7 +173,7 @@ import java.time.format.DateTimeFormatter
         Text(stringResource(R.string.machine_type),fontWeight=FontWeight.Bold)
         FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             FilterChip(selected=machine.isEmpty(),onClick={ machine="" },label={ Text(stringResource(R.string.all_items)) })
-            listOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.TREADMILL).forEach { m -> FilterChip(selected=machine==m.name,onClick={ machine=m.name },label={ Text(machineName(m)) }) }
+            listOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.TREADMILL,Machine.JUMP_ROPE,Machine.DUMBBELL).forEach { m -> FilterChip(selected=machine==m.name,onClick={ machine=m.name },label={ Text(machineName(m)) }) }
         }
         Text(stringResource(R.string.source_data),fontWeight=FontWeight.Bold)
         FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) { listOf(R.string.all_items,R.string.real_data,R.string.demo).forEachIndexed { i,id -> FilterChip(selected=source==i,onClick={ source=i },label={ Text(stringResource(id)) }) } }

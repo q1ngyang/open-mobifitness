@@ -10,7 +10,19 @@ import org.openmobifitness.core.*
 import java.time.Instant
 
 class Repository(context: Context) {
+    private val preferences=context.getSharedPreferences("preferences",Context.MODE_PRIVATE)
     companion object {
+        val MIGRATION_6_7=object: androidx.room.migration.Migration(6,7) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS preference_restore (id INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY(id))")
+            }
+        }
+        val MIGRATION_5_6=object: androidx.room.migration.Migration(5,6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                listOf("jumpCount","continuousJumps","jumpInterruptions","repetitions","deviceDurationSec","dumbbellFewActions","dumbbellActionNumber").forEach { db.execSQL("ALTER TABLE samples ADD COLUMN $it INTEGER") }
+                db.execSQL("ALTER TABLE samples ADD COLUMN loadKg REAL")
+            }
+        }
         val MIGRATION_4_5=object: androidx.room.migration.Migration(4,5) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE sessions ADD COLUMN energyModel TEXT NOT NULL DEFAULT ''")
@@ -41,22 +53,29 @@ class Repository(context: Context) {
             }
         }
     }
-    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5).build()
+    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7).build()
     private val dao get() = db.records()
     val revision = MutableStateFlow(0L)
     val history by lazy { HistoryStore(db) }
     val sessions = MutableStateFlow<List<Session>>(emptyList())
     val workouts = MutableStateFlow<List<Workout>>(emptyList())
     suspend fun load() = withContext(Dispatchers.IO) {
+        recoverPreferences()
         db.runInTransaction {
             dao.activeSessions().forEach { it.status="interrupted"; it.end=Instant.now().toString(); dao.session(it) }
         }
         refresh()
     }
-    private fun refresh() {
+    internal fun refresh() {
         revision.update { it+1 }
         sessions.value=dao.recentSessions().map { it.model() }
         workouts.value=dao.workouts().map { Exchange.parse(it.csv).workouts.single() }
+    }
+    internal fun recoverPreferences() {
+        dao.pendingPreferences()?.let { pending ->
+            check(PortablePreferences.apply(preferences,pending.json)) { "preference_restore_pending" }
+            dao.clearPendingPreferences()
+        }
     }
     suspend fun save(session: Session, sample: Sample? = null) = withContext(Dispatchers.IO) {
         db.runInTransaction {
@@ -118,9 +137,10 @@ internal fun Session.row() = SessionRow().also {
     it.caloriesKcal=caloriesKcal; it.caloriesEstimated=caloriesEstimated; it.distanceEstimated=distanceEstimated; it.weightKg=weightKg; it.met=met; it.energyModel=energyModel
 }
 internal fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met,workoutId,workoutTitle,archived,energyModel)
-private fun Sample.row() = SampleRow().also { s ->
+internal fun Sample.row() = SampleRow().also { s ->
     s.sessionId=sessionId; s.elapsedMs=elapsedMs
     metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes
-        s.caloriesKcal=it.caloriesKcal; s.inclinePercent=it.inclinePercent; s.strideM=it.strideM; s.forceN=it.forceN; s.stepRate=it.stepRate; s.stepCount=it.stepCount; s.targetCadence=it.targetCadence; s.powerEstimated=it.powerEstimated }
+        s.caloriesKcal=it.caloriesKcal; s.inclinePercent=it.inclinePercent; s.strideM=it.strideM; s.forceN=it.forceN; s.stepRate=it.stepRate; s.stepCount=it.stepCount; s.targetCadence=it.targetCadence; s.powerEstimated=it.powerEstimated
+        s.jumpCount=it.jumpCount; s.continuousJumps=it.continuousJumps; s.jumpInterruptions=it.jumpInterruptions; s.repetitions=it.repetitions; s.loadKg=it.loadKg; s.deviceDurationSec=it.deviceDurationSec; s.dumbbellFewActions=it.dumbbellFewActions; s.dumbbellActionNumber=it.dumbbellActionNumber }
 }
-internal fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes,caloriesKcal,inclinePercent,strideM,forceN,stepRate,stepCount,targetCadence,powerEstimated))
+internal fun SampleRow.model() = Sample(sessionId,elapsedMs,Metrics(cadence,resistance,speedMps,distanceM,heartBpm,powerW,strokes,caloriesKcal,inclinePercent,strideM,forceN,stepRate,stepCount,targetCadence,powerEstimated,jumpCount,continuousJumps,jumpInterruptions,repetitions,loadKg,deviceDurationSec,dumbbellFewActions,dumbbellActionNumber))

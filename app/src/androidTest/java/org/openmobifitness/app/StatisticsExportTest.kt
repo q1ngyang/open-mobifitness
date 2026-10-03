@@ -8,6 +8,8 @@ import org.junit.Test
 import org.junit.Assert.*
 import org.openmobifitness.app.data.HistoryQuery
 import org.openmobifitness.core.*
+import java.io.File
+import java.util.Locale
 import java.util.regex.Pattern
 
 class StatisticsExportTest {
@@ -20,7 +22,8 @@ class StatisticsExportTest {
         val device=UiDevice.getInstance(instrumentation); Configurator.getInstance().waitForIdleTimeout=100
         val name="$token.csv"
         try { ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { it.exportReport(HistoryQuery(search=token)) }
+            var reportLocale=Locale.getDefault()
+            scenario.onActivity { reportLocale=it.resources.configuration.locales[0]; it.exportReport(HistoryQuery(search=token)) }
             assertNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText")),30_000))
             device.findObject(By.desc("Show roots"))?.let { roots -> roots.click(); val downloads=device.findObject(UiSelector().resourceId("android:id/title").text("Downloads")); assertTrue(downloads.waitForExists(10_000)); downloads.click(); device.wait(Until.gone(By.text("Save to")),10_000) }
             device.wait(Until.findObject(By.clazz("android.widget.EditText")),10_000).text=name
@@ -34,7 +37,13 @@ class StatisticsExportTest {
                 if(!content.contains(token)) Thread.sleep(200)
             } while(!content.contains(token) && android.os.SystemClock.elapsedRealtime()<deadline)
             val rows=Csv.read(content)
-            assertEquals(2,rows.size); assertTrue(rows[1].contains(token)); assertTrue(rows[1].contains("00:40:11")); assertTrue(content.contains("kcal")); assertFalse(content.contains("elapsed_ms")); assertTrue(rows[1].contains("149.0"))
+            File(instrumentation.targetContext.getExternalFilesDir(null),"statistics-export.csv").writeText(content)
+            assertEquals(2,rows.size)
+            assertTrue("Only the requested fixture is exported",rows[1].contains(token))
+            assertTrue("Readable elapsed time is preserved",rows[1].contains("00:40:11"))
+            assertTrue("Energy header includes its unit",content.contains("kcal"))
+            assertFalse("This is the readable report, not the raw interchange",content.contains("elapsed_ms"))
+            assertTrue("Heart rate follows the selected report locale $reportLocale",rows[1].contains(String.format(reportLocale,"%.1f",149.0)))
         } } finally { runBlocking { c.repo.deleteSession(s.id) }; instrumentation.uiAutomation.executeShellCommand("rm /sdcard/Download/$name").close() }
     }
 }

@@ -22,10 +22,10 @@ class LegacyPowerTest {
         assertEquals(0.0,Protocols.v1Metrics(frame(0,12))!!.powerW!!,0.0)
         for(level in listOf(0,25,255)) assertNull(Protocols.v1Metrics(frame(500,level))!!.powerW)
         assertNull(Protocols.v1Metrics(frame(500,12,99))!!.powerW)
-        assertNull(Protocols.v1Metrics(frame(1,12))!!.powerW)
+        assertEquals(85.0,Protocols.v1Metrics(frame(1,12))!!.powerW!!,0.0) // Official BaseHandler substitutes 30 rpm for an out-of-range elliptical pulse rate.
         assertNull(Protocols.v1Metrics(frame(500,12).copyOf(11))!!.powerW)
         val good=Protocols.v1Metrics(frame(500,12))!!
-        assertNull(good.merge(Protocols.v1Metrics(frame(1,12))!!).powerW)
+        assertEquals(85.0,good.merge(Protocols.v1Metrics(frame(1,12))!!).powerW!!,0.0)
         val measured=good.merge(Metrics(powerW=72.0))
         assertEquals(72.0,measured.powerW!!,0.0); assertFalse(measured.powerEstimated)
         assertTrue(good.merge(Metrics(heartBpm=120)).powerEstimated)
@@ -34,11 +34,11 @@ class LegacyPowerTest {
         val id=Session().id
         val sample=Sample(id,1000,Protocols.v1Metrics(frame(500,12))!!)
         assertEquals(listOf(sample),Exchange.parse(Exchange.samples(listOf(sample))).samples)
-        val edge=Sample(id,2000,Protocols.v1Metrics(frame(100,24))!!)
+        val edge=Sample(id,2000,Metrics(powerW=40000.0,powerEstimated=true)) // Imported high-power samples retain provenance without tying validation to one model.
         assertTrue(edge.metrics.powerW!!>32767)
         assertEquals(listOf(edge),Exchange.parse(Exchange.samples(listOf(edge))).samples)
         val rows=Csv.read(Exchange.samples(listOf(sample)))
-        val legacy=Csv.write(listOf(rows[0].dropLast(1),rows[1].dropLast(1).toMutableList().apply { this[0]="2" }))
+        val legacy=Csv.write(listOf(rows[0].take(17),rows[1].take(17).toMutableList().apply { this[0]="2" }))
         assertFalse(Exchange.parse(legacy).samples.single().metrics.powerEstimated)
         assertEquals(235.0,Exchange.parse(legacy).samples.single().metrics.powerW!!,0.0)
     }

@@ -1,0 +1,161 @@
+{
+  "reference_apks": [
+    {
+      "version": "international 2.1.14",
+      "sha256": "1bd01d47b07ca73235354c6a9b7d0cbf26d60d88fd0b8ca8b7ef0e47128775d8"
+    },
+    {
+      "version": "Chinese 4.5.16.1",
+      "sha256": "99af8aeb883d56bd724ebdadd1114caf79ab7bef34c4b96488d0c2ced7be19e4"
+    }
+  ],
+  "environment": "Android 14 x86_64 emulator; original DEX loaded by app_process; no vendor APK installation or physical BLE I/O",
+  "input_kind": "synthetic; not hardware captures",
+  "requests_per_apk": 1663,
+  "both_versions_same_tables": true,
+  "cases": [
+    {
+      "file": "tools/protocol-oracle/alternate-cases.jsonl",
+      "sha256": "c4bb4c2d2fac615d3f340834456569c1a5adedde8549b96b5c41b911d4eb1b3e",
+      "requests": 532
+    },
+    {
+      "file": "tools/protocol-oracle/cases.jsonl",
+      "sha256": "54b7637a9c5541f1c7fe41008eb88312698f016a876f6590234c95781aa1cc55",
+      "requests": 640
+    },
+    {
+      "file": "tools/protocol-oracle/command-cases.jsonl",
+      "sha256": "075274e2ff3f1143e5efd374b71ebd637473e2da7ac7000fc97e9f47532f046d",
+      "requests": 183
+    },
+    {
+      "file": "tools/protocol-oracle/equipment-cases.jsonl",
+      "sha256": "8f44834a47e28423cf2bf31fd009363def459cd5d995665eee013f330b07e9ad",
+      "requests": 6
+    },
+    {
+      "file": "tools/protocol-oracle/resistance-cases.jsonl",
+      "sha256": "bccf28dc7d417d7181013d69e95bf46d46b79b54d5aef14842d44e4d7424c431",
+      "requests": 20
+    },
+    {
+      "file": "tools/protocol-oracle/status-cases.jsonl",
+      "sha256": "f1e209ec2aeaa80f6950cf79fa3a70c3776ad190e13459ec9cb7f673d6283427",
+      "requests": 266
+    },
+    {
+      "file": "tools/protocol-oracle/fold-cases.jsonl",
+      "sha256": "955231c89009e281c9d11d03e0a81cc8aed6c8017a7d72506d70ec2f1173cf63",
+      "requests": 8
+    },
+    {
+      "file": "tools/protocol-oracle/ftms-handler-cases.jsonl",
+      "sha256": "fdb38ee6fde560ecf792edb916e4c7acb5e2e2cd994a7b433885f460400891fa",
+      "requests": 4
+    },
+    {
+      "file": "tools/protocol-oracle/interaction-cases.jsonl",
+      "sha256": "cbb929a160776f1ce7cfac19ce427b218b516dc87635bf28d2ff964865ad6059",
+      "requests": 1
+    },
+    {
+      "file": "tools/protocol-oracle/ftms-status-cases.jsonl",
+      "sha256": "f1c1da49c2c0d3accb568b35a5e287652a649e3a7c45e5bc2cbd3f0de059aeb5",
+      "requests": 3
+    }
+  ],
+  "tables": [
+    {
+      "file": "core/src/test/resources/oracle/alternate-intl-2.1.14.tsv",
+      "sha256": "d9d9e53ac11749606ce0c87dbc1becfe72bf8599424ea531ee1e9c0b06f9cf6e",
+      "rows": 504
+    },
+    {
+      "file": "core/src/test/resources/oracle/commands-intl-2.1.14.tsv",
+      "sha256": "26a362430b40a584031bbf5f1c1ad4304e5d3f04e4d8f9f395cf804c9c36c30a",
+      "rows": 183
+    },
+    {
+      "file": "core/src/test/resources/oracle/equipment-intl-2.1.14.tsv",
+      "sha256": "00a500d9dcf2b022334ef7614e6c7d32e8e078da97b9fdca6c39edd4d3f0f7db",
+      "rows": 1662
+    },
+    {
+      "file": "core/src/test/resources/oracle/fold-intl-2.1.14.tsv",
+      "sha256": "e4c74c35085d401160c170e0e1e317a11891822c44d42bf6741761d67523f89f",
+      "rows": 8
+    },
+    {
+      "file": "core/src/test/resources/oracle/ftms-handler-intl-2.1.14.tsv",
+      "sha256": "44bafd1d0ad897c0105e9ff1aa6bd328e89701ed8da11b3779e7ba6947551c81",
+      "rows": 1088
+    },
+    {
+      "file": "core/src/test/resources/oracle/ftms-intl-2.1.14.tsv",
+      "sha256": "bb6ff5402aa9e6542d54ebcad2fb9fa2bb9030839c60cfd5531562226f609354",
+      "rows": 3338
+    },
+    {
+      "file": "core/src/test/resources/oracle/ftms-status-intl-2.1.14.tsv",
+      "sha256": "9b51af19edf267f937cbb9b50517f913bb1dceaa25351cbeae71237529a68be6",
+      "rows": 19
+    },
+    {
+      "file": "core/src/test/resources/oracle/interactions-intl-2.1.14.tsv",
+      "sha256": "48c51a6007387d54288ccde32d3b62c57ca05db2662d3a1fb941a1cc570dcfab",
+      "rows": 42
+    },
+    {
+      "file": "core/src/test/resources/oracle/packets-intl-2.1.14.tsv",
+      "sha256": "978e8cb90a2e2af0b54992e6808d45eb904e20f82f82c020a6834532a259ab5b",
+      "rows": 5564
+    },
+    {
+      "file": "core/src/test/resources/oracle/power-intl-2.1.14.tsv",
+      "sha256": "328d8bbcf8e47df81abbfd38981c32f3cda6dc834d8b2b966d8ee28cbf6c68f1",
+      "rows": 504
+    },
+    {
+      "file": "core/src/test/resources/oracle/profiles-intl-2.1.14.tsv",
+      "sha256": "09e7db28bd94bf43336c3bb702c8a8e14fd01e317a2eacd02d338c0a042dc8b4",
+      "rows": 33
+    },
+    {
+      "file": "core/src/test/resources/oracle/resistance-intl-2.1.14.tsv",
+      "sha256": "d05f6c0db9d159b87cb9dadee6d281ad818118ca9b9aeeaf8d4d0022afbd4f4e",
+      "rows": 680
+    },
+    {
+      "file": "core/src/test/resources/oracle/row-math-intl-2.1.14.tsv",
+      "sha256": "ae7d84503bf799b3afe0a14247f4d277d161112ce4c43cb870a8ef36ad4cadc0",
+      "rows": 28
+    },
+    {
+      "file": "core/src/test/resources/oracle/rowing-intl-2.1.14.tsv",
+      "sha256": "b761caad24aeaf052615935cf225059a86ef8516d8e44b24cdc37ee5ed03be3a",
+      "rows": 2363
+    },
+    {
+      "file": "core/src/test/resources/oracle/status-intl-2.1.14.tsv",
+      "sha256": "9da4aa79fa1b16794dd2c17380988783a207c83e9fac4ab5d039deda7daea79b",
+      "rows": 2192
+    },
+    {
+      "file": "core/src/test/resources/oracle/wire-intl-2.1.14.tsv",
+      "sha256": "3aa3ab951fe28aefea79d3b1a78b6c43240995bb34e6d51e6782134118ae079a",
+      "rows": 256
+    }
+  ],
+  "v011_baseline": {
+    "version": "OpenMOBI 0.1.1 debug",
+    "commit": "78b3c27a434eec5bc5cdb807be967328df352660",
+    "apk_sha256": "441a564b7e879f76813de6cf806d5f3b0b5bfca2a17910d83a6c5f73e74ed950",
+    "corpus_file": "tools/protocol-oracle/v011-cases.jsonl",
+    "corpus_sha256": "597b2c74e31502a61357afad94c346331f081718c05a07d0b3f702ac6b367ae5",
+    "table_file": "core/src/test/resources/oracle/v011-baseline.tsv",
+    "table_sha256": "2e566ee15d238919b87e85f173ae2d9713de44e768bea215e27345a9f21b5b37",
+    "synthetic_frames": 576
+  },
+  "comparisons": 64039
+}

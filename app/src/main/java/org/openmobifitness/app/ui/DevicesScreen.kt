@@ -34,6 +34,8 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
     else->R.string.connecting
 }
 @Composable internal fun DevicesScreen(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
+    val saved by c.local.devices.collectAsStateWithLifecycle()
+    var editing by remember { mutableStateOf<SavedDevice?>(null) }
     val found by c.ble.found.collectAsStateWithLifecycle()
     val scanning by c.ble.scanning.collectAsStateWithLifecycle()
     val heart by c.heart.state.collectAsStateWithLifecycle()
@@ -50,9 +52,12 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                         Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
                             Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer) { MachineGlyph(link.machine.takeUnless { it==Machine.UNKNOWN } ?: Machine.ELLIPTICAL,Modifier.padding(14.dp)) }
                             Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)) {
-                                Text(if(link.name.isBlank()) stringResource(R.string.connect_equipment) else link.name,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                Text(saved.firstOrNull { it.address==link.address }?.note?.takeIf { it.isNotBlank() } ?: if(link.name.isBlank()) stringResource(R.string.connect_equipment) else link.name,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
                                 Text(stringResource(connectionStatus(link))+(if(link.protocol==Protocol.UNKNOWN) "" else " · ${link.protocol}"),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                        }
+                        saved.firstOrNull { it.address==link.address }?.let { device ->
+                            TextButton(onClick={ editing=device },modifier=Modifier.align(Alignment.End)) { Text(stringResource(R.string.device_note)) }
                         }
                         if(link.phase!="disconnected") {
                             HorizontalDivider()
@@ -71,6 +76,13 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                             }
                         }
                     }
+                }
+                if(saved.any { it.address!=link.address && !it.heart }) SettingsGroup(stringResource(R.string.saved_devices)) {
+                    saved.filter { it.address!=link.address && !it.heart }.forEach { device -> SavedDeviceRow(activity,c,state,device) { editing=device } }
+                }
+                if(heart.phase=="disconnected") SettingsGroup(stringResource(R.string.heart_device)) {
+                    if(saved.any { it.heart }) saved.filter { it.heart }.forEach { device -> SavedDeviceRow(activity,c,state,device) { editing=device } }
+                    else SettingsRow(Icons.Default.Favorite,stringResource(R.string.add_heart),stringResource(R.string.optional_heart)) { activity.scan() }
                 }
                 if(heart.phase!="disconnected") SettingsGroup(stringResource(R.string.heart_device)) {
                     Row(Modifier.fillMaxWidth().testTag("heart-accessory").padding(16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -92,8 +104,8 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                 if(BuildConfig.DEBUG) DemoPanel(activity,c,state)
             }
             val nearbyHeader: @Composable ()->Unit = {
-                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                    Text(stringResource(R.string.nearby_devices),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
+                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text(stringResource(R.string.nearby_devices),Modifier.align(Alignment.CenterVertically),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
                     TextButton(onClick={ if(scanning) c.ble.stopScan() else activity.scan() }) { Icon(if(scanning) Icons.Default.Close else Icons.Default.Refresh,null,Modifier.size(18.dp)); Spacer(Modifier.width(5.dp)); Text(stringResource(if(scanning) R.string.stop_scan else R.string.scan)) }
                 }
                 if(scanning) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -117,6 +129,14 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("device-connections").padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { connection(); support() }
                 LazyColumn(Modifier.weight(1f).testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp),content=nearby)
             } else LazyColumn(Modifier.fillMaxSize().testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { connection() } }; nearby(); item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { support() } } }
+        }
+    }
+    editing?.let { device ->
+        var note by remember(device.address) { mutableStateOf(device.note) }
+        FormDialog(stringResource(R.string.device_note),{ editing=null },{ c.local.rename(device.address,note); editing=null }) {
+                Text(device.name)
+                OutlinedTextField(note,{ if(it.length<=80) note=it },label={ Text(stringResource(R.string.device_note)) },modifier=Modifier.fillMaxWidth().testTag("device-note-input"))
+                TextButton(onClick={ c.local.remove(device.address); editing=null }) { Text(stringResource(R.string.remove_device)) }
         }
     }
     if(help) ModalBottomSheet(onDismissRequest={ help=false },sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
@@ -154,6 +174,24 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
             Text(stringResource(R.string.demo_description),style=MaterialTheme.typography.bodySmall)
             FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) { listOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.TREADMILL).forEach { m -> FilterChip(state.demo && state.demoMachine==m,onClick={ c.setDemo(true,m) },enabled=state.session==null,label={ Text(machineName(m)) }) } }
             OutlinedButton(onClick={ val enabled=!state.demo; c.setDemo(enabled); if(enabled) activity.page.value=0 },enabled=state.session==null) { Text(stringResource(if(state.demo) R.string.exit_demo else R.string.start_demo)) }
+        }
+    }
+}
+
+@Composable private fun SavedDeviceRow(activity: MainActivity,c: Controller,state: ExerciseState,device: SavedDevice,edit: ()->Unit) {
+    val link by c.ble.state.collectAsStateWithLifecycle()
+    Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            if(device.heart) Icon(Icons.Default.Favorite,null) else MachineGlyph(device.machine)
+            Column(Modifier.weight(1f)) {
+                Text(device.note.ifBlank { device.name },style=MaterialTheme.typography.titleSmall)
+                if(device.note.isNotBlank()) Text(device.name,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButton(onClick=edit,modifier=Modifier.testTag("device-note-${device.address}")) { Icon(Icons.Default.MoreVert,stringResource(R.string.device_note)) }
+        }
+        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(if(device.heart) R.string.optional_heart else R.string.replace_equipment),Modifier.weight(1f),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick={ activity.connect(org.openmobifitness.app.ble.FoundDevice(device.address,device.name,0,device.heart)) },enabled=device.heart || state.session==null && !state.starting || link.address==device.address && !state.demo) { Text(stringResource(R.string.connect)) }
         }
     }
 }

@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class,androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package org.openmobifitness.app.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,7 +50,7 @@ private val darkColors=darkColorScheme(
     onSurface=Color(0xFFF2F2F4),surfaceContainer=Color(0xFF23242B),surfaceContainerHigh=Color(0xFF2D2E35),surfaceContainerHighest=Color(0xFF35363D),
     surfaceContainerLow=Color(0xFF191A20),surfaceContainerLowest=Color(0xFF0E0F13),error=Color(0xFFFFADB4))
 private val lightColors=lightColorScheme(
-    primary=Color(0xFF0073E6),onPrimary=Color.White,primaryContainer=Color(0xFFF0F7FF),onPrimaryContainer=Color(0xFF173655),
+    primary=Color(0xFF0062CC),onPrimary=Color.White,primaryContainer=Color(0xFFF0F7FF),onPrimaryContainer=Color(0xFF173655),
     secondary=Color(0xFF3059B6),secondaryContainer=Color(0xFFE4EBFF),onSecondaryContainer=Color(0xFF18366D),
     tertiary=Color(0xFF755A00),tertiaryContainer=Color(0xFFFFF0B3),onTertiaryContainer=Color(0xFF352B00),
     background=Color(0xFFF8F9FB),surface=Color.White,surfaceVariant=Color(0xFFE1E6ED),onSurfaceVariant=Color(0xFF4D5B70),outline=Color(0xFFB8C2CF),outlineVariant=Color(0xFFDFE4EB),
@@ -67,7 +69,7 @@ private val lightColors=lightColorScheme(
     MaterialTheme(colorScheme=if(dark) darkColors else lightColors,typography=Typography()) {
         Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
             BoxWithConstraints(Modifier.safeDrawingPadding()) {
-                if(focused && state.session!=null) { TrainingScreen(activity,controller,state,link) } else {
+                if(focused && state.inUse) { TrainingScreen(activity,controller,state,link) } else {
                 val shortLayout=maxHeight<480.dp
                 val rail=maxWidth>=720.dp || (maxWidth>=520.dp && shortLayout)
                 val labels=listOf(R.string.train,R.string.history,R.string.devices,R.string.settings)
@@ -76,7 +78,7 @@ private val lightColors=lightColorScheme(
                     if(rail) NavigationRail(containerColor=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxHeight().width(100.dp)) {
                         BrandMark(dark,Modifier.size(if(shortLayout) 40.dp else 76.dp))
                         Spacer(Modifier.height(if(shortLayout) 4.dp else 32.dp))
-                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({ Text(stringResource(id)) }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
+                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.inUse) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({ Text(stringResource(id)) }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         if(!shortLayout || !rail) FlowRow(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalArrangement=Arrangement.spacedBy(6.dp)) {
@@ -96,17 +98,22 @@ private val lightColors=lightColorScheme(
                                 IconButton(onClick={ controller.error(null) }) { Icon(Icons.Default.Close,stringResource(R.string.close)) }
                             }
                         }
-                        if(state.session!=null && page!=0) ActiveWorkoutBanner(state) { activity.page.value=0; activity.focusTraining.value=true }
+                        if(state.inUse && page!=0) {
+                            if(state.session!=null) ActiveWorkoutBanner(state) { activity.page.value=0; activity.focusTraining.value=true }
+                            else TextButton(onClick={ activity.page.value=0; activity.focusTraining.value=true },modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.control_only)+" · "+stringResource(R.string.open_app)) }
+                        }
                         Box(Modifier.weight(1f).fillMaxWidth()) {
-                            pageState.SaveableStateProvider(page) { when(page) {
-                                0 -> if(state.session==null) WorkoutLibrary(activity,controller,state,link) else TrainingScreen(activity,controller,state,link)
+                            AnimatedContent(page,transitionSpec={ fadeIn(tween(180)) togetherWith fadeOut(tween(100)) },label="navigation") { destination ->
+                            pageState.SaveableStateProvider(destination) { when(destination) {
+                                0 -> if(!state.inUse) WorkoutLibrary(activity,controller,state,link) else TrainingScreen(activity,controller,state,link)
                                 1 -> HistoryScreen(activity,controller)
                                 2 -> DevicesScreen(activity,controller,state,link)
                                 else -> SettingsScreen(activity,controller)
                             } }
+                            }
                         }
                         if(!rail) NavigationBar(containerColor=MaterialTheme.colorScheme.surface) {
-                            labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.session!=null) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={
+                            labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.inUse) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={
                                 BasicText(stringResource(id),style=LocalTextStyle.current.copy(color=LocalContentColor.current,textAlign=TextAlign.Center,letterSpacing=0.sp),maxLines=2,
                                     autoSize=TextAutoSize.StepBased(minFontSize=10.sp,maxFontSize=12.sp,stepSize=1.sp))
                             }) }
@@ -124,11 +131,9 @@ private val lightColors=lightColorScheme(
                 }
             }
         }
-        val preview by activity.preview
         activity.metricScope.value?.let { scope -> MetricPicker(controller,scope) { activity.metricScope.value=null; activity.intent.removeExtra("metrics_scope") } }
-        if(preview!=null) AlertDialog(onDismissRequest={ activity.preview.value=null },title={ Text(stringResource(R.string.import_preview)) },
-            text={ Text(stringResource(R.string.import_summary,preview!!.sessions.size,preview!!.samples.size,preview!!.workouts.size)) },
-            confirmButton={ TextButton(onClick=activity::confirmImport) { Text(stringResource(R.string.confirm)) } },dismissButton={ TextButton(onClick={ activity.preview.value=null }) { Text(stringResource(R.string.cancel)) } })
+        BackupDialogs(activity,controller)
+
     }
 }
 @Composable private fun BrandMark(dark: Boolean,modifier: Modifier=Modifier) {

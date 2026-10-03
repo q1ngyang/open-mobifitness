@@ -19,7 +19,7 @@ class RepositoryTest {
     @After fun close() { repo.db.close() }
     @Test fun backupRoundTripAndRepeatedImportAreLossless() = runBlocking {
         val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0,energyModel="legacy-v1")
-        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0,powerW=148.0,powerEstimated=true))
+        val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0,powerW=148.0,powerEstimated=true,jumpCount=50,continuousJumps=20,jumpInterruptions=2,repetitions=10,loadKg=12.5,deviceDurationSec=300,dumbbellFewActions=3,dumbbellActionNumber=10))
         repo.save(s,sample)
         val workout=Workout(title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
         repo.saveWorkout(workout)
@@ -58,7 +58,7 @@ class RepositoryTest {
         assertEquals(1,repo.archive().samples.size)
     }
     @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking {
-        for(version in 1..4) {
+        for(version in 1..6) {
         repo.db.close()
         val context=RuntimeEnvironment.getApplication()
         context.deleteDatabase("openmobi.db")
@@ -75,6 +75,7 @@ class RepositoryTest {
         val queries=schema.getJSONArray("setupQueries"); for(i in 0 until queries.length()) db.execSQL(queries.getString(i))
         db.execSQL("INSERT INTO sessions (id,start,end,zone,device,machine,protocol,status,elapsedMs,distanceM,demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",arrayOf<Any>(id,"2026-09-30T10:00:00Z","","UTC","legacy","ELLIPTICAL","DEMO","stopped",9000,25.0,1))
         db.execSQL("INSERT INTO samples (sessionId,elapsedMs,cadence) VALUES (?, ?, ?)",arrayOf<Any>(id,9000,62.0))
+        if(version==6) db.execSQL("UPDATE samples SET repetitions=42,loadKg=12.5,jumpCount=800,continuousJumps=77,jumpInterruptions=3,deviceDurationSec=9,dumbbellFewActions=4,dumbbellActionNumber=5")
         db.version=version; db.close()
         repo=Repository(context)
         val restored=repo.archive()
@@ -83,7 +84,9 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(5,repo.db.openHelper.readableDatabase.version)
+        assertEquals(7,repo.db.openHelper.readableDatabase.version)
+        if(version==6) assertEquals(Metrics(cadence=62.0,repetitions=42,loadKg=12.5,jumpCount=800,continuousJumps=77,jumpInterruptions=3,deviceDurationSec=9,dumbbellFewActions=4,dumbbellActionNumber=5),restored.samples.single().metrics)
+        else { assertNull(restored.samples.single().metrics.repetitions); assertNull(restored.samples.single().metrics.loadKg) }
         assertFalse(restored.samples.single().metrics.powerEstimated)
         }
     }

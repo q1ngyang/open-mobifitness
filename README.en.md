@@ -8,28 +8,29 @@ OpenMOBI is an independent Android app for using Mobi fitness equipment after th
 
 ## Download
 
-**[Download v0.1.1 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.1.1/OpenMOBI-0.1.1.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.1.1.md#english)
+**[Download v0.2.0 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.2.0/OpenMOBI-0.2.0.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.2.0.md#english)
 
 Requires Android 10 or later on a 64-bit phone or tablet. It can be installed alongside the original app.
 
 **For everyday use, choose the APK without `debug` in its filename.** The Debug app includes simulated equipment for testing and keeps its data separate from the regular app.
 
-So far, user testing covers **Mobi MB-EP ellipticals using the V1 protocol**. Other bikes, rowers and treadmills still need model-by-model testing. This version does not start treadmill motors or control their speed or incline. [Check device support](docs/COMPATIBILITY.md#english)
+So far, user hardware feedback covers **Mobi MB-EP ellipticals using the V1 protocol**; other models have no hardware feedback yet. This version does not start treadmill motors or control their speed or incline. [Check device support](docs/COMPATIBILITY.md#english)
 
 ## What you can do
 
-- **Work out offline:** adjust resistance yourself or follow one of 21 built-in plans. Search, save favorites and create your own.
-- **Watch while you train:** use a full workout screen or a two-size floating panel, with your choice of metrics.
-- **See your progress:** today's activity, history, trends and workout details, plus readable CSV reports and local backups.
+- **Record when you want:** view readings and adjust resistance in control-only mode, then start recording when ready. Follow one of 21 built-in plans or create your own.
+- **Watch while you train:** use the full workout screen or two floating-panel sizes, with selected metrics, saved positions and resistance presets.
+- **Set your own pace:** enter frequency or heart-rate ranges for optional hints. They never adjust resistance automatically.
+- **Keep your history:** today's totals, past workouts and details, plus readable CSV reports, full backups and settings transfer.
 - **Use your screen comfortably:** phone, tablet and foldable-window layouts, light/dark themes and six interface languages.
 
 ## Screenshots
 
-<img src="docs/screenshots/home-phone.png" alt="Free workout and workout library on a phone" width="270"> <img src="docs/screenshots/workout-phone.png" alt="Workout progress, selectable metrics and resistance control" width="270">
+<img src="docs/screenshots/overview.png" alt="v0.2.0 phone screens: home, control only and free recording" width="1000">
 
-<img src="docs/screenshots/home-tablet.png" alt="Free workout and today's activity on a tablet in dark mode" width="800">
+<img src="docs/screenshots/floating-panels.png" alt="Compact and expanded floating panels: readings, resistance controls, pause and return to the app" width="1000">
 
-Actual emulator captures with test connection states and sample workout data. [More screenshots](docs/SCREENSHOTS.md)
+Actual v0.2.0 captures with Debug demo data; the presentation layout does not change the app interface. [Tablet and more screenshots](docs/SCREENSHOTS.md)
 
 ## Bluetooth trouble? Please report it
 

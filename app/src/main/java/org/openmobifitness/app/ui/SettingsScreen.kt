@@ -34,7 +34,7 @@ import org.openmobifitness.app.data.*
     var dialog by rememberSaveable { mutableStateOf("") }
     BackHandler(section.isNotEmpty()) { activity.settingsSection.value="" }
     val languages=listOf("" to stringResource(R.string.system),"zh-Hans" to "简体中文","zh-Hant" to "繁體中文","en" to "English","ja" to "日本語","ko" to "한국어","de" to "Deutsch")
-    val title=when(section) { "diagnostics"->R.string.diagnostics; "about"->R.string.about; "floating"->R.string.floating_settings; "display"->R.string.display_settings; "data"->R.string.data_management; else->R.string.settings }
+    val title=when(section) { "personal"->R.string.personal_hints; "diagnostics"->R.string.diagnostics; "about"->R.string.about; "floating"->R.string.floating_settings; "display"->R.string.display_settings; "data"->R.string.data_management; else->R.string.settings }
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
         PageTitle(stringResource(title),if(section.isNotEmpty()) ({ activity.settingsSection.value="" }) else null)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -50,6 +50,7 @@ import org.openmobifitness.app.data.*
                         SettingsGroup(stringResource(R.string.train)) {
                             SettingsRow(Icons.Default.List,stringResource(R.string.display_settings),stringResource(R.string.display_settings_summary),"setting-display",symbol=R.drawable.ic_display) { activity.settingsSection.value="display" }
                             SettingsRow(Icons.Default.Home,stringResource(R.string.floating_settings),stringResource(if(!floating) R.string.disabled else if(automatic) R.string.auto_floating else R.string.enabled),"setting-floating",symbol=R.drawable.ic_float) { activity.settingsSection.value="floating" }
+                            SettingsRow(Icons.Default.Favorite,stringResource(R.string.personal_hints),stringResource(R.string.personal_hints_help),"setting-personal") { activity.settingsSection.value="personal" }
                             SettingsRow(Icons.Default.Info,stringResource(R.string.estimation_settings),stringResource(R.string.estimation_summary),"setting-estimates") { dialog="estimates" }
                         }
                     }
@@ -68,12 +69,17 @@ import org.openmobifitness.app.data.*
                         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(16.dp)) { support() }
                     } else { preferences(); support() }
                 } else when(section) {
+                    "personal"->PersonalHintsSettings(c)
                     "diagnostics"->DiagnosticsSettings(activity,c)
                     "about"->AboutSettings(activity,c)
                     "floating"->SettingsGroup(stringResource(R.string.floating_settings)) {
                         ToggleRow(stringResource(R.string.floating_enabled),floating,c.display::floating)
                         ToggleRow(stringResource(R.string.auto_floating),automatic,c.display::automaticFloating,enabled=floating)
                         HelpText(stringResource(R.string.auto_floating_help))
+                        SettingsRow(Icons.Default.Refresh,stringResource(R.string.reset_overlay_position),tag="reset-position") {
+                            c.local.resetPositions()
+                            if(c.serviceStarted) activity.startService(android.content.Intent(activity,org.openmobifitness.app.service.WorkoutService::class.java).setAction(org.openmobifitness.app.service.WorkoutService.RESET_POSITION))
+                        }
                         val allowed by activity.overlayAllowed
                         if(floating && !allowed) OutlinedButton(onClick=activity::requestOverlayPermission,modifier=Modifier.padding(16.dp)) { Text(stringResource(R.string.allow_overlay)) }
                     }
@@ -81,11 +87,7 @@ import org.openmobifitness.app.data.*
                         HelpText(stringResource(R.string.display_settings_help))
                         listOf(DisplayScope.TRAINING to R.string.training_screen,DisplayScope.COMPACT to R.string.compact_panel,DisplayScope.EXPANDED to R.string.expanded_panel).forEach { (scope,label) -> SettingsRow(Icons.Default.List,stringResource(label)) { activity.metricScope.value=scope } }
                     }
-                    "data"->SettingsGroup(stringResource(R.string.data_management)) {
-                        SettingsRow(Icons.Default.Share,stringResource(R.string.export_backup),stringResource(R.string.export_help)) { activity.export("backup") }
-                        SettingsRow(Icons.Default.List,stringResource(R.string.export_workouts)) { activity.export("workouts") }
-                        SettingsRow(Icons.Default.Add,stringResource(R.string.import_file)) { activity.importFile() }
-                    }
+                    "data"->BackupSettings(activity,c)
                 }
             }
         }
@@ -102,9 +104,10 @@ import org.openmobifitness.app.data.*
 }
 
 @Composable internal fun PageTitle(title: String,onBack: (() -> Unit)?=null) {
-    Row(Modifier.fillMaxWidth().heightIn(min=56.dp),verticalAlignment=Alignment.CenterVertically) {
+    val short=androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp<480
+    Row(Modifier.fillMaxWidth().heightIn(min=if(short) 48.dp else 56.dp),verticalAlignment=Alignment.CenterVertically) {
         if(onBack!=null) IconButton(onClick=onBack,modifier=Modifier.testTag("page-back")) { Icon(Icons.Default.ArrowBack,stringResource(R.string.back)) }
-        Text(title,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
+        Text(title,style=if(short) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
     }
 }
 @Composable internal fun SettingsGroup(title: String,content: @Composable ColumnScope.()->Unit) {
@@ -121,7 +124,7 @@ import org.openmobifitness.app.data.*
         Icon(Icons.Default.KeyboardArrowRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
-@Composable private fun ToggleRow(title: String,checked: Boolean,onChange: (Boolean)->Unit,enabled: Boolean=true) {
+@Composable internal fun ToggleRow(title: String,checked: Boolean,onChange: (Boolean)->Unit,enabled: Boolean=true) {
     Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
         Text(title,Modifier.weight(1f),style=MaterialTheme.typography.bodyLarge)
         Switch(checked,onChange,enabled=enabled,modifier=Modifier.semantics { contentDescription=title })

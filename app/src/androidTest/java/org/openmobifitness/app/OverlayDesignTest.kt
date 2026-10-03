@@ -23,6 +23,13 @@ class OverlayDesignTest {
         }
         return activity
     }
+    private fun reachable(device: UiDevice,selector: BySelector): UiObject2? {
+        for(direction in listOf(Direction.DOWN,Direction.UP)) repeat(5) {
+            device.findObject(selector)?.let { if(it.visibleBounds.height()>=16) return it }
+            device.findObject(By.clazz(android.widget.ScrollView::class.java))?.scroll(direction,.7f)
+        }
+        return device.findObject(selector)
+    }
     private fun screenshot(name: String,bounds: android.graphics.Rect?=null) {
         val image=instrumentation.uiAutomation.takeScreenshot() ?: return
         val dir=File(instrumentation.targetContext.getExternalFilesDir(null),"screenshots").apply { mkdirs() }
@@ -79,8 +86,9 @@ class OverlayDesignTest {
                 val local=context.createConfigurationContext(android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.GERMAN) })
                 val panel=device.wait(Until.findObject(By.desc(local.getString(R.string.expanded_panel))),30_000)!!
                 for(label in listOf(R.string.resume,R.string.open_app,R.string.increase,R.string.decrease)) {
-                    val control=device.wait(Until.findObject(By.desc(local.getString(label))),15_000)!!
-                    assertTrue("Controls remain on screen after resize",android.graphics.Rect(0,0,width,height).contains(control.visibleBounds))
+                    val control=reachable(device,By.desc(local.getString(label)))
+                    assertNotNull("Control remains reachable after resize: $label",control)
+                    assertTrue("Controls remain on screen after resize",android.graphics.Rect(0,0,width,height).contains(control!!.visibleBounds))
                 }
                 screenshot("alpha5-live-resize-${width}x$height",panel.visibleBounds)
                 assertEquals(id,c.state.value.session!!.id); assertTrue(c.state.value.paused)
@@ -142,13 +150,13 @@ class OverlayDesignTest {
             val large=panel()
             val increase=activity.getString(R.string.increase); val decrease=activity.getString(R.string.decrease)
             for(label in listOf(increase,decrease,activity.getString(R.string.open_app),activity.getString(R.string.pause_short))) {
-                val control=device.wait(Until.findObject(By.desc(label)),10_000)
+                val control=reachable(device,By.desc(label))
                 assertNotNull("Control $label remains visible in $prefix",control)
                 assertTrue(large.contains(control!!.visibleBounds))
             }
             screenshot("$prefix-large",large)
-            // In short windows, both rows are reachable through the information region;
-            // scrolling must not move the fixed resistance and playback controls.
+            // In short windows, readings and resistance share the scroll area;
+            // playback and return-to-app actions remain fixed.
             val rate=activity.getString(R.string.cadence)
             // Accessibility may include clipped descendants, so use the window's actual
             // height to exercise scrolling rather than treating node existence as visibility.
@@ -157,17 +165,16 @@ class OverlayDesignTest {
                 assertNotNull("Short windows provide an information scroller",scroller)
                 if(scroller.visibleBounds.isEmpty) device.dumpWindowHierarchy(File(instrumentation.targetContext.getExternalFilesDir(null),"$prefix-scroll-hierarchy.xml"))
                 assertFalse("The overlay scroller has a visible touch region",scroller.visibleBounds.isEmpty)
-                scroller.scroll(Direction.DOWN,1f)
-                screenshot("$prefix-scrolled",large)
-                val rateLabel=device.wait(Until.findObject(By.text(rate)),10_000)
+                scroller.scroll(Direction.UP,1f)
+                val rateLabel=reachable(device,By.text(rate))
                 assertNotNull(rateLabel)
+                screenshot("$prefix-scrolled",large)
                 val region=scroller.visibleBounds
                 assertTrue("The second row is inside the visible information region: region=$region rate=${rateLabel!!.visibleBounds}",region.contains(rateLabel.visibleBounds))
-                assertTrue(large.contains(device.findObject(By.desc(increase)).visibleBounds))
-                scroller.scroll(Direction.UP,1f)
+                assertTrue(large.contains(device.findObject(By.desc(activity.getString(R.string.open_app))).visibleBounds))
             }
-            device.findObject(By.desc(increase)).click(); awaitState { c.state.value.metrics.resistance==13.0 }
-            device.findObject(By.desc(decrease)).click(); awaitState { c.state.value.metrics.resistance==12.0 }
+            reachable(device,By.desc(increase))!!.click(); awaitState { c.state.value.metrics.resistance==13.0 }
+            reachable(device,By.desc(decrease))!!.click(); awaitState { c.state.value.metrics.resistance==12.0 }
             device.findObject(By.desc(activity.getString(R.string.pause_short))).click(); awaitState { c.state.value.paused }
             assertNotNull(device.wait(Until.findObject(By.desc(activity.getString(R.string.resume))),10_000))
             val held=c.state.value.session!!.elapsedMs; val remaining=c.state.value.remainingMs
@@ -177,7 +184,8 @@ class OverlayDesignTest {
                 c.display.save(DisplayScope.COMPACT,listOf(MetricId.TIME,MetricId.CALORIES))
                 c.state.value=c.state.value.copy(session=c.state.value.session!!.copy(elapsedMs=359999000,caloriesKcal=99999.9,caloriesEstimated=true,distanceM=9999999.0,distanceEstimated=true))
             }
-            val longElapsed=device.wait(Until.findObject(By.text("99:59:59")),15_000)
+            Thread.sleep(1200)
+            val longElapsed=reachable(device,By.text("99:59:59"))
             screenshot("$prefix-large-long",large)
             if(longElapsed==null) device.dumpWindowHierarchy(File(instrumentation.targetContext.getExternalFilesDir(null),"$prefix-hierarchy.xml"))
             assertNotNull("Long elapsed time in expanded panel; state=${c.state.value.session?.elapsedMs}",longElapsed)

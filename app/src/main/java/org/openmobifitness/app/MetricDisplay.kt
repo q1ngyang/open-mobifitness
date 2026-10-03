@@ -14,6 +14,8 @@ fun metricLabel(id: MetricId)=when(id) {
     MetricId.FORCE -> R.string.force; MetricId.INCLINE -> R.string.incline; MetricId.STEP_RATE -> R.string.step_rate
     MetricId.STRIDE -> R.string.stride; MetricId.TARGET_CADENCE -> R.string.target_cadence; MetricId.POWER -> R.string.power
     MetricId.PACE -> R.string.pace; MetricId.AVERAGE_SPEED -> R.string.average_speed
+    MetricId.JUMPS -> R.string.jump_count; MetricId.JUMP_RATE -> R.string.jump_rate; MetricId.CONTINUOUS_JUMPS -> R.string.continuous_jumps
+    MetricId.JUMP_INTERRUPTS -> R.string.jump_interruptions; MetricId.REPETITIONS -> R.string.repetitions; MetricId.LOAD -> R.string.load_weight
 }
 fun Context.minutesSeconds(ms: Long): String {
     val seconds=ceil(ms.coerceAtLeast(0)/1000.0).toLong()
@@ -21,15 +23,15 @@ fun Context.minutesSeconds(ms: Long): String {
 }
 fun Context.reading(id: MetricId,c: Controller): MetricReading {
     val s=c.state.value; val session=s.session; val m=s.metrics
-    val machine=session?.machine ?: if(s.demo) s.demoMachine else c.ble.state.value.machine
+    val machine=c.displayMachine()
     val protocol=session?.protocol ?: c.ble.state.value.protocol
     val imperial=c.imperial.value; val locale=resources.configuration.locales[0] ?: Locale.getDefault()
     fun n(value: Double?,digits: Int=1)=value?.takeIf { it.isFinite() }?.let { String.format(locale,"%.${digits}f",it) } ?: "—"
-    val legacy=if(protocol in setOf(Protocol.V1,Protocol.V2)) Estimates.legacySpeed(m.cadence,machine) else null
+    val legacy=if(protocol in setOf(Protocol.V1,Protocol.V2,Protocol.HUANTONG)) Estimates.legacySpeed(m.cadence,machine) else null
     val speed=m.speedMps ?: legacy
     var estimated=false; val label=metricLabel(id)
     val (value,unit)=when(id) {
-        MetricId.TIME -> WorkoutService.elapsed(session?.elapsedMs ?: 0) to ""
+        MetricId.TIME -> (session?.let { WorkoutService.elapsed(it.elapsedMs) } ?: getString(R.string.not_recording)) to ""
         MetricId.DISTANCE -> { estimated=session?.distanceEstimated==true; n(session?.distanceM?.div(if(imperial) 1609.344 else 1000.0),2) to if(imperial) "mi" else "km" }
         MetricId.CALORIES -> { estimated=session?.caloriesEstimated==true; n(session?.caloriesKcal,1) to "kcal" }
         MetricId.HEART -> (m.heartBpm?.toString() ?: "—") to "bpm"
@@ -48,6 +50,12 @@ fun Context.reading(id: MetricId,c: Controller): MetricReading {
         MetricId.STRIDE -> { estimated=protocol==Protocol.V2 && m.strideM!=null; n(m.strideM?.times(100),0) to "cm" }
         MetricId.TARGET_CADENCE -> (if(machine==Machine.ROWER) c.display.targetCadence.value.toString() else "—") to "spm"
         MetricId.POWER -> { estimated=m.powerEstimated; n(m.powerW,0) to "W" }
+        MetricId.JUMPS -> (s.jumpCount?.toString() ?: "—") to ""
+        MetricId.JUMP_RATE -> n(m.cadence.takeIf { machine==Machine.JUMP_ROPE },0) to "/min"
+        MetricId.CONTINUOUS_JUMPS -> (m.continuousJumps?.toString() ?: "—") to ""
+        MetricId.JUMP_INTERRUPTS -> (s.jumpInterruptions?.toString() ?: "—") to ""
+        MetricId.REPETITIONS -> (s.repetitions?.toString() ?: "—") to ""
+        MetricId.LOAD -> n(m.loadKg?.times(if(imperial) 2.2046226 else 1.0)) to if(imperial) "lb" else "kg"
         MetricId.PACE -> (speed?.takeIf { it>0 }?.let { minutesSeconds((500/it*1000).toLong()) } ?: "—") to "/500 m"
         MetricId.AVERAGE_SPEED -> { estimated=session?.distanceEstimated==true
             n(session?.takeIf { it.elapsedMs>0 }?.let { it.distanceM?.div(it.elapsedMs/1000.0) }?.times(if(imperial) 2.236936 else 3.6)) to if(imperial) "mph" else "km/h" }

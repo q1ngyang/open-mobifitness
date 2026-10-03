@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
     private var exportKind="sessions"
     private var exportSessionId: String?=null
     private var reportQuery=HistoryQuery()
-    val preview=mutableStateOf<Archive?>(null)
+    var includeBackupPreferences=true
     private var awaitingOverlay=false
     private var externalNavigation=false
     val overlayAllowed=mutableStateOf(false)
@@ -44,17 +44,12 @@ class MainActivity : ComponentActivity() {
     }
     private val notifications=registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     private val importLauncher=registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if(uri!=null) controller.scope.launch {
-            try {
-                val archive=withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)!!.use { Files.read(it) } }
-                controller.repo.validate(archive)
-                preview.value=archive
-            } catch(e: ImportProblem) { controller.error(R.string.import_row_error,e.row) }
-            catch(e: Exception) { controller.error(R.string.import_failed) }
-        }
+        if(uri!=null) controller.backup.read(uri)
     }
+
     private val exportLauncher=registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
-        if(uri!=null) controller.scope.launch {
+        if(uri!=null && exportKind=="backup") controller.backup.export(uri,includeBackupPreferences)
+        else if(uri!=null) controller.scope.launch {
             val kind=exportKind
             val sessionId=exportSessionId
             val query=reportQuery
@@ -105,6 +100,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } else if(intent.getBooleanExtra("devices",false)) { page.value=2; focusTraining.value=false }; intent.removeExtra("training"); intent.removeExtra("devices"); metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
+        if(intent.getBooleanExtra("reconnect",false)) { intent.removeExtra("reconnect"); reconnect() }
         externalNavigation=false
         overlayAllowed.value=Settings.canDrawOverlays(this)
         val minimizeOnReturn=awaitingOverlay; awaitingOverlay=false
@@ -114,7 +110,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Do not draw over our own permission/file flows, rotations, or the lock screen.
-        if(!isChangingConfigurations && !externalNavigation && controller.state.value.session!=null &&
+        if(!isChangingConfigurations && !externalNavigation && controller.state.value.inUse &&
             controller.display.floatingEnabled.value && controller.display.autoFloating.value &&
             Settings.canDrawOverlays(this) && controller.serviceStarted &&
             getSystemService(android.os.PowerManager::class.java).isInteractive &&
@@ -148,8 +144,14 @@ class MainActivity : ComponentActivity() {
         } catch(e: Exception) { controller.error(R.string.permission_help) }
     }
     fun startTraining() { if(!controller.canStart()) { controller.error(if(controller.ble.state.value.phase=="awaiting_data") R.string.waiting_data_help else R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
+    fun startControl() {
+        if(!controller.canStart()) { controller.error(R.string.connect_first); page.value=2; return }
+        ensureService(); controller.enterControl(); page.value=0; focusTraining.value=true
+    }
+    fun exitControl() { controller.exitControl(); focusTraining.value=false; page.value=0; stopIdleService() }
+    private fun stopIdleService() { if(controller.serviceStarted) startService(Intent(this,WorkoutService::class.java).setAction(WorkoutService.STOP_IF_IDLE)) }
     fun minimize() {
-        if(controller.state.value.session==null || !controller.display.floatingEnabled.value) return
+        if(!controller.state.value.inUse || !controller.display.floatingEnabled.value) return
         if(!Settings.canDrawOverlays(this)) {
             awaitingOverlay=true
             Toast.makeText(this,R.string.overlay_permission,Toast.LENGTH_LONG).show()
@@ -170,15 +172,12 @@ class MainActivity : ComponentActivity() {
         if(Build.VERSION.SDK_INT>=33) getSystemService(android.app.LocaleManager::class.java).applicationLocales=android.os.LocaleList.forLanguageTags(tag)
         else recreate()
     }
-    fun export(kind: String,sessionId: String?=null) { externalNavigation=true; exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
+    fun export(kind: String,sessionId: String?=null) { if(kind=="backup" && controller.state.value.session!=null) { controller.error(R.string.backup_active); return }; externalNavigation=true; exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
     fun exportReport(query: HistoryQuery=HistoryQuery(),sessionId: String?=null) { reportQuery=query; export("report",sessionId) }
-    fun importFile() { externalNavigation=true; importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
-    fun confirmImport() {
-        val archive=preview.value ?: return; preview.value=null
-        controller.scope.launch { try { controller.repo.importArchive(archive); Toast.makeText(applicationContext.localized(),R.string.import_done,Toast.LENGTH_SHORT).show() } catch(e: Exception) { controller.error(R.string.import_failed) } }
-    }
+    fun importFile() { if(controller.state.value.session!=null) { controller.error(R.string.backup_active); return }; externalNavigation=true; importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
+
     fun openDiagnostics() { focusTraining.value=false; page.value=3; settingsSection.value="diagnostics" }
     fun feedback() { openUrl(org.openmobifitness.app.data.Updates.REPOSITORY+"/issues/new?template=device-problem.yml") }
     fun openUrl(url: String) { externalNavigation=true; runCatching { startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url))) }.onFailure { externalNavigation=false; controller.error(R.string.network_unavailable) } }
-    fun disconnect() { controller.ble.disconnect(); if(controller.state.value.session==null && controller.heart.state.value.phase=="disconnected") stopService(Intent(this,WorkoutService::class.java)) }
+    fun disconnect() { controller.disconnectEquipment(); if(!controller.state.value.inUse && controller.heart.state.value.phase=="disconnected") stopIdleService() }
 }

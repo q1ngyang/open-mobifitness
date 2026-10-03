@@ -40,7 +40,7 @@ class WorkoutLayoutTest {
         compose.waitUntil(30_000) { c.state.value.stage>0 }
         compose.onNodeWithTag("finish").assertIsDisplayed()
         val saveText=mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-        compose.onNodeWithText(compose.activity.getString(R.string.finish),useUnmergedTree=true)
+        compose.onNodeWithText(compose.activity.getString(R.string.finish_save),useUnmergedTree=true)
             .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(saveText) }
         assertTrue("The complete save label must fit",saveText.isNotEmpty() && saveText.none { it.hasVisualOverflow })
         compose.onNodeWithTag("pause").assertIsDisplayed()

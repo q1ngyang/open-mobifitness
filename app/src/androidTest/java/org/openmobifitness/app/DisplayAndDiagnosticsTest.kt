@@ -23,7 +23,7 @@ class DisplayAndDiagnosticsTest {
         val c=(compose.activity.application as OpenMobiApp).controller
         compose.waitUntil(30_000) { c.state.value.ready }
         compose.runOnUiThread {
-            c.display.save(DisplayScope.TRAINING,listOf(MetricId.STROKE_RATE,MetricId.STROKES,MetricId.FORCE,MetricId.CALORIES,MetricId.DISTANCE,MetricId.HEART))
+            c.display.save(DisplayScope.TRAINING,listOf(MetricId.STROKE_RATE,MetricId.STROKES,MetricId.FORCE,MetricId.CALORIES,MetricId.DISTANCE,MetricId.HEART),Machine.ROWER)
             c.setDemo(true,Machine.ROWER); c.select(Presets.all.first { it.id=="hiit" }); compose.activity.startTraining()
         }
         compose.waitUntil(30_000) { c.state.value.session?.elapsedMs?.let { it>2500 }==true }
@@ -33,19 +33,19 @@ class DisplayAndDiagnosticsTest {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.choose_metrics)).performClick()
         compose.onAllNodesWithContentDescription(compose.activity.getString(R.string.move_up))[1].performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.save)).performClick()
-        compose.waitUntil(10_000) { c.display.selections.value.getValue(DisplayScope.TRAINING).first()==MetricId.STROKES }
+        compose.waitUntil(10_000) { c.display.selected(DisplayScope.TRAINING,Machine.ROWER).first()==MetricId.STROKES }
         compose.activityRule.scenario.recreate()
         compose.waitUntil(30_000) { runCatching { compose.onNodeWithContentDescription(compose.activity.getString(R.string.choose_metrics)).fetchSemanticsNode(); true }.getOrDefault(false) }
         assertEquals(id,c.state.value.session!!.id)
-        assertEquals(MetricId.STROKES,DisplayPreferences(c.prefs).selections.value.getValue(DisplayScope.TRAINING).first())
-        val count=c.display.selections.value.getValue(DisplayScope.TRAINING).size
+        assertEquals(MetricId.STROKES,DisplayPreferences(c.prefs).selected(DisplayScope.TRAINING,Machine.ROWER).first())
+        val count=c.display.selected(DisplayScope.TRAINING,Machine.ROWER).size
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.choose_metrics)).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.compact_panel)).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.expanded_panel)).performClick()
         val image=InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         if(image!=null) { val dir=File(compose.activity.getExternalFilesDir(null),"screenshots").apply { mkdirs() }; File(dir,"metric-picker.png").outputStream().use { image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }; image.recycle() }
         compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
-        assertEquals(count,c.display.selections.value.getValue(DisplayScope.TRAINING).size)
+        assertEquals(count,c.display.selected(DisplayScope.TRAINING,Machine.ROWER).size)
         AppLog.event("test_redaction","address=AA:BB:CC:DD:EE:FF")
         val packet=java.nio.ByteBuffer.allocate(8).putLong(System.nanoTime()).array()
         val hex=packet.joinToString("") { "%02x".format(it) }

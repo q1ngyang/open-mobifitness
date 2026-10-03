@@ -6,6 +6,8 @@
 
 训练记录、方案和设置保存在本机，不需要账号，没有广告或使用统计服务。应用不会把器材注册到原厂服务器。系统云备份已关闭；请主动导出完整备份。卸载会清除应用数据。
 
+常用设备的蓝牙地址、备注、快捷档位、个人范围和悬浮位置也保存在本机。导出时勾选「包含个人偏好」才会把这些设置加入备份；恢复时可按组选择。备份不包含系统权限或蓝牙配对凭据，恢复设备后仍须手动连接。
+
 ## 什么时候联网？
 
 只有你检查更新、打开项目主页或提交问题时才访问 GitHub；作者链接会打开 X。网站会收到正常的访问请求信息，但 App 不会自动上传运动记录、设备标识或日志。网络不可用不会影响本地训练。
@@ -32,13 +34,15 @@
 | 蓝牙报文 | 最多 30 分钟、32 KiB | 最近 30 分钟 |
 | 完整诊断文件 | 按需导出 | 小于 128 KiB |
 
-写入、启动或导出时清理过期内容。关闭报文开关会停止新增报文；已有内容到期删除，也可在「设置 → 设备诊断」手动清除。清日志不会删除运动记录。体重和估算参数只存本机，并随你主动导出的完整备份保存。
+写入、启动或导出时清理过期内容。关闭报文开关会停止新增报文；已有内容到期删除，也可在「设置 → 设备诊断」手动清除。清日志不会删除运动记录。体重和估算参数只存本机，导出时可选择随个人偏好保存；每条运动记录仍保留其当时使用的估算参数。
 
 ## English
 
 ### Where is my data?
 
 Workouts, plans and preferences stay on your device. There is no account, advertising or usage analytics service, and no equipment registration with the original servers. System cloud backup is disabled; export a full backup yourself. Uninstalling removes local app data.
+
+Saved-device Bluetooth addresses, notes, resistance presets, personal bounds and floating positions also stay local. They enter a backup only when Include personal preferences is selected, and can be restored by group. Backups exclude system permissions and Bluetooth pairing credentials. Restored devices require a manual connection.
 
 ### When does the app go online?
 
@@ -66,4 +70,4 @@ Record Bluetooth packets defaults to on and preserves an explicit choice to turn
 | Bluetooth packets | Up to 30 minutes and 32 KiB | Last 30 minutes |
 | Complete diagnostic export | Created on request | Under 128 KiB |
 
-Expired entries are cleared during startup, writes or export. Turning packet recording off stops new entries; existing entries expire or can be cleared in Settings → Device diagnostics. Clearing logs does not delete workouts. Weight and estimate settings stay local and are included when you choose to export a full workout backup.
+Expired entries are cleared during startup, writes or export. Turning packet recording off stops new entries; existing entries expire or can be cleared in Settings → Device diagnostics. Clearing logs does not delete workouts. Weight and estimate settings stay local and can be exported with personal preferences. Each workout record retains the estimate parameters used for that session.

@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package org.openmobifitness.app.ui
 
 import androidx.compose.foundation.*
@@ -24,11 +25,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Constraints
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import org.openmobifitness.app.*
@@ -54,9 +58,8 @@ private val HeroSecondary=Color(0xFFCCD5E1)
     }
     Surface(color=HeroInk,contentColor=Color.White,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().testTag("free-training-card")) {
         BoxWithConstraints(Modifier.padding(16.dp)) {
-            val wide=maxWidth>=600.dp || (compact && maxWidth>=460.dp)
+            val wide=maxWidth/LocalDensity.current.fontScale>=600.dp || (compact && maxWidth/LocalDensity.current.fontScale>=460.dp)
             val metricWidth=if(wide) (maxWidth-49.dp)/2 else maxWidth
-            val metricColumns=if(metricWidth<310.dp && LocalDensity.current.fontScale>1.15f) 2 else 4
             val ringRadius=(metricWidth*(if(wide) .20f else .28f)).coerceIn(if(compact) 48.dp else 54.dp,if(compact) 58.dp else 82.dp)
             val ringInset=if(wide) ringRadius+8.dp else 18.dp
             // Anchor the center above the card, rather than measuring an artwork
@@ -81,19 +84,27 @@ private val HeroSecondary=Color(0xFFCCD5E1)
                     Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
                         Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.free_training),Modifier.fillMaxWidth().padding(end=ringInset+safeRadius),fontSize=if(compact) 22.sp else 27.sp,lineHeight=titleLineHeight,fontWeight=FontWeight.Bold)
-                            if(!compact && !(metricColumns==2 && !wide)) Text(stringResource(R.string.free_training_help),Modifier.fillMaxWidth().padding(end=hintInset),style=MaterialTheme.typography.bodySmall,color=HeroSecondary)
+                            if(!compact && LocalDensity.current.fontScale<1.5f) Text(stringResource(R.string.free_training_help),Modifier.fillMaxWidth().padding(end=hintInset),style=MaterialTheme.typography.bodySmall,color=HeroSecondary)
                         }
-                        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                            Surface(onClick={ activity.page.value=2 },modifier=Modifier.weight(1f).testTag("hero-device"),color=Color.White.copy(alpha=.08f),contentColor=Color.White,shape=RoundedCornerShape(12.dp)) {
-                                Row(Modifier.heightIn(min=48.dp).padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                                    val status=stringResource(connectionStatus(link))
-                                    Text(if(state.demo) stringResource(R.string.demo) else if(link.phase=="disconnected" || metricColumns==2 && !wide) status else machineName(link.machine)+" · "+status,Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
-                                    Icon(Icons.Default.KeyboardArrowRight,null,Modifier.size(16.dp))
-                                }
+                        Surface(onClick={ activity.page.value=2 },modifier=Modifier.fillMaxWidth().testTag("hero-device"),color=Color.White.copy(alpha=.08f),contentColor=Color.White,shape=RoundedCornerShape(12.dp)) {
+                            Row(Modifier.heightIn(min=48.dp).padding(horizontal=12.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                                MachineGlyph(c.displayMachine())
+                                Text((if(state.demo) stringResource(R.string.demo) else link.name.takeIf { it.isNotBlank() } ?: machineName(link.machine))+" · "+stringResource(if(state.demo) R.string.connected else connectionStatus(link)),Modifier.weight(1f),style=MaterialTheme.typography.labelLarge)
+                                Icon(Icons.Default.KeyboardArrowRight,null,Modifier.size(18.dp))
                             }
-                            Button(onClick={ if(c.canStart()) { c.select(null); activity.startTraining() } else activity.page.value=2 },modifier=Modifier.weight(1f).heightIn(min=48.dp).testTag("hero-start"),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF087BF0),contentColor=Color.White),contentPadding=PaddingValues(horizontal=10.dp,vertical=8.dp)) {
-                                Icon(if(c.canStart()) Icons.Default.PlayArrow else Icons.Default.Search,null,Modifier.size(20.dp)); Spacer(Modifier.width(4.dp))
-                                Text(stringResource(if(c.canStart()) R.string.start else R.string.connect),style=MaterialTheme.typography.labelLarge,maxLines=2)
+                        }
+                        val buttonMeasurer=rememberTextMeasurer()
+                        val buttonStyle=MaterialTheme.typography.labelLarge
+                        val startLabel=stringResource(if(c.canStart()) R.string.start_recording else R.string.connect)
+                        val controlLabel=stringResource(R.string.control_only)
+                        val minimumButton=with(LocalDensity.current) { maxOf(buttonMeasurer.measure(startLabel,buttonStyle,maxLines=1).size.width.toDp()+45.dp,buttonMeasurer.measure(controlLabel,buttonStyle,maxLines=1).size.width.toDp()+20.dp) }
+                        FlowRow(maxItemsInEachRow=if(metricWidth>=minimumButton*2+10.dp) 2 else 1,horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                            Button(onClick={ if(c.canStart()) { c.select(null); activity.startTraining() } else activity.page.value=2 },enabled=!state.starting,modifier=Modifier.weight(1f).heightIn(min=48.dp).testTag("hero-start"),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF0062CC),contentColor=Color.White),contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)) {
+                                Icon(if(c.canStart()) Icons.Default.PlayArrow else Icons.Default.Search,null,Modifier.size(20.dp)); Spacer(Modifier.width(5.dp))
+                                Text(stringResource(if(c.canStart()) R.string.start_recording else R.string.connect),style=MaterialTheme.typography.labelLarge)
+                            }
+                            if(c.canStart()) OutlinedButton(onClick=activity::startControl,enabled=!state.starting,modifier=Modifier.weight(1f).heightIn(min=48.dp).testTag("hero-control"),border=BorderStroke(1.dp,HeroSecondary),colors=ButtonDefaults.outlinedButtonColors(contentColor=Color.White),contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)) {
+                                Text(stringResource(R.string.control_only),style=MaterialTheme.typography.labelLarge)
                             }
                         }
                     }
@@ -111,23 +122,53 @@ private val HeroSecondary=Color(0xFFCCD5E1)
                     val values=listOf(stats?.let { (it.elapsedMs/60000).toString() } ?: "—",stats?.calories?.takeIf { stats.caloriesPresent==stats.count }?.let { String.format(Locale.getDefault(),"%.0f",it) } ?: if(empty) "0" else "—",stats?.count?.toString() ?: "—",stats?.distanceM?.takeIf { stats.distancePresent==stats.count }?.let { String.format(Locale.getDefault(),"%.1f",it/if(imperial) 1609.344 else 1000.0) } ?: if(empty) "0.0" else "—")
                     val labels=listOf(R.string.today_time,R.string.calories,R.string.today_count,R.string.distance)
                     val units=listOf(stringResource(R.string.minute_unit),"kcal",stringResource(R.string.session_unit),if(imperial) "mi" else "km")
-                    values.indices.chunked(metricColumns).forEach { group -> Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        group.forEach { i -> val value=values[i]
-                            Column(Modifier.weight(1f).testTag("today-metric-$i").semantics(mergeDescendants=true) {},verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                                    TodayIcon(i,brandColors[i])
-                                    BasicText(stringResource(labels[i])+(if(i==1 && stats?.estimated==true || i==3 && stats?.distanceEstimated==true) " ≈" else ""),modifier=Modifier.weight(1f),style=MaterialTheme.typography.labelSmall.copy(color=HeroSecondary),maxLines=1,autoSize=TextAutoSize.StepBased(9.sp,11.sp,1.sp))
+                    val shownUnits=units.mapIndexed { i,unit -> (if(i==1 && stats?.estimated==true || i==3 && stats?.distanceEstimated==true) "≈ " else "")+unit }
+                    val measurer=rememberTextMeasurer()
+                    val numberStyle=MaterialTheme.typography.headlineSmall.copy(fontWeight=FontWeight.Bold,fontFeatureSettings="tnum",color=Color.White)
+                    val density=LocalDensity.current
+                    // Keep all four statistics on one line, including accumulated totals.
+                    // Larger accessibility fonts may scroll horizontally; they never wrap
+                    // the card into a second metric row or truncate a number.
+                    val labelStyle=MaterialTheme.typography.labelSmall
+                    val minimumNumberStyle=numberStyle.copy(fontSize=15.sp)
+                    val valueWidth=with(density) { values.maxOf { measurer.measure(it,minimumNumberStyle,maxLines=1).size.width }.toDp() }+8.dp
+                    val unitWidth=with(density) { shownUnits.maxOf { measurer.measure(it,labelStyle,maxLines=1).size.width }.toDp() }+6.dp
+                    val cellWidth=maxOf((metricWidth-3.dp)/4,valueWidth,unitWidth)
+                    // Keep each localized word intact. When an icon and its label
+                    // cannot share a line, align all four icons above the labels.
+                    // The four metrics still occupy one horizontal row.
+                    val labelTexts=labels.map { stringResource(it) }
+                    val inlineLabels=with(density) { labelTexts.all { measurer.measure(it,labelStyle,maxLines=1).size.width.toDp()+26.dp<=cellWidth } }
+                    val labelConstraints=Constraints(maxWidth=with(density) { (cellWidth-if(inlineLabels) 26.dp else 6.dp).roundToPx().coerceAtLeast(1) })
+                    val labelTextHeight=with(density) { labelTexts.maxOf { measurer.measure(it,labelStyle,maxLines=2,constraints=labelConstraints).size.height }.toDp() }
+                    val labelHeight=if(inlineLabels) maxOf(20.dp,labelTextHeight) else labelTextHeight+20.dp
+                    // Android's enlarged fonts scale nonlinearly. Measure each
+                    // candidate size instead of applying a linear pixel ratio.
+                    val numberSize=remember(values,cellWidth,numberStyle,density) {
+                        val available=with(density) { (cellWidth-8.dp).toPx() }
+                        ((24 downTo 15).firstOrNull { size -> values.all { measurer.measure(it,numberStyle.copy(fontSize=size.sp),maxLines=1,softWrap=false).size.width<=available } } ?: 15).sp
+                    }
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).height(IntrinsicSize.Min)) {
+                            values.indices.forEach { i ->
+                                if(i>0) VerticalDivider(Modifier.fillMaxHeight().padding(vertical=8.dp),color=Color.White.copy(alpha=.14f))
+                                Column(Modifier.width(cellWidth).padding(horizontal=3.dp,vertical=2.dp).testTag("today-metric-$i").semantics(mergeDescendants=true) {},horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                                    if(inlineLabels) Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp,Alignment.CenterHorizontally),modifier=Modifier.fillMaxWidth().height(labelHeight)) {
+                                        TodayIcon(i,brandColors[i])
+                                        Text(labelTexts[i],Modifier.weight(1f,fill=false),style=labelStyle,color=HeroSecondary,textAlign=TextAlign.Center,maxLines=1)
+                                    } else Column(Modifier.fillMaxWidth().height(labelHeight),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                                        TodayIcon(i,brandColors[i])
+                                        Text(labelTexts[i],style=labelStyle,color=HeroSecondary,textAlign=TextAlign.Center,maxLines=2)
+                                    }
+                                    Text(values[i],Modifier.fillMaxWidth().testTag("today-value-$i"),style=numberStyle.copy(fontSize=numberSize,lineHeight=28.sp,textAlign=TextAlign.Center),maxLines=1,softWrap=false)
+                                    Text(shownUnits[i],style=labelStyle,color=HeroSecondary,textAlign=TextAlign.Center,maxLines=1)
                                 }
-                                BasicText(value,style=MaterialTheme.typography.titleLarge.copy(fontFamily=FontFamily.Monospace,fontSize=22.sp,lineHeight=26.sp,fontWeight=FontWeight.Bold,color=Color.White),maxLines=1,autoSize=TextAutoSize.StepBased(13.sp,22.sp,1.sp))
-                                Text(units[i],style=MaterialTheme.typography.labelSmall.copy(lineHeight=14.sp),color=HeroSecondary,maxLines=1)
                             }
-                        }
-                    } }
+                    }
                 }
             }
-            if(wide) Row(Modifier.height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(24.dp),verticalAlignment=Alignment.CenterVertically) {
+            if(wide) Row(horizontalArrangement=Arrangement.spacedBy(24.dp),verticalAlignment=Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).align(Alignment.Top)) { intro() }
-                VerticalDivider(Modifier.fillMaxHeight(),color=Color.White.copy(alpha=.15f))
+                VerticalDivider(Modifier.height(120.dp),color=Color.White.copy(alpha=.15f))
                 Box(Modifier.weight(1f)) { today() }
             } else Column(verticalArrangement=Arrangement.spacedBy(10.dp)) { intro(); HorizontalDivider(color=Color.White.copy(alpha=.15f)); today() }
         }

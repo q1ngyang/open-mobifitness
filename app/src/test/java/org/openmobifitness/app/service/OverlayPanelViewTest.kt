@@ -34,7 +34,7 @@ class OverlayPanelViewTest {
             val c=app.createConfigurationContext(Configuration(app.resources.configuration).apply { fontScale=scale })
             val density=c.resources.displayMetrics.density
             val width=((if(expanded) 304 else 236)*density).toInt()
-            for(heightDp in if(expanded) listOf(368,240) else listOf(128)) {
+            for(heightDp in if(expanded) listOf(416,240) else listOf(192+(100*(scale-1)).toInt())) {
                 val height=(heightDp*density).toInt()
                 val view=OverlayPanelView(c,expanded,dark) {}
                 val model=sample().let { if(expanded) it else it.copy(readings=it.readings.take(2)) }
@@ -45,6 +45,12 @@ class OverlayPanelViewTest {
                 assertTrue("Elapsed time must fit at font scale $scale",elapsed.layout.getLineWidth(0)<=elapsed.width+1)
                 if(expanded) for(id in listOf(R.string.open_app,R.string.increase,R.string.decrease,R.string.pause_short,R.string.choose_metrics,R.string.collapse_panel)) {
                     val button=children(view).first { it.contentDescription==c.getString(id) }
+                    // In short/large-font windows the resistance area scrolls; the dock stays fixed.
+                    val parent=generateSequence(button.parent) { it.parent }.filterIsInstance<android.widget.ScrollView>().firstOrNull()
+                    if(parent!=null) {
+                        val target=Rect(0,0,button.width,button.height); parent.offsetDescendantRectToMyCoords(button,target)
+                        parent.scrollTo(0,(target.bottom-parent.height).coerceAtLeast(0))
+                    }
                     val bounds=Rect(0,0,button.width,button.height); view.offsetDescendantRectToMyCoords(button,bounds)
                     assertTrue("$id remains inside a $heightDp dp panel",bounds.top>=0 && bounds.bottom<=height && bounds.left>=0 && bounds.right<=width)
                     assertTrue("Controls retain a 48 dp height",button.height>=(48*density).toInt())

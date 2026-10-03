@@ -1,6 +1,6 @@
 # 早期测试版本 / Earlier test releases
 
-[当前正式版 / Current stable release](v0.1.1.md)
+[当前正式版 / Current stable release](v0.2.0.md) · [v0.1.1](v0.1.1.md)
 
 这些是早期测试版本的主要变化，**新安装请选正式版**。当时的功能和限制可能已改变，日常使用以当前[使用说明](../USER_GUIDE.md)和[设备支持](../COMPATIBILITY.md)为准。以下版本均支持 Android 10+、64 位设备；可使用同一发行签名覆盖升级。
 

@@ -14,27 +14,28 @@ import org.openmobifitness.app.MetricReading
 /** A fixed-size cell: changing digits can only resize text, never the window or neighboring cells. */
 internal class OverlayMetricView(context: Context,private val ink: Int,private val muted: Int,expanded: Boolean,numberSize: Int=if(expanded) 25 else 30): LinearLayout(context) {
     private fun dp(value: Int)=(value*resources.displayMetrics.density).toInt()
+    private fun textHeight(value: Int)=dp((value*resources.configuration.fontScale).toInt())
     val label=TextView(context).apply {
-        setTextColor(muted); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration(8,(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
+        setTextColor(muted); maxLines=2; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
+        setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
     }
     val value=TextView(context).apply {
         setTextColor(ink); typeface=Typeface.create(Typeface.MONOSPACE,Typeface.BOLD); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration(8,(numberSize*resources.configuration.fontScale).toInt().coerceAtLeast(numberSize),1,TypedValue.COMPLEX_UNIT_DIP)
+        setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(numberSize*resources.configuration.fontScale).toInt().coerceAtLeast(numberSize),1,TypedValue.COMPLEX_UNIT_DIP)
     }
     val unit=TextView(context).apply {
         setTextColor(muted); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration(8,(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
+        setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
     }
     private var reading: MetricReading?=null
     init {
         orientation=VERTICAL; setPadding(dp(3),dp(2),dp(5),dp(2))
-        addView(label,LayoutParams(LayoutParams.MATCH_PARENT,dp(18)))
+        addView(label,LayoutParams(LayoutParams.MATCH_PARENT,textHeight(if(resources.configuration.fontScale>=1.5f) 24 else 18)))
         val row=LinearLayout(context).apply { orientation=HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         val numberHeight=if(numberSize>=30) 34 else 30
-        row.addView(value,LayoutParams(0,dp(numberHeight),1f))
-        row.addView(unit,LayoutParams(dp(32),dp(numberHeight)).apply { marginStart=dp(3) })
-        addView(row,LayoutParams(LayoutParams.MATCH_PARENT,dp(numberHeight)))
+        row.addView(value,LayoutParams(0,textHeight(numberHeight),1f))
+        row.addView(unit,LayoutParams(textHeight(32),textHeight(numberHeight)).apply { marginStart=dp(3) })
+        addView(row,LayoutParams(LayoutParams.MATCH_PARENT,textHeight(numberHeight)))
     }
     fun bind(next: MetricReading) {
         if(next==reading) return
@@ -47,6 +48,6 @@ internal class OverlayMetricView(context: Context,private val ink: Int,private v
         unit.text=next.unit
         unit.visibility=if(next.unit.isEmpty()) GONE else VISIBLE
         // Unit widths depend only on the unit, never on the number of digits in a reading.
-        (unit.layoutParams as LayoutParams).apply { width=dp(if(next.unit=="km/h" || next.unit=="/500 m") 38 else 30) }.also { unit.layoutParams=it }
+        (unit.layoutParams as LayoutParams).apply { width=textHeight(if(next.unit=="km/h" || next.unit=="/500 m") 38 else 30) }.also { unit.layoutParams=it }
     }
 }

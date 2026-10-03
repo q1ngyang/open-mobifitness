@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name="org.openmobifitness.app.BackgroundVideoActivity" android:exported="true" android:theme="@android:style/Theme.Material.NoActionBar" />
+        <activity android:name="org.openmobifitness.app.OverlayRotationActivity" android:exported="true" android:screenOrientation="fullUser" android:theme="@android:style/Theme.Material.NoActionBar" />
+    </application>
+</manifest>

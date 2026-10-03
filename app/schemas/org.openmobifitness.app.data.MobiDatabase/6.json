@@ -1,0 +1,375 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "b36fd3251cf5dad6878f1fa4bc7e5fe4",
+    "entities": [
+      {
+        "tableName": "sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `start` TEXT NOT NULL, `end` TEXT NOT NULL, `zone` TEXT NOT NULL, `device` TEXT NOT NULL, `machine` TEXT NOT NULL, `protocol` TEXT NOT NULL, `status` TEXT NOT NULL, `startEpoch` INTEGER NOT NULL DEFAULT 0, `archived` INTEGER NOT NULL DEFAULT 0, `workoutId` TEXT NOT NULL DEFAULT '', `workoutTitle` TEXT NOT NULL DEFAULT '', `energyModel` TEXT NOT NULL DEFAULT '', `elapsedMs` INTEGER NOT NULL, `distanceM` REAL, `demo` INTEGER NOT NULL, `caloriesKcal` REAL, `weightKg` REAL, `met` REAL, `caloriesEstimated` INTEGER NOT NULL DEFAULT 0, `distanceEstimated` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "start",
+            "columnName": "start",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "end",
+            "columnName": "end",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zone",
+            "columnName": "zone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "device",
+            "columnName": "device",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "machine",
+            "columnName": "machine",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protocol",
+            "columnName": "protocol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startEpoch",
+            "columnName": "startEpoch",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "workoutId",
+            "columnName": "workoutId",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "workoutTitle",
+            "columnName": "workoutTitle",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "energyModel",
+            "columnName": "energyModel",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "elapsedMs",
+            "columnName": "elapsedMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distanceM",
+            "columnName": "distanceM",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "demo",
+            "columnName": "demo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caloriesKcal",
+            "columnName": "caloriesKcal",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "weightKg",
+            "columnName": "weightKg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "met",
+            "columnName": "met",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "caloriesEstimated",
+            "columnName": "caloriesEstimated",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "distanceEstimated",
+            "columnName": "distanceEstimated",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sessions_startEpoch",
+            "unique": false,
+            "columnNames": [
+              "startEpoch"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sessions_startEpoch` ON `${TABLE_NAME}` (`startEpoch`)"
+          },
+          {
+            "name": "index_sessions_archived_startEpoch",
+            "unique": false,
+            "columnNames": [
+              "archived",
+              "startEpoch"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sessions_archived_startEpoch` ON `${TABLE_NAME}` (`archived`, `startEpoch`)"
+          },
+          {
+            "name": "index_sessions_machine_startEpoch",
+            "unique": false,
+            "columnNames": [
+              "machine",
+              "startEpoch"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sessions_machine_startEpoch` ON `${TABLE_NAME}` (`machine`, `startEpoch`)"
+          }
+        ]
+      },
+      {
+        "tableName": "samples",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sessionId` TEXT NOT NULL, `elapsedMs` INTEGER NOT NULL, `cadence` REAL, `resistance` REAL, `speedMps` REAL, `distanceM` REAL, `powerW` REAL, `heartBpm` INTEGER, `strokes` INTEGER, `caloriesKcal` REAL, `inclinePercent` REAL, `strideM` REAL, `forceN` REAL, `stepRate` REAL, `targetCadence` REAL, `stepCount` INTEGER, `jumpCount` INTEGER, `continuousJumps` INTEGER, `jumpInterruptions` INTEGER, `repetitions` INTEGER, `deviceDurationSec` INTEGER, `dumbbellFewActions` INTEGER, `dumbbellActionNumber` INTEGER, `loadKg` REAL, `powerEstimated` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`sessionId`, `elapsedMs`), FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "elapsedMs",
+            "columnName": "elapsedMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cadence",
+            "columnName": "cadence",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "resistance",
+            "columnName": "resistance",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "speedMps",
+            "columnName": "speedMps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "distanceM",
+            "columnName": "distanceM",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "powerW",
+            "columnName": "powerW",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "heartBpm",
+            "columnName": "heartBpm",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "strokes",
+            "columnName": "strokes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "caloriesKcal",
+            "columnName": "caloriesKcal",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "inclinePercent",
+            "columnName": "inclinePercent",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "strideM",
+            "columnName": "strideM",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "forceN",
+            "columnName": "forceN",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "stepRate",
+            "columnName": "stepRate",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "targetCadence",
+            "columnName": "targetCadence",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "stepCount",
+            "columnName": "stepCount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "jumpCount",
+            "columnName": "jumpCount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "continuousJumps",
+            "columnName": "continuousJumps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "jumpInterruptions",
+            "columnName": "jumpInterruptions",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "repetitions",
+            "columnName": "repetitions",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "deviceDurationSec",
+            "columnName": "deviceDurationSec",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dumbbellFewActions",
+            "columnName": "dumbbellFewActions",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dumbbellActionNumber",
+            "columnName": "dumbbellActionNumber",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "loadKg",
+            "columnName": "loadKg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "powerEstimated",
+            "columnName": "powerEstimated",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sessionId",
+            "elapsedMs"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_samples_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_samples_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "sessions",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "workouts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `csv` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "csv",
+            "columnName": "csv",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b36fd3251cf5dad6878f1fa4bc7e5fe4')"
+    ]
+  }
+}

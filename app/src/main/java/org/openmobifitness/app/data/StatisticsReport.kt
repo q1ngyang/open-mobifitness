@@ -11,7 +11,7 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-fun machineResource(machine: Machine)=when(machine) { Machine.ELLIPTICAL->R.string.machine_elliptical; Machine.BIKE->R.string.machine_bike; Machine.ROWER->R.string.machine_rower; Machine.TREADMILL->R.string.machine_treadmill; else->R.string.devices }
+fun machineResource(machine: Machine)=when(machine) { Machine.ELLIPTICAL->R.string.machine_elliptical; Machine.BIKE->R.string.machine_bike; Machine.ROWER->R.string.machine_rower; Machine.TREADMILL->R.string.machine_treadmill; Machine.JUMP_ROPE->R.string.machine_jump_rope; Machine.DUMBBELL->R.string.machine_dumbbell; else->R.string.devices }
 fun seriesResource(metric: SeriesMetric)=when(metric) { SeriesMetric.HEART->R.string.heart_rate; SeriesMetric.CADENCE->R.string.cadence; SeriesMetric.POWER->R.string.power; SeriesMetric.SPEED->R.string.speed; SeriesMetric.RESISTANCE->R.string.resistance }
 fun seriesUnit(metric: SeriesMetric,machine: Machine,imperial: Boolean=false)=when(metric) { SeriesMetric.HEART->"bpm"; SeriesMetric.CADENCE->if(machine in setOf(Machine.ROWER,Machine.TREADMILL)) "spm" else "rpm"; SeriesMetric.POWER->"W"; SeriesMetric.SPEED->if(imperial) "mph" else "km/h"; SeriesMetric.RESISTANCE->"" }
 fun displayNumber(value: Double?,digits: Int=0): String=value?.let { String.format(Locale.getDefault(),"%.${digits}f",it) } ?: "—"

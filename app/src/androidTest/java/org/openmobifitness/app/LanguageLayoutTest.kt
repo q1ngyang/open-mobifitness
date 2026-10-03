@@ -44,7 +44,7 @@ class LanguageLayoutTest {
                 var increase=""; var decrease=""; var minimize=""; var finish=""; var density=1f
                 var values=listOf<String>()
                 scenario.onActivity {
-                    increase=it.getString(R.string.increase); decrease=it.getString(R.string.decrease); minimize=it.getString(R.string.minimize); finish=it.getString(R.string.finish)
+                    increase=it.getString(R.string.increase); decrease=it.getString(R.string.decrease); minimize=it.getString(R.string.minimize); finish=it.getString(R.string.finish_save)
                     density=it.resources.displayMetrics.density
                     values=listOf(MetricId.DISTANCE,MetricId.CALORIES).map { metric -> it.reading(metric,c).value }
                 }
