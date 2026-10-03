@@ -35,7 +35,14 @@ class BackupTransferTest {
         }
         prefs.edit().putString("theme","dark").putBoolean("imperial",true).putInt("target_cadence",27).commit()
         val digest=digest(repo.db)
-        val evidence=File(requireNotNull(System.getenv("DEV_TEMP_BASE")),"work/open-mobifitness-v020/qa/large-backup-test").apply { mkdirs() }
+        // Keep local evidence on the configured development disk, while hosted CI
+        // uses its own temporary workspace instead of requiring a local-only variable.
+        val evidence=System.getenv("DEV_TEMP_BASE")?.let {
+            File(it,"work/open-mobifitness-v020/qa/large-backup-test").apply { check(isDirectory || mkdirs()) }
+        } ?: java.nio.file.Files.createTempDirectory(
+            File(System.getenv("RUNNER_TEMP") ?: System.getenv("TMPDIR") ?: System.getProperty("java.io.tmpdir")).toPath(),
+            "openmobi-backup-test-"
+        ).toFile()
         val file=File(evidence,"360001-samples-v7.zip")
         file.outputStream().use { BackupTransfer.export(repo,it,PortablePreferences.export(prefs)) }
         assertTrue("compressed backup must also exceed old 32 MiB limit: ${file.length()}",file.length()>32*1024*1024)
