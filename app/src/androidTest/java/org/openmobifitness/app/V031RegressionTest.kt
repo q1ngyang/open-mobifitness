@@ -143,10 +143,22 @@ class V031RegressionTest {
         chart.performTouchInput { click(androidx.compose.ui.geometry.Offset(left+(width-left)*5/60,height/2f)) }
         compose.onNodeWithTag("detail-chart-readout").assertTextContains("00:05",substring=true).assertTextContains("W",substring=true)
         screen("power-point")
-        // Short landscape windows scroll the metric chips and plot separately into view.
-        compose.onAllNodesWithText(text(R.string.heart_rate)).filter(isSelectable()).onFirst().performScrollTo().performClick()
-        compose.onNodeWithText(text(R.string.no_samples)).performScrollTo().assertIsDisplayed()
-        compose.onAllNodesWithText(text(R.string.power)).filter(isSelectable()).onFirst().performScrollTo().performClick()
-        chart.performScrollTo().assertIsDisplayed()
+        // A chart card can exceed the short viewport; align the child, not its whole lazy item.
+        val report=compose.onNodeWithTag("detail-scroll")
+        fun reveal(node: SemanticsNodeInteraction) {
+            val viewport=report.getUnclippedBoundsInRoot(); val bounds=node.getUnclippedBoundsInRoot()
+            val delta=when { bounds.top<viewport.top -> (bounds.top-viewport.top).value; bounds.bottom>viewport.bottom -> (bounds.bottom-viewport.bottom).value; else -> 0f }
+            if(delta!=0f) report.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f,delta*density) }
+            compose.waitForIdle()
+        }
+        val heart=compose.onAllNodesWithText(text(R.string.heart_rate)).filter(isSelectable()).onFirst()
+        reveal(heart); heart.performScrollTo()
+        compose.onAllNodesWithText(text(R.string.heart_rate)).filter(isSelectable()).onFirst().assertIsDisplayed().performClick()
+        reveal(compose.onNodeWithText(text(R.string.no_samples)))
+        compose.onNodeWithText(text(R.string.no_samples)).assertIsDisplayed()
+        val power=compose.onAllNodesWithText(text(R.string.power)).filter(isSelectable()).onFirst()
+        reveal(power); power.performScrollTo().assertIsDisplayed().performClick()
+        reveal(chart)
+        chart.assertIsDisplayed()
     }
 }
