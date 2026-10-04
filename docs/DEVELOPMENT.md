@@ -104,7 +104,7 @@ Code layout: `core` holds protocol/workout/data models; `app/ble` Bluetooth; `ap
 1. 结束另一版的训练或仅控制状态，并断开器材及心率带，再打开 Debug。
 2. 需要历史样例时进入“设备 → 演示 · Debug → 一键加载演示数据”。默认不加载；样例有 4 个档案、6 类器材、36 个完整月份及边界记录，共 780 条。点击“查看记录”仅调整历史范围，不切换当前训练用户或器材。
 3. 再次加载只补缺失，沿用首次时间锚点及当地时区。样例跟随 APK，不需要下载 ZIP。清理前预览数量；精确清理清单内的演示记录，保留真实记录、其他演示和有关联数据的档案。用户自行移除的演示档案不会自动恢复。
-4. 真实器材测试继续使用现有诊断流程：连接 → 仅控制观察数据与相邻档位反馈 → 短记录 → 暂停／继续 → 保存查看 → 换人 → 导出问题日志。Debug 的真实训练仍标为真实来源。首页今日统计排除演示。
+4. 真实器材测试继续使用现有诊断流程：连接 → 仅控制观察数据与相邻档位反馈 → 短记录 → 暂停／继续 → 保存查看 → 换人 → 导出问题日志。Debug 的真实训练仍标为真实来源。首页今日统计包含当前用户已保存的记录，并标注其中的演示次数。
 5. 结束并断开 Debug，再回普通版。日常数据需要复制时，由普通版导出完整备份并手动导入 Debug；两版不自动同步。v0.3.0 备份不能交给旧版 App 导入。
 
 新测试：`V030UiTest` 检查身份确认、暂停锁定、删除勾选、方案草稿与响应式页面；`DebugDatasetTest`／`DebugSampleStoreTest` 检查覆盖矩阵、日期、幂等、回滚、清理和正式备份往返。矩阵参数示例：
@@ -117,4 +117,4 @@ Use the regular app for daily workouts and Debug for demos and testing; see the 
 
 Use **Devices → Demo · Debug → Load built-in demo data** for the explicit 780-record, four-profile, six-equipment dataset. Repeated loads preserve its original anchor/time zone and fill missing data only. Viewing history changes filters, not the active user or equipment. Cleanup previews exact manifest records; real workouts and unrelated demos survive, and profiles with other references are retained. User-removed profiles are not revived. Samples are bundled only with Debug; no extra ZIP is needed.
 
-For physical checks, disconnect the other variant, connect in control-only mode, verify an adjacent resistance level, record briefly, pause/resume, save/review, switch users, and export diagnostics for issues. Real equipment recordings remain real in Debug. Finish and disconnect before returning to the regular app. Backups are copied manually; v0.3.0 backups require a compatible new app.
+For physical checks, disconnect the other variant, connect in control-only mode, verify an adjacent resistance level, record briefly, pause/resume, save/review, switch users, and export diagnostics for issues. Real equipment recordings remain real in Debug. Today's totals include the current user's saved records and label any included demo workouts. Finish and disconnect before returning to the regular app. Backups are copied manually; v0.3.0 backups require a compatible new app.
