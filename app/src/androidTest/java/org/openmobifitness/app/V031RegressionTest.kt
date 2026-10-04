@@ -143,9 +143,10 @@ class V031RegressionTest {
         chart.performTouchInput { click(androidx.compose.ui.geometry.Offset(left+(width-left)*5/60,height/2f)) }
         compose.onNodeWithTag("detail-chart-readout").assertTextContains("00:05",substring=true).assertTextContains("W",substring=true)
         screen("power-point")
-        compose.onAllNodesWithText(text(R.string.heart_rate)).filter(isSelectable()).onFirst().performClick()
-        compose.onNodeWithText(text(R.string.no_samples)).assertIsDisplayed()
-        compose.onAllNodesWithText(text(R.string.power)).filter(isSelectable()).onFirst().performClick()
-        chart.assertIsDisplayed()
+        // Short landscape windows scroll the metric chips and plot separately into view.
+        compose.onAllNodesWithText(text(R.string.heart_rate)).filter(isSelectable()).onFirst().performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.no_samples)).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(text(R.string.power)).filter(isSelectable()).onFirst().performScrollTo().performClick()
+        chart.performScrollTo().assertIsDisplayed()
     }
 }

@@ -16,6 +16,14 @@ Control-only mode has an Exit action in the bottom dock. Reports prefer availabl
 | :---: | :---: |
 | <img src="screenshots/v031-control-exit-phone.png" alt="仅控制模式底部的退出按钮 / Exit action in control-only mode" width="300"> | <img src="screenshots/v031-power-line-phone.png" alt="包含缺测和有效零值的功率折线 / Power line with gaps and measured zeros" width="300"> |
 
+## 同类方案递进 / Related plan progressions · v0.3.1
+
+间歇、金字塔与 HIIT 等同类方案连续排列；宽屏三列下，HIIT 的 20、30、40 分钟方案位于同一行。
+
+Intervals, pyramids and HIIT variants stay adjacent. In the three-column layout, the 20-, 30- and 40-minute HIIT plans share one row.
+
+<img src="screenshots/v031-hiit-progression-tablet.png" alt="同类训练相邻、HIIT 连续递进 / Adjacent workout families and progressive HIIT plans" width="1000">
+
 ## 平板训练 / Tablet workout
 
 六项指标同时展示，单位紧邻数值并保持稳定；翻页顺序为「〈 页码 〉」，常用档位保持单行。
