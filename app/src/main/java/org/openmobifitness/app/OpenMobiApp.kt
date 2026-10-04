@@ -289,8 +289,9 @@ class Controller(val app: Application,
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); return@withLock }
         org.openmobifitness.app.data.AppLog.event("session_finish","duration_ms=${s.elapsedMs}")
         prefs.edit().putString("finished_detail_id",s.id).apply()
+        // A completed recording ends this use, while the existing Bluetooth links remain available.
+        state.value=state.value.copy(session=null,controlOnly=false,selected=null,pendingResistance=null,automatic=false,paused=false,done=false,stage=0,progress=0f,remainingMs=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null,frequencyHint=RangePosition.UNAVAILABLE,heartHint=RangePosition.UNAVAILABLE,error=null,errorRow=null); engine=null
         finishedSession.value=s.id
-        state.value=state.value.copy(session=null,controlOnly=true,selected=null,pendingResistance=null,paused=false,done=false,stage=0,progress=0f,remainingMs=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null); engine=null
     } }
     fun automaticControl(enabled: Boolean) {
         if(state.value.session==null || (enabled && (state.value.selected==null || state.value.done))) return

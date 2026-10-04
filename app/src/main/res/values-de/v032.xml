@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_metric_heading">Messwert</string>
+    <string name="report_fastest_short">Schnellste</string>
+    <string name="report_slowest_short">Langsamste</string>
+</resources>

@@ -85,7 +85,7 @@ class V020ExperienceTest {
         compose.onNodeWithTag("finish").performClick()
         compose.onAllNodesWithText(compose.activity.getString(R.string.finish_save),useUnmergedTree=true).onLast().performClick()
         compose.waitUntil(30000) { c.state.value.session==null }
-        assertTrue(c.state.value.controlOnly)
+        assertFalse(c.state.value.inUse)
         compose.runOnUiThread { c.dismissResult(); compose.activity.focusTraining.value=false; compose.activity.page.value=2 }
         shot("06-devices")
         compose.runOnUiThread { compose.activity.page.value=3; compose.activity.settingsSection.value="personal" }
@@ -188,7 +188,7 @@ class V020ExperienceTest {
         compose.onNodeWithTag("finish").performClick()
         compose.onAllNodesWithText(compose.activity.getString(R.string.finish_save),useUnmergedTree=true).onLast().performClick()
         compose.waitUntil(30000) { c.state.value.session==null }
-        assertTrue(c.state.value.controlOnly)
+        assertFalse(c.state.value.inUse)
         assertEquals(selected,c.display.selected(DisplayScope.TRAINING,Machine.ROWER,true))
         runBlocking { c.repo.deleteSession(id) }
     }

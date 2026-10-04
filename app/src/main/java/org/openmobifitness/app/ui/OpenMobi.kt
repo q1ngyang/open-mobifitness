@@ -127,10 +127,10 @@ private val lightColors=lightColorScheme(
             }
         }
         val finished by controller.finishedSession.collectAsStateWithLifecycle()
-        if(finished!=null) Dialog(onDismissRequest=controller::dismissResult,properties=DialogProperties(usePlatformDefaultWidth=false)) {
+        if(finished!=null) Dialog(onDismissRequest=activity::closeCompletedReport,properties=DialogProperties(usePlatformDefaultWidth=false)) {
             BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),contentAlignment=Alignment.Center) {
                 Surface(Modifier.widthIn(max=1040.dp).fillMaxWidth().fillMaxHeight(if(maxHeight<440.dp) 1f else .94f),shape=RoundedCornerShape(22.dp),color=MaterialTheme.colorScheme.background) {
-                    SessionDetailScreen(activity,controller,finished!!,saved=true,onBack=controller::dismissResult)
+                    SessionDetailScreen(activity,controller,finished!!,saved=true,onBack=activity::closeCompletedReport)
                 }
             }
         }

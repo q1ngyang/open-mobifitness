@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_metric_heading">指標</string>
+    <string name="report_fastest_short">最速</string>
+    <string name="report_slowest_short">最遅</string>
+</resources>

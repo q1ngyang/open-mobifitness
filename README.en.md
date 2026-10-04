@@ -8,9 +8,9 @@ OpenMOBI is an independent Android app for using Mobi fitness equipment after th
 
 ## Download
 
-**[Download v0.3.1 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.1/OpenMOBI-0.3.1.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.1.md#english)
+**[Download v0.3.2 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.2/OpenMOBI-0.3.2.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.2.md#english)
 
-**v0.3.1** makes Exit available in the control-only dock, restores power line charts and groups related plans in difficulty order. Local profiles, 70 plans across four equipment types and full backups remain available. [Profile and upgrade guide](docs/V030_GUIDE.md#english)
+**v0.3.2** makes performance reports more compact with clearer average values. Closing the report after finishing a recording now returns home. [Profile and upgrade guide](docs/V030_GUIDE.md#english)
 
 Requires Android 10 or later on a 64-bit phone or tablet. It can be installed alongside the original app.
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_metric_heading">Metric</string>
+    <string name="report_fastest_short">Fastest</string>
+    <string name="report_slowest_short">Slowest</string>
+</resources>

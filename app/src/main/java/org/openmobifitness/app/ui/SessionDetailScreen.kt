@@ -92,12 +92,8 @@ import kotlin.math.abs
             HorizontalDivider()
             ReportGrid(descriptors.filter { it.key in mainKeys },imperial,true)
         } }
-        val measurements: @Composable ()->Unit = { DetailCard {
-            Text(stringResource(R.string.report_performance),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-            ReportGroups(performance,imperial)
-            if(s.machine==Machine.DUMBBELL) Text(stringResource(R.string.report_no_sets),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            DataLine(stringResource(R.string.status_label),stringResource(sessionStatus(s.status)))
-        } }
+        val resistanceRange=remember(s.capabilitySnapshot) { s.reportResistanceRange() }
+        val measurements: @Composable ()->Unit = { ReportPerformanceCard(performance,imperial,stringResource(sessionStatus(s.status)),s.machine==Machine.DUMBBELL,resistanceRange) }
         val chart: @Composable ()->Unit = { DetailCard {
             Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) { availableSeries.forEach { m -> FilterChip(selected=chosen==m,onClick={ selected=m.name },label={ Text(stringResource(seriesResource(m,s.machine))) }) } }
             val metric=stats.metrics.getValue(chosen)

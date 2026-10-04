@@ -160,10 +160,10 @@ class V020OverlayTest {
             clickDescription(text(R.string.open_app))
             assertTrue(device.wait(Until.hasObject(By.desc(text(R.string.finish_save))),30000))
             main { c.finish() }; await { c.state.value.session==null }
-            assertTrue(c.state.value.controlOnly)
+            assertFalse(c.state.value.inUse)
             clickDescription(text(R.string.close))
             assertTrue(device.wait(Until.hasObject(By.text(text(R.string.control_only))),15000))
-            screen("06-back-in-control")
+            screen("06-back-home")
         } catch(error: Throwable) {
             screen("failure")
             device.dumpWindowHierarchy(File(directory,"failure-hierarchy.xml"))

@@ -17,7 +17,7 @@
 
 ## 仅控制或开始记录
 
-连接后，在首页自由运动卡片选择「仅控制」，即可查看实时指标、调阻和使用悬浮窗；这个模式不保存记录，今日统计也不会增加。需要保存时点「开始记录」，保留当前连接和档位，从新的计数基准开始。自由记录结束保存后回到仅控制，已保存的记录可在「记录」页查看。
+连接后，在首页自由运动卡片选择「仅控制」，即可查看实时指标、调阻和使用悬浮窗；这个模式不保存记录，今日统计也不会增加。需要保存时点「开始记录」，保留当前连接和档位，从新的计数基准开始。结束保存后显示完成报告，关闭报告返回首页；设备连接保留，记录可在「记录」页查看。
 
 不再使用时，点击底部红色描边「退出」即可断开器材及心率配件并回到首页，不生成记录。
 
@@ -31,7 +31,7 @@
 - 运动中用加减按钮或滑块调阻。跟随方案时，手动调阻会退出自动模式，之后可以重新打开「自动调阻」。
 - 档位以器材反馈为准。百分比是当前档位除以最高档位，例如 24 档器材的 12 档是 50%，不是个人运动强度的百分比。
 - 点击「显示设置」挑选运动指标；部分指标需要器材提供数据，没有数据时显示 `—`。
-- 方案训练点击「结束并保存」后可查看本次详情；自由记录保存后回到仅控制。暂停和结束只管理 App 内的训练，**不等于让器材停机**。
+- 方案训练或自由记录点击「结束并保存」后可查看本次详情，关闭后返回首页。从「记录」打开详情时，返回仍回到记录列表。暂停和结束只管理 App 内的训练，**不等于让器材停机**。
 
 ## 一边看视频，一边运动
 
@@ -76,7 +76,7 @@ Use the header name to add or switch profiles and choose a photo avatar. Each pr
 
 ### Control only or record
 
-After connecting, choose Control only on the home card to view readings, adjust resistance and use floating panels without creating history. Start recording retains the connection and level, using a new counter baseline. Finishing a free recording returns to Control only; the saved workout is available in History.
+After connecting, choose Control only on the home card to view readings, adjust resistance and use floating panels without creating history. Start recording retains the connection and level, using a new counter baseline. Finishing shows the saved report; closing it returns home while retaining device connections. The saved workout remains available in History.
 
 When finished, tap the red outlined Exit button in the bottom dock to disconnect equipment and the heart-rate accessory and return home without creating a record.
 
@@ -90,7 +90,7 @@ Save up to four resistance presets for the current equipment. Editing presets do
 - Use the buttons or slider to change resistance. A manual change turns off automatic resistance; you can turn Automatic mode back on.
 - The current level comes from equipment feedback. The percentage is level divided by maximum level: 12 of 24 is 50%. It is not a percentage of your personal exercise intensity.
 - Use Display settings to choose metrics. A metric shows `—` when the required data is unavailable.
-- Finishing a plan offers its details; finishing a free recording returns to Control only. Pause and finish manage the workout in the app; **they do not stop the equipment's motor**.
+- Finishing either a plan or a free recording shows its report; closing the report returns home. Details opened from History still return to the history list. Pause and finish manage the workout in the app; **they do not stop the equipment's motor**.
 
 ### Watch while you exercise
 

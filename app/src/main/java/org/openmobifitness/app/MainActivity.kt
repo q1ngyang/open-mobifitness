@@ -146,6 +146,15 @@ class MainActivity : ComponentActivity() {
         ensureService(); controller.enterControl(); page.value=0; focusTraining.value=true
     }
     fun exitControl() { controller.exitControl(); focusTraining.value=false; page.value=0; stopIdleService() }
+    fun closeCompletedReport() {
+        if(controller.finishedSession.value==null) return
+        controller.dismissResult()
+        // History details have their own back stack. Only the post-save report returns home.
+        if(!controller.state.value.inUse) {
+            focusTraining.value=false; page.value=0
+            if(controller.ble.state.value.phase=="disconnected" && controller.heart.state.value.phase=="disconnected") stopIdleService()
+        }
+    }
     private fun stopIdleService() { if(controller.serviceStarted) startService(Intent(this,WorkoutService::class.java).setAction(WorkoutService.STOP_IF_IDLE)) }
     fun minimize() {
         if(!controller.state.value.inUse || !controller.display.floatingEnabled.value) return

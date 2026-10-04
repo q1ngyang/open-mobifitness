@@ -57,7 +57,7 @@ class ControlOnlyTest {
         assertEquals(c.app.getString(R.string.not_recording),c.app.reading(MetricId.TIME,c).value)
         assertEquals("—",c.app.reading(MetricId.DISTANCE,c).value)
     }
-    @Test fun recordingStartsAtNewCounterBaselineAndFinishesBackInControl()=runBlocking {
+    @Test fun recordingStartsAtNewCounterBaselineAndFinishesIdleWithoutDisconnecting()=runBlocking {
         c.enterControl().join(); tick(1100.0)
         val connection=c.ble.connectionId
         c.start().join(); tick(1125.0)
@@ -66,8 +66,11 @@ class ControlOnlyTest {
         c.pauseResume().join(); tick(1505.0); tick(1520.0)
         assertEquals(40.0,c.state.value.session!!.distanceM!!,0.0)
         c.finish().join()
-        assertEquals(UseMode.CONTROL_ONLY,c.state.value.mode)
+        assertEquals(UseMode.IDLE,c.state.value.mode)
         assertNull(c.state.value.selected)
+        assertFalse(c.state.value.automatic)
+        assertFalse(c.state.value.inUse)
+        assertEquals("ready",c.ble.state.value.phase)
         tick(1600.0)
         val archive=c.repo.archive()
         assertEquals(1,archive.sessions.size)
@@ -76,6 +79,29 @@ class ControlOnlyTest {
         assertEquals(40.0,archive.sessions.single().distanceM!!,0.0)
         assertEquals(12.0,c.controlResistance()!!,0.0)
         assertEquals(connection,c.ble.connectionId)
+    }
+    @Test fun successfulFinishCancelsQueuedControlAndKeepsTheSavedReportAcrossControllerRestart()=runBlocking {
+        c.heart.state.value=LinkState(name="Heart",phase="ready",machine=Machine.HEART,metrics=Metrics(heartBpm=132),heartAt=now)
+        val primary=c.ble.connectionId; val accessory=c.heart.connectionId
+        c.start().join(); tick(1020.0)
+        val id=c.state.value.session!!.id
+        val generation=c.ble.controlGeneration
+        c.adjustTo(18.0)
+        c.finish().join()
+        delay(750)
+        assertFalse(c.state.value.inUse); assertNull(c.state.value.pendingResistance)
+        assertTrue(c.ble.controlGeneration>generation); assertNull(c.ble.state.value.requested)
+        assertEquals(primary,c.ble.connectionId); assertEquals(accessory,c.heart.connectionId)
+        assertEquals("ready",c.ble.state.value.phase); assertEquals("ready",c.heart.state.value.phase)
+        assertEquals(id,c.finishedSession.value)
+        c.scope.cancel(); c.repo.db.close()
+        c=Controller(RuntimeEnvironment.getApplication(),CoroutineScope(SupervisorJob()+Dispatchers.Unconfined),{ now },false)
+        withTimeout(5000) { c.state.first { it.ready } }
+        assertEquals(id,c.finishedSession.value); assertEquals(UseMode.IDLE,c.state.value.mode)
+        c.dismissResult()
+        assertNull(c.finishedSession.value)
+        assertFalse(c.prefs.contains("finished_detail_id"))
+        assertEquals(id,c.repo.archive().sessions.single().id)
     }
     @Test fun reconnectDoesNotResumeOrChargeOfflineCounters()=runBlocking {
         c.enterControl().join(); c.start().join(); tick(1010.0)
@@ -214,6 +240,7 @@ class ControlOnlyTest {
         try { c.idleOperation { fail("Restore must remain blocked") }; fail() } catch(_: IllegalStateException) { }
         withContext(Dispatchers.IO) { c.repo.db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_final_save") }
         c.finish().join(); assertNull(c.state.value.session); assertEquals(session.id,c.finishedSession.value)
+        assertEquals(UseMode.IDLE,c.state.value.mode); assertNull(c.state.value.error)
         c.switchUser(other.id).join(); assertEquals(other.id,c.currentUser.value?.id)
     }
     @Test fun startRequestedDuringRestoreDoesNotRunAfterTheRestoreReleasesItsLock()=runBlocking {

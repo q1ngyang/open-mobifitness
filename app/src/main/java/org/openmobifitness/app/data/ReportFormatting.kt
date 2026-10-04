@@ -5,6 +5,23 @@ import org.openmobifitness.app.R
 import org.openmobifitness.app.metricLabel
 import org.openmobifitness.core.*
 import java.util.Locale
+import kotlin.math.roundToInt
+
+/** A report belongs to its recorded device, never to whichever device is connected now. */
+fun Session.reportResistanceRange(): ResistanceRange? = runCatching {
+    if(capabilitySnapshot.isEmpty()) return@runCatching null
+    SnapshotValidation.capability(this)
+    val snapshot=org.json.JSONObject(capabilitySnapshot)
+    if(snapshot.optJSONObject("units")?.optString("resistance")!="level") return@runCatching null
+    ResistanceRange(snapshot.getDouble("resistanceMin"),snapshot.getDouble("resistanceMax"),snapshot.getDouble("resistanceIncrement"))
+}.getOrNull()
+
+/** Display rounded levels and their matching percentage; keep stored/CSV statistics precise. */
+fun ReportMetricDescriptor.performanceValue(imperial: Boolean,locale: Locale,range: ResistanceRange?): Pair<String,String> {
+    if(metric!=MetricId.RESISTANCE) return reportValue(imperial,locale)
+    val level=value?.takeIf { it.isFinite() }?.roundToInt() ?: return "—" to ""
+    return String.format(locale,"%d",level) to (range?.takeIf { it.max>0 }?.percentage(level.toDouble())?.let { "$it%" } ?: "")
+}
 
 /** Read archived units, never infer a capability from a device name or a desired target. */
 fun Session.reportEvidence(): Set<SeriesMetric> = runCatching {
