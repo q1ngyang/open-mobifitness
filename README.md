@@ -8,9 +8,9 @@ OpenMOBI 是一款独立开发的 Android 应用，让莫比健身器材在官�
 
 ## 下载
 
-**[下载 v0.3.0 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.0/OpenMOBI-0.3.0.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.3.0.md)
+**[下载 v0.3.1 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.1/OpenMOBI-0.3.1.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.3.1.md)
 
-**v0.3.0** 新增本地多用户、四类器材的 70 套训练方案与分组指标报告，并改善平板、手机及悬浮窗排版。[升级与使用变化](docs/V030_GUIDE.md)
+**v0.3.1** 补齐仅控制模式的底部退出入口、恢复功率折线图，并将同类方案按难度递进排列。本地多用户、四类器材的 70 套方案和完整备份继续保留。[多用户与升级说明](docs/V030_GUIDE.md)
 
 支持 Android 10 及以上的 64 位手机和平板，可与官方 App 共存。
 

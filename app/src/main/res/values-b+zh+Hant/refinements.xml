@@ -6,6 +6,6 @@
     <string name="plan_rower_help">以划頻和連貫動作節奏為主，阻力請在器材端按自身感受設定。可複製方案調整划頻範圍和訓練時長。</string>
     <string name="plan_treadmill_help">速度與坡度僅作手動調節參考，請按步態和體能複製調整。開始記錄不會啟動跑步機，也不會自動改變速度或坡度。</string>
     <string name="plan_short_interval_help">10 分鐘間歇是短訓練片段。開始前另做充分熱身，結束後逐漸冷卻；可使用獨立熱身、冷卻方案。</string>
-    <string name="report_power_bars">柱狀圖顯示各時間段的取樣峰值，缺測區間留空。</string>
+    <string name="exit_control">離開</string>
     <string name="minimum_value">最低</string>
 </resources>

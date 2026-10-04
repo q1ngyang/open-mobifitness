@@ -2,9 +2,19 @@
 
 [首页 / Home](../README.md) · [English home](../README.en.md)
 
-以下是 **v0.3.0 实际运行截图**，来自 Android 14 模拟器，使用 Debug 合成演示数据。包括最终发布包的平板横屏截图，以及未受后续局部调整影响的页面截图；详细范围见[版本验证](V030_VALIDATION.md)与[界面精修](V030_REFINEMENTS.md)。模拟器展示不代表真实器材兼容性。
+以下是 **v0.3.1 与未受本次修改影响的 v0.3.0 实际运行截图**，来自 Android 14 模拟器，使用 Debug 合成演示数据。新版改动见[发布说明](releases/v0.3.1.md)，原有页面的验证范围见[版本验证](V030_VALIDATION.md)与[界面精修](V030_REFINEMENTS.md)。模拟器展示不代表真实器材兼容性。
 
-These are **actual v0.3.0 app captures** from an Android 14 emulator with synthetic Debug data. They include the final release build's landscape tablet view and captures of pages unaffected by later localized changes. See [validation](V030_VALIDATION.md#english) and [interface refinements](V030_REFINEMENTS.md#english) for the testing scope. Emulator captures do not establish hardware compatibility.
+These are **actual v0.3.1 captures and unchanged v0.3.0 views** from an Android 14 emulator with synthetic Debug data. See the [release notes](releases/v0.3.1.md#english) for new behavior, and [validation](V030_VALIDATION.md#english) and [interface refinements](V030_REFINEMENTS.md#english) for the earlier scope. Emulator captures do not establish hardware compatibility.
+
+## 直接退出与功率折线 / Direct exit and power lines · v0.3.1
+
+仅控制模式在底部提供「退出」；报告默认优先展示有数据的功率折线，缺测区间断开，真实零值保留。
+
+Control-only mode has an Exit action in the bottom dock. Reports prefer available power as a line, leaving missing intervals disconnected and preserving measured zeros.
+
+| 底部退出 / Bottom Exit action | 功率折线 / Power line chart |
+| :---: | :---: |
+| <img src="screenshots/v031-control-exit-phone.png" alt="仅控制模式底部的退出按钮 / Exit action in control-only mode" width="300"> | <img src="screenshots/v031-power-line-phone.png" alt="包含缺测和有效零值的功率折线 / Power line with gaps and measured zeros" width="300"> |
 
 ## 平板训练 / Tablet workout
 
@@ -29,14 +39,6 @@ The header retains the brand and current user. Unrecorded state is highlighted, 
 | 小窗 / Compact | 大窗 / Expanded |
 | :---: | :---: |
 | <img src="screenshots/v030-refined-overlay-compact.png" alt="小悬浮窗 / Compact floating panel" width="350"> | <img src="screenshots/v030-refined-overlay-expanded-6.png" alt="六指标悬浮窗 / Six-reading expanded panel" width="350"> |
-
-## 分组报告 / Grouped report
-
-同类指标的平均、最大、最低放在一起；有数据时默认展示功率柱状图。
-
-Averages and extremes stay grouped by metric. Available power is the default chart.
-
-<img src="screenshots/v030-refined-report-tablet.png" alt="按指标分组的运动报告 / Workout report grouped by metric" width="1000">
 
 ## 设备与设置 / Devices and settings
 

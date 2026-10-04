@@ -4,6 +4,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class BuiltinProgramsTest {
+    @Test fun relatedPlansStayAdjacentAndProgressFromLighterToHarder() {
+        val families=listOf(setOf("warmup","recovery","cooldown"),setOf("light","moderate","vigorous"),setOf("steady20","steady30"),setOf("pyramid20","pyramid30"),setOf("interval10","interval20","interval30"),setOf("hiit","hiit30","hiit40"))
+        WorkoutPolicy.supported.forEach { machine ->
+            val plans=WorkoutPolicy.templates(machine)
+            families.forEachIndexed { familyIndex,family ->
+                val positions=plans.indices.filter { plans[it].id.substringBeforeLast('_') in family }
+                assertTrue("$machine keeps $family together",positions.zipWithNext().all { (a,b) -> b==a+1 })
+                if(familyIndex>0) {
+                    val group=positions.map(plans::get)
+                    assertTrue("$machine progresses duration within $family",group.zipWithNext().all { (a,b) -> a.steps.sumOf { it.target }<=b.steps.sumOf { it.target } })
+                    fun effort(w: Workout)=w.steps.maxOf { it.resistancePercent?.toDouble() ?: it.speedTargetMps ?: it.frequency.upper ?: 0.0 }
+                    assertTrue("$machine progresses targets within $family",group.zipWithNext().all { (a,b) -> effort(a)<=effort(b) })
+                }
+            }
+        }
+    }
     @Test fun catalogIsTypedRoundTrippableAndKeepsStableFavorites() {
         val all=WorkoutPolicy.supported.flatMap(WorkoutPolicy::templates)
         assertEquals(70,all.size); assertEquals(all.size,all.map { it.id }.distinct().size)

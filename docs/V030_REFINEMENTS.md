@@ -2,6 +2,8 @@
 
 本页记录 v0.3.0 的响应式界面规则，保留品牌、首页圆环位置与多用户数据规则。安装入口见 [版本说明](releases/v0.3.0.md)。
 
+后续修正：[v0.3.1](releases/v0.3.1.md) 已将报告功率改为折线图，并补齐底部退出入口、整理方案顺序；下文保留 v0.3.0 的验证范围。Later changes: [v0.3.1](releases/v0.3.1.md#english) restores power lines, adds the missing exit action and groups related plans. The validation scope below describes v0.3.0.
+
 ## 最终设计规则
 
 1. **小悬浮窗**：姓名放在标题栏、展开按钮左侧；删去重复整行状态。底部以蓝色胶囊展示控制／阶段状态，以琥珀色展示尚未记录提醒。保留 OpenMOBI 品牌和拖动区域。

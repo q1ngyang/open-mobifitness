@@ -6,6 +6,6 @@
     <string name="plan_rower_help">ストローク数と滑らかな動作を意識します。抵抗は機器側で体感に合わせて設定し、プランを複製して頻度と時間を調整できます。</string>
     <string name="plan_treadmill_help">速度と傾斜は手動調整の目安です。歩き方や体力に合わせて複製・調整してください。記録開始で機器は起動せず、速度や傾斜も自動変更されません。</string>
     <string name="plan_short_interval_help">10分インターバルは短い運動ブロックです。別途ウォームアップとクールダウンを行ってください。専用プランもあります。</string>
-    <string name="report_power_bars">棒は各時間帯のサンプル最大値です。欠測区間は空白のまま表示します。</string>
+    <string name="exit_control">終了</string>
     <string name="minimum_value">最低</string>
 </resources>

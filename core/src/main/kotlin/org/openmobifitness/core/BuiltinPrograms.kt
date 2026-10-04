@@ -5,6 +5,17 @@ package org.openmobifitness.core
  * Treadmill targets are guidance only; no motor, speed or incline commands are added.
  */
 object BuiltinPrograms {
+    // Presentation order is independent of schedules: its first 14 entries define
+    // the existing rowing/treadmill catalog, not a difficulty or display order.
+    private val displayOrder=listOf(
+        "warmup","recovery","cooldown",
+        "light","moderate","vigorous",
+        "steady20","steady30","endurance",
+        "weight","cardio40","progressive",
+        "pyramid20","pyramid30","strength",
+        "interval10","interval20","interval30",
+        "hiit","hiit30","hiit40"
+    ).withIndex().associate { it.value to it.index }
     private data class Block(val minutes: Double,val effort: Int,val recovery: Boolean=false)
     private fun b(minutes: Number,effort: Int,recovery: Boolean=false)=Block(minutes.toDouble(),effort,recovery)
     private fun intervals(warm: Int,rounds: Int,work: Double,easy: Double,effort: Int=3)=
@@ -77,6 +88,7 @@ object BuiltinPrograms {
     }
     private val all: Map<Machine,List<Workout>> by lazy {
         mapOf(Machine.ELLIPTICAL to originalElliptical(),Machine.BIKE to authored(Machine.BIKE),Machine.ROWER to authored(Machine.ROWER),Machine.TREADMILL to authored(Machine.TREADMILL))
+            .mapValues { (_,plans) -> plans.sortedBy { displayOrder.getValue(it.id.substringBeforeLast('_')) } }
     }
     fun forMachine(machine: Machine): List<Workout> = all[machine].orEmpty()
 }

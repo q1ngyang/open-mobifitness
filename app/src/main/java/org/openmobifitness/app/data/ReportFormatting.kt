@@ -50,21 +50,3 @@ fun Context.rangeText(range: PersonalRange,unit: String): String {
     val lower=range.lower; val upper=range.upper
     return when { lower!=null && upper!=null -> "${n(lower)}–${n(upper)} $unit"; lower!=null -> getString(R.string.report_lower,n(lower))+" $unit"; else -> getString(R.string.report_upper,n(upper!!))+" $unit" }
 }
-
-/** Use actual peak samples, not means of a downsampled series. Keep missing-data segments separate. */
-fun powerBarPeaks(points: List<PlotPoint>,elapsedMs: Long,buckets: Int=48): List<PlotPoint> {
-    require(buckets>0)
-    return points.groupBy { it.segment to powerBarIndex(it.ms,elapsedMs,buckets) }
-        .values.map { group -> group.maxBy { it.value } }.sortedBy { it.ms }
-}
-fun powerBarIndex(ms: Long,elapsedMs: Long,buckets: Int=48): Int {
-    require(buckets>0)
-    val interval=(elapsedMs.coerceAtLeast(1)/buckets.toDouble()).coerceAtLeast(1.0)
-    return (ms/interval).toInt().coerceIn(0,buckets-1)
-}
-/** Select the displayed bar, not a neighboring sample whose timestamp happens to be closer. */
-fun powerBarAtTime(peaks: List<PlotPoint>,elapsedMs: Long,ms: Long,buckets: Int=48): PlotPoint? {
-    if(ms<0 || ms>elapsedMs) return null
-    val index=powerBarIndex(ms,elapsedMs,buckets)
-    return peaks.filter { powerBarIndex(it.ms,elapsedMs,buckets)==index }.maxByOrNull { it.value }
-}

@@ -19,13 +19,15 @@
 
 连接后，在首页自由运动卡片选择「仅控制」，即可查看实时指标、调阻和使用悬浮窗；这个模式不保存记录，今日统计也不会增加。需要保存时点「开始记录」，保留当前连接和档位，从新的计数基准开始。自由记录结束保存后回到仅控制，已保存的记录可在「记录」页查看。
 
+不再使用时，点击底部红色描边「退出」即可断开器材及心率配件并回到首页，不生成记录。
+
 一台主运动器材可以另接一台心率配件。「设备」页保留连接成功的常用设备，可加备注或移除；点设备后才会连接，不自动套用上次档位。断连会暂停记录，重连后确认读数，再主动继续。
 
 阻力区可按当前设备保存最多四个常用档位，编辑不会立即调阻。没有档位回报的设备会明确标为设定值；待确认请求与实际阻力分开显示。
 
 ## 开始一次训练
 
-- 在「训练」页选择自由运动，或按器材搜索 70 套内置方案。收藏的方案会优先显示；也可以添加自己的训练。椭圆机、单车、划船机与跑步机提供对应编辑项，方案详情会明确提示未连接或器材不匹配。
+- 在「训练」页选择自由运动，或按器材搜索 70 套内置方案。同类方案相邻排列，按强度或时长递进；可按收藏筛选，也可以添加自己的训练。椭圆机、单车、划船机与跑步机提供对应编辑项，方案详情会明确提示未连接或器材不匹配。
 - 运动中用加减按钮或滑块调阻。跟随方案时，手动调阻会退出自动模式，之后可以重新打开「自动调阻」。
 - 档位以器材反馈为准。百分比是当前档位除以最高档位，例如 24 档器材的 12 档是 50%，不是个人运动强度的百分比。
 - 点击「显示设置」挑选运动指标；部分指标需要器材提供数据，没有数据时显示 `—`。
@@ -47,7 +49,7 @@
 
 - 首页「今日已记录」统计今天已保存的非演示训练，点它可进入记录。
 - 「记录」默认展示周概览，可按用户、设备、来源筛选和搜索，并切换月／年趋势。查看其他人的记录不会切换当前训练用户。列表默认显示本月及之前五个月，较早的记录在「全部记录」按年／月查找。
-- 点击记录查看时长、热量、距离，以及按同类指标分组的均值／极值；默认展示有数据的功率图。内容取决于器材提供的数据，缺测不补零。
+- 点击记录查看时长、热量、距离，以及按同类指标分组的均值／极值；默认展示有数据的功率折线图。内容取决于器材提供的数据，缺测不补零、不跨缺测区间连线。
 - 「记录 → ⋮ → 导出统计 CSV」适合用表格软件查看；它不是备份文件，不能重新导入。
 - 换设备或重装前，到「设置 → 数据管理 → 导出完整备份」。备份包含全部保留的用户、头像、个人设置、方案及记录。在新设备同一页面选择「导入文件」，预览后确认；已有档案与个人设置默认不覆盖，共享偏好按所选组恢复。重复记录跳过，内容冲突则取消导入。v0.3.0 新备份需要兼容的新版本读取。卸载会删除 App 内数据。
 
@@ -76,13 +78,15 @@ Use the header name to add or switch profiles and choose a photo avatar. Each pr
 
 After connecting, choose Control only on the home card to view readings, adjust resistance and use floating panels without creating history. Start recording retains the connection and level, using a new counter baseline. Finishing a free recording returns to Control only; the saved workout is available in History.
 
+When finished, tap the red outlined Exit button in the bottom dock to disconnect equipment and the heart-rate accessory and return home without creating a record.
+
 Use one primary machine and an optional heart-rate accessory. Successfully connected devices appear in Devices, with optional notes and removal. Tap to connect; saved levels are never applied automatically. A disconnect pauses recording; reconnect, check the readings and resume explicitly.
 
 Save up to four resistance presets for the current equipment. Editing presets does not change resistance. Devices without resistance feedback show the commanded value explicitly; pending requests stay distinct from actual feedback.
 
 ### Start a workout
 
-- Choose Free workout or search 70 built-in plans by equipment. Favorites appear first. Elliptical, cycling, rowing and treadmill plans have their own editing fields; details explain disconnected or mismatched equipment. You can also create your own plans.
+- Choose Free workout or search 70 built-in plans by equipment. Related plans stay together with increasing targets or durations; filter by favorites or create your own plans. Elliptical, cycling, rowing and treadmill plans have their own editing fields; details explain disconnected or mismatched equipment.
 - Use the buttons or slider to change resistance. A manual change turns off automatic resistance; you can turn Automatic mode back on.
 - The current level comes from equipment feedback. The percentage is level divided by maximum level: 12 of 24 is 50%. It is not a percentage of your personal exercise intensity.
 - Use Display settings to choose metrics. A metric shows `—` when the required data is unavailable.
@@ -104,7 +108,7 @@ Hints compare readings with your entered range without inferring personal zones,
 
 - Recorded today counts saved, non-demo workouts from the current day. Tap it to open History.
 - History opens to the weekly overview. Search or filter by user, equipment and source, and switch to monthly/yearly trends. Viewing another user's history does not change the training user. The list shows this month and the previous five months; use All records for older workouts.
-- Open a workout for duration, energy, distance and grouped averages/extremes. Available power is the default chart. Details depend on actual readings; missing data is not filled with zero.
+- Open a workout for duration, energy, distance and grouped averages/extremes. Available power is the default line chart. Missing intervals are neither filled with zero nor joined by a line.
 - History → ⋮ → Export summary CSV creates a readable spreadsheet report. This report cannot be imported as a backup.
 - Before reinstalling or moving devices, use Settings → Data management → Export full backup. It includes all retained profiles, avatars, personal settings, plans and records. Choose Import file on the new device and review the preview. Existing profiles and personal preferences are not overwritten by default; shared settings follow your selected groups. Identical records are skipped; conflicting content cancels the import. New v0.3.0 backups require a compatible new app. Uninstalling removes local app data.
 

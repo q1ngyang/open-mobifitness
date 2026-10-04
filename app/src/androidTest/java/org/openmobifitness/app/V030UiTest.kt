@@ -81,8 +81,8 @@ class V030UiTest {
         screen("02-plan-grid")
         if(args.getString("expectedColumns")!=null) {
             val expected=args.getString("expectedColumns")!!.toInt()
-            val ids=listOf("warmup","recovery","steady20").take(expected)
-            val positions=ids.map { compose.onNodeWithTag("plan-${it}_elliptical").fetchSemanticsNode().boundsInRoot }
+            val ids=WorkoutPolicy.templates(Machine.ELLIPTICAL).take(expected).map { it.id }
+            val positions=ids.map { compose.onNodeWithTag("plan-$it").fetchSemanticsNode().boundsInRoot }
             assertTrue(positions.all { kotlin.math.abs(it.top-positions.first().top)<2f })
             assertEquals(expected,positions.map { it.left }.distinct().size)
         }

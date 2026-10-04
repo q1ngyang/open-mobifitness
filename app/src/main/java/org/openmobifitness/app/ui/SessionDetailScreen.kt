@@ -104,9 +104,8 @@ import kotlin.math.abs
             val representative=descriptors.first { it.series==chosen }
             val unit=representative.reportValue(imperial,locale).second
             val scale=if(imperial) when(chosen) { SeriesMetric.SPEED -> 1/1.609344; SeriesMetric.STRIDE -> 3.280839895; SeriesMetric.LOAD -> 2.204622622; else -> 1.0 } else 1.0
-            DetailChart(metric.points.map { it.copy(value=it.value*scale) },s.elapsedMs,stringResource(seriesResource(chosen,s.machine)),if(chosen==SeriesMetric.PACE) "s / 500m" else unit,if(chosen==SeriesMetric.HEART) Color(0xFFE63D77) else MaterialTheme.colorScheme.primary,bars=chosen==SeriesMetric.POWER)
+            DetailChart(metric.points.map { it.copy(value=it.value*scale) },s.elapsedMs,stringResource(seriesResource(chosen,s.machine)),if(chosen==SeriesMetric.PACE) "s / 500m" else unit,if(chosen==SeriesMetric.HEART) Color(0xFFE63D77) else MaterialTheme.colorScheme.primary)
             ReportGroups(descriptors.filter { it.series==chosen },imperial)
-            if(chosen==SeriesMetric.POWER) Text(stringResource(R.string.report_power_bars),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(R.string.coverage_format,shortDuration(metric.coverageMs),shortDuration(s.elapsedMs)),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(chosen==SeriesMetric.PACE) Text(stringResource(R.string.report_pace_basis),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
@@ -248,35 +247,25 @@ import kotlin.math.abs
         else Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) { Text(label,Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant); Text(value,Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium,fontWeight=FontWeight.Medium) }
     }
 }
-@Composable private fun DetailChart(points: List<PlotPoint>,elapsed: Long,label: String,unit: String,color: Color,bars: Boolean=false) {
+@Composable private fun DetailChart(points: List<PlotPoint>,elapsed: Long,label: String,unit: String,color: Color) {
     var selected by remember(points) { mutableStateOf<PlotPoint?>(null) }
-    val visiblePoints=remember(points,elapsed,bars) { if(bars) powerBarPeaks(points,elapsed) else points }
     val line=MaterialTheme.colorScheme.outlineVariant; val textColor=MaterialTheme.colorScheme.onSurfaceVariant
-    Text(selected?.let { "${shortDuration(it.ms)} · ${displayNumber(it.value,1)} $unit" } ?: (label+if(unit.isEmpty()) "" else " ($unit)"),style=MaterialTheme.typography.labelMedium,color=textColor)
+    Text(selected?.let { "${shortDuration(it.ms)} · ${displayNumber(it.value,1)} $unit" } ?: (label+if(unit.isEmpty()) "" else " ($unit)"),Modifier.testTag("detail-chart-readout"),style=MaterialTheme.typography.labelMedium,color=textColor)
     if(points.isEmpty()) { Box(Modifier.fillMaxWidth().height(160.dp),contentAlignment=Alignment.Center) { Text(stringResource(R.string.no_samples),style=MaterialTheme.typography.bodyMedium,color=textColor) }; return }
     val maximum=(points.maxOf { it.value }*1.1).coerceAtLeast(1.0); val minimum=points.minOf { it.value }.coerceAtMost(0.0)
     val description="$label: ${displayNumber(points.minOf { it.value })}–${displayNumber(points.maxOf { it.value })} $unit"
-    Canvas(Modifier.fillMaxWidth().height(180.dp).semantics { contentDescription=description }.pointerInput(points,elapsed,bars) { detectTapGestures { tap -> val target=(tap.x-34.dp.toPx())/(size.width-34.dp.toPx())*elapsed; selected=if(bars) powerBarAtTime(visiblePoints,elapsed,target.toLong()) else visiblePoints.minByOrNull { abs(it.ms-target) } } }) {
+    Canvas(Modifier.fillMaxWidth().height(180.dp).testTag("detail-chart").semantics { contentDescription=description }.pointerInput(points,elapsed) { detectTapGestures { tap -> val target=(tap.x-34.dp.toPx())/(size.width-34.dp.toPx())*elapsed; selected=points.minByOrNull { abs(it.ms-target) } } }) {
         val left=34.dp.toPx(); val top=8.dp.toPx(); val bottom=size.height-24.dp.toPx(); val width=size.width-left; val height=bottom-top
         val paint=android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color=textColor.toArgb(); textSize=10.sp.toPx() }
         repeat(4) { n->val y=bottom-height*n/3; drawLine(line,Offset(left,y),Offset(size.width,y),1.dp.toPx()); drawContext.canvas.nativeCanvas.drawText(displayNumber(minimum+(maximum-minimum)*n/3),0f,y+4.dp.toPx(),paint) }
         fun point(p: PlotPoint): Offset {
-            val fraction=if(bars) (powerBarIndex(p.ms,elapsed)+.5)/48 else p.ms.toDouble()/elapsed.coerceAtLeast(1)
+            val fraction=p.ms.toDouble()/elapsed.coerceAtLeast(1)
             return Offset(left+(fraction*width).toFloat(),bottom-((p.value-minimum)/(maximum-minimum)*height).toFloat())
         }
-        if(bars) {
-            // Peak-preserving reduction keeps a readable number of bars and never joins segments.
-            visiblePoints.forEach { p ->
-                val here=point(p)
-                val stroke=(width/48*.65f).coerceIn(.75.dp.toPx(),12.dp.toPx())
-                drawLine(color,Offset(here.x,bottom),here,stroke)
-            }
-        } else {
         val path=Path(); var previous: PlotPoint?=null
         points.forEach { p -> val pt=point(p); if(previous==null || p.segment!=previous!!.segment) path.moveTo(pt.x,pt.y) else path.lineTo(pt.x,pt.y); previous=p }
         drawPath(path,color,style=Stroke(2.dp.toPx()))
         points.forEachIndexed { i,p -> if((i==0 || points[i-1].segment!=p.segment) && (i==points.lastIndex || points[i+1].segment!=p.segment)) drawCircle(color,2.5.dp.toPx(),point(p)) }
-        }
         selected?.let { val p=point(it); drawLine(color.copy(alpha=.4f),Offset(p.x,top),Offset(p.x,bottom),1.dp.toPx()); drawCircle(color,4.dp.toPx(),p) }
         listOf(0L,elapsed/2,elapsed).forEachIndexed { i,ms -> paint.textAlign=when(i) { 0->android.graphics.Paint.Align.LEFT; 2->android.graphics.Paint.Align.RIGHT; else->android.graphics.Paint.Align.CENTER }; drawContext.canvas.nativeCanvas.drawText(shortDuration(ms),left+width*i/2,size.height-3.dp.toPx(),paint) }
     }

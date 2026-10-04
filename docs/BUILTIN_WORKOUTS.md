@@ -2,6 +2,8 @@
 
 本轮内置 70 个 OpenMOBI 原创、可复制编辑的方案：椭圆机 21、单车 21、划船机 14、跑步机 14。名称沿用已有热身、恢复、稳定、耐力、间歇、金字塔、递进、冷却等类别。不同器材使用不同目标，不能互相启动。既有方案 ID、收藏兼容；已保存记录按原始方案快照解释。
 
+v0.3.1 将同类方案集中展示，组内按强度或时长递进，HIIT 按入门 20 分钟、递进 30 分钟、长间歇 40 分钟相邻排列。排序独立于训练编排，不改变各器材方案数量、ID、收藏、阶段或历史快照。
+
 ## 参考材料与证据边界
 
 核验日期：2026-10-04。
@@ -36,6 +38,8 @@
 ## English
 
 The library contains 70 original, editable OpenMOBI plans: 21 elliptical, 21 cycling, 14 rowing and 14 treadmill plans. Familiar warm-up, recovery, steady, endurance, interval, pyramid, progression and cooldown categories are retained. Existing IDs and favorites remain compatible; saved workouts use their original plan snapshots.
+
+Version 0.3.1 groups related plans with increasing targets or durations, keeping the 20-, 30- and 40-minute HIIT variants adjacent. Presentation order is separate from workout authoring and does not change equipment-specific counts, IDs, favorites, stages or historical snapshots.
 
 Sources were checked on 2026-10-04. Local inspection of the Chinese 4.5.16.1 and international 2.1.14 original apps established editor fields, stage conditions and execution semantics, but did not recover a verifiable complete offline course library. See the [protocol verification method](PROTOCOL_VERIFICATION.md). These plans are not presented as official courses.
 

@@ -6,6 +6,6 @@
     <string name="plan_rower_help">분당 스트로크 수와 부드러운 동작에 집중하세요. 저항은 기기에서 체감에 맞게 설정하고 계획을 복사하여 빈도와 시간을 조정할 수 있습니다.</string>
     <string name="plan_treadmill_help">속도와 경사는 수동 조절 참고값입니다. 편안한 보행에 맞게 복사하고 조정하세요. 기록을 시작해도 러닝머신이 켜지거나 속도와 경사가 자동으로 바뀌지 않습니다.</string>
     <string name="plan_short_interval_help">10분 인터벌은 짧은 운동 구간입니다. 전후로 충분히 준비 운동과 정리 운동을 하세요. 별도 계획을 이용할 수 있습니다.</string>
-    <string name="report_power_bars">막대는 시간 구간별 표본 최댓값을 표시합니다. 누락된 구간은 비워 둡니다.</string>
+    <string name="exit_control">종료</string>
     <string name="minimum_value">최소</string>
 </resources>
