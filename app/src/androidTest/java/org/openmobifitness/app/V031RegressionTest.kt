@@ -79,7 +79,8 @@ class V031RegressionTest {
             val bounds=exit.getUnclippedBoundsInRoot()
             val root=compose.onRoot().getUnclippedBoundsInRoot()
             assertTrue("Exit is fully inside the window",bounds.top>=root.top && bounds.bottom<=root.bottom && bounds.left>=root.left && bounds.right<=root.right)
-            assertTrue(compose.onNodeWithTag("pause").getUnclippedBoundsInRoot().right<=bounds.left)
+            val primary=compose.onNodeWithTag("pause").getUnclippedBoundsInRoot()
+            assertTrue("Exit follows the primary action",primary.right<=bounds.left || primary.bottom<=bounds.top)
             if(floating) assertTrue(bounds.right<=compose.onNodeWithTag("float").getUnclippedBoundsInRoot().left)
             else compose.onNodeWithTag("float").assertDoesNotExist()
             screen(if(floating) "control-exit" else "control-exit-no-overlay")
@@ -91,6 +92,7 @@ class V031RegressionTest {
                 val diagnostic=results.joinToString { result -> "${result.layoutInput.text}: ${result.size}, lines="+(0 until result.lineCount).map { "${result.getLineRight(it)},${result.getLineBottom(it)},${result.isLineEllipsized(it)}" } }
                 // Centered text can retain a paragraph alignment offset after intrinsic measurement.
                 assertTrue("Action text remains readable: $diagnostic",results.isNotEmpty() && results.all { result -> !result.multiParagraph.didExceedMaxLines && (0 until result.lineCount).all { !result.isLineEllipsized(it) && result.getLineRight(it)-result.getLineLeft(it)<=result.size.width+1 && result.getLineBottom(it)<=result.size.height+1 } })
+                if(floating && layout.contains("font2")) assertTrue("Large-font actions avoid splitting words",results.all { it.lineCount==1 })
             } }
             exit.performClick()
             compose.waitUntil(30000) { !c.state.value.inUse && !c.serviceStarted }
@@ -99,6 +101,20 @@ class V031RegressionTest {
             assertEquals("Exiting control does not create history",before,records())
         }
         val cfg=compose.activity.resources.configuration
+        if(cfg.fontScale>=1.5f) {
+            compose.runOnUiThread { c.display.floating(true); compose.activity.startControl() }
+            compose.waitUntil(30000) { c.state.value.controlOnly && !c.state.value.starting }
+            compose.onNodeWithTag("pause").performClick()
+            compose.waitUntil(30000) { c.state.value.session!=null && !c.state.value.starting }
+            val recordedId=c.state.value.session!!.id
+            compose.onNodeWithTag("finish").assertIsDisplayed().assertIsEnabled()
+            screen("recording-dock")
+            compose.onNodeWithTag("pause").performClick()
+            compose.waitUntil(30000) { c.state.value.paused }
+            screen("paused-recording-dock")
+            runBlocking { c.finish().join(); c.repo.deleteSession(recordedId) }
+            compose.runOnUiThread { c.dismissResult(); compose.activity.exitControl() }
+        }
         if(cfg.screenWidthDp>=1200 && cfg.fontScale<=1.1f) {
             compose.onNodeWithTag("plan-library").performScrollToNode(hasTestTag("plan-hiit_elliptical"))
             val cards=listOf("hiit","hiit30","hiit40").map { compose.onNodeWithTag("plan-${it}_elliptical").assertIsDisplayed().getUnclippedBoundsInRoot() }

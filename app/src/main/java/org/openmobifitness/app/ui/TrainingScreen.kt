@@ -192,21 +192,40 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
     val minimizeDescription = stringResource(R.string.minimize)
     val finishDescription = stringResource(if(state.controlOnly) R.string.disconnect_exit else R.string.finish_save)
     val density = LocalDensity.current
-    val compactLabels = density.fontScale>=1.2f && (short || LocalWindowInfo.current.containerSize.width / density.density < 600f)
+    val windowWidth = LocalWindowInfo.current.containerSize.width / density.density
+    val compactLabels = density.fontScale>=1.2f && (short || windowWidth < 600f)
+    val twoRows = floating && compactLabels && windowWidth / density.fontScale < 300f
+    val height = if (large) 60.dp else 48.dp
+    val shape = RoundedCornerShape(if (large) 12.dp else 9.dp)
+    val primary: @Composable (Modifier) -> Unit = { modifier ->
+        Button(onClick = pause, enabled=ready && !state.starting, modifier = modifier.heightIn(min=height).testTag("pause"), shape = shape, contentPadding = PaddingValues(horizontal = 6.dp)) {
+            DockContent(if (state.controlOnly || state.paused) WorkoutGlyph.PLAY else WorkoutGlyph.PAUSE, stringResource(if(state.controlOnly) R.string.start_recording else if (state.paused) R.string.resume_recording else R.string.pause_short), large)
+        }
+    }
+    val exit: @Composable (Modifier) -> Unit = { modifier ->
+        OutlinedButton(onClick = finish, enabled = !state.starting, modifier = modifier.heightIn(min=height).testTag("finish").semantics { contentDescription = finishDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), contentPadding = PaddingValues(horizontal = 6.dp)) {
+            DockContent(WorkoutGlyph.STOP, stringResource(if(state.controlOnly) R.string.exit_control else if(compactLabels) R.string.finish_compact else R.string.finish_save), large)
+        }
+    }
+    val overlay: @Composable (Modifier) -> Unit = { modifier ->
+        OutlinedButton(onClick = minimize, modifier = modifier.heightIn(min=height).testTag("float").semantics { contentDescription = minimizeDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
+            DockContent(WorkoutGlyph.FLOAT, stringResource(R.string.float_short), large)
+        }
+    }
     Surface(modifier=Modifier.testTag("workout-dock"),color = MaterialTheme.colorScheme.surface) {
         Column {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(Modifier.fillMaxWidth().padding(horizontal = if (large) 20.dp else 10.dp, vertical = if(short) 2.dp else if (large) 10.dp else 8.dp).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(if (large) 12.dp else 8.dp)) {
-                val height = if (large) 60.dp else 48.dp
-                val shape = RoundedCornerShape(if (large) 12.dp else 9.dp)
-                Button(onClick = pause, enabled=ready && !state.starting, modifier = Modifier.weight(if(state.controlOnly) 1.4f else 1f).fillMaxHeight().heightIn(min=height).testTag("pause"), shape = shape, contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    DockContent(if (state.controlOnly || state.paused) WorkoutGlyph.PLAY else WorkoutGlyph.PAUSE, stringResource(if(state.controlOnly) R.string.start_recording else if (state.paused) R.string.resume_recording else R.string.pause_short), large)
-                }
-                OutlinedButton(onClick = finish, enabled = !state.starting, modifier = Modifier.weight(1.15f).fillMaxHeight().heightIn(min=height).testTag("finish").semantics { contentDescription = finishDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    DockContent(WorkoutGlyph.STOP, stringResource(if(state.controlOnly) R.string.exit_control else if(compactLabels) R.string.finish_compact else R.string.finish_save), large)
-                }
-                if (floating) OutlinedButton(onClick = minimize, modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min=height).testTag("float").semantics { contentDescription = minimizeDescription }, shape = shape, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface), contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    DockContent(WorkoutGlyph.FLOAT, stringResource(R.string.float_short), large)
+            Column(Modifier.fillMaxWidth().padding(horizontal = if (large) 20.dp else 10.dp, vertical = if(short) 2.dp else if (large) 10.dp else 8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                if(twoRows) {
+                    primary(Modifier.fillMaxWidth())
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                        exit(Modifier.weight(1f).fillMaxHeight())
+                        overlay(Modifier.weight(1f).fillMaxHeight())
+                    }
+                } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(if(large) 12.dp else 8.dp)) {
+                    primary(Modifier.weight(if(state.controlOnly) 1.4f else 1f).fillMaxHeight())
+                    exit(Modifier.weight(1.15f).fillMaxHeight())
+                    if(floating) overlay(Modifier.weight(1f).fillMaxHeight())
                 }
             }
         }
