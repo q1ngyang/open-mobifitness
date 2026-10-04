@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
  * The slot only grows during this composition's lifetime: 99.9 / 100.0, missing
  * samples and recovery must not repeatedly move the unit or change the font size.
  */
-@Composable internal fun MetricValueLine(value: String, unit: String, maxSp: Int) {
+@Composable internal fun MetricValueLine(value: String, unit: String, maxSp: Int, unitSp: Int = 15) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer(cacheSize = 64)
     val typography = MaterialTheme.typography
@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.sp
     )
     val unitStyle = typography.bodyMedium.copy(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 15.sp,
+        fontSize = unitSp.sp,
         lineHeight = 20.sp,
         textAlign = TextAlign.Start,
     )
@@ -74,7 +74,7 @@ import androidx.compose.ui.unit.sp
         val fit = remember(numberSample, unitSample, available, gapPx, numberStyle, unitStyle, measurer) {
             // Fit against the reserved sample, never the instantaneous reading.
             // Keep units readable; only long readings in narrow cells shrink.
-            (15 downTo 12).firstNotNullOfOrNull { unitSize ->
+            (unitSp downTo 12).firstNotNullOfOrNull { unitSize ->
                 (maxSp downTo 12).firstOrNull { size ->
                     measurer.textWidth(numberSample, numberStyle.copy(fontSize = size.sp)) +
                         measurer.textWidth(unitSample, unitStyle.copy(fontSize = unitSize.sp)) + gapPx <= available

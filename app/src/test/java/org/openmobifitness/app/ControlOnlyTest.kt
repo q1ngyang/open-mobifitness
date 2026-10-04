@@ -80,6 +80,22 @@ class ControlOnlyTest {
         assertEquals(12.0,c.controlResistance()!!,0.0)
         assertEquals(connection,c.ble.connectionId)
     }
+    @Test fun savedNonDemoEquipmentTelemetryRefreshesAllFourHomeTotals()=runBlocking {
+        val owner=c.currentUser.value!!.id
+        val before=c.repo.revision.value
+        c.start().join()
+        repeat(65) { tick(1010.0+it*10.0) }
+        assertFalse(c.state.value.session!!.demo)
+        assertEquals(0,c.repo.history.todayOverview(owner).count)
+        c.finish().join()
+        val saved=c.repo.archive().sessions.single()
+        val today=c.repo.history.todayOverview(owner)
+        assertTrue(c.repo.revision.value>before)
+        assertEquals(1,today.count); assertEquals(0,today.demoCount)
+        assertEquals(saved.elapsedMs,today.elapsedMs); assertTrue(today.elapsedMs>=60000)
+        assertEquals(saved.caloriesKcal,today.calories); assertTrue(today.calories!!>0)
+        assertEquals(saved.distanceM,today.distanceM); assertTrue(today.distanceM!!>0)
+    }
     @Test fun successfulFinishCancelsQueuedControlAndKeepsTheSavedReportAcrossControllerRestart()=runBlocking {
         c.heart.state.value=LinkState(name="Heart",phase="ready",machine=Machine.HEART,metrics=Metrics(heartBpm=132),heartAt=now)
         val primary=c.ble.connectionId; val accessory=c.heart.connectionId

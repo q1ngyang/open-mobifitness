@@ -40,9 +40,9 @@ class HomeDevicePreviewTest {
         runBlocking {
             ids.forEach { c.repo.deleteSession(it) }
             val time=LocalDate.now().atTime(8,0).atZone(ZoneId.systemDefault()).toInstant().toString()
-            c.repo.save(Session(id=ids[0],start=time,end=time,status="completed",elapsedMs=1200000,device="UI fixture · preview",machine=Machine.ELLIPTICAL,protocol=Protocol.V1,caloriesKcal=146.0,caloriesEstimated=true,distanceM=3000.0,distanceEstimated=true))
-            c.repo.save(Session(id=ids[1],start=time,end=time,status="completed",elapsedMs=720000,device="UI fixture · preview",machine=Machine.ELLIPTICAL,protocol=Protocol.V1,caloriesKcal=90.0,caloriesEstimated=true,distanceM=1800.0,distanceEstimated=true))
-            c.repo.save(Session(id=ids[2],start=time,end=time,status="completed",elapsedMs=600000,demo=true,protocol=Protocol.DEMO,caloriesKcal=999.0,distanceM=99999.0))
+            c.repo.save(Session(id=ids[0],ownerUserId=c.currentUser.value?.id,start=time,end=time,status="completed",elapsedMs=1200000,device="UI fixture · preview",machine=Machine.ELLIPTICAL,protocol=Protocol.V1,caloriesKcal=146.0,caloriesEstimated=true,distanceM=3000.0,distanceEstimated=true))
+            c.repo.save(Session(id=ids[1],ownerUserId=c.currentUser.value?.id,start=time,end=time,status="completed",elapsedMs=720000,device="UI fixture · preview",machine=Machine.ELLIPTICAL,protocol=Protocol.V1,caloriesKcal=90.0,caloriesEstimated=true,distanceM=1800.0,distanceEstimated=true))
+            c.repo.save(Session(id=ids[2],ownerUserId=c.currentUser.value?.id,start=time,end=time,status="completed",elapsedMs=600000,demo=true,protocol=Protocol.DEMO,caloriesKcal=999.0,distanceM=99999.0))
         }
         openPage(0)
     }
@@ -53,8 +53,7 @@ class HomeDevicePreviewTest {
         runBlocking { (ids+listOfNotNull(createdSession)).forEach { c.repo.deleteSession(it) } }
     }
     @Test fun finalLayoutSnapshots() {
-        val dates=RecordDates.today()
-        val expected=runBlocking { c.repo.history.overview(HistoryQuery(dates.first,dates.second,source=1)) }
+        val expected=runBlocking { c.repo.history.todayOverview(c.currentUser.value?.id) }
         compose.waitUntil(30000) { compose.onAllNodes(hasTestTag("today-metric-2") and hasText(expected.count.toString())).fetchSemanticsNodes().isNotEmpty() }
         screenshot("home-disconnected")
         compose.runOnUiThread { c.ble.state.value=readyEquipment() }
@@ -68,8 +67,7 @@ class HomeDevicePreviewTest {
         screenshot("settings")
     }
     @Test fun fourColorSummaryConnectionAndHeartAccessoryAreTruthful() {
-        val dates=RecordDates.today()
-        val expected=runBlocking { c.repo.history.overview(HistoryQuery(dates.first,dates.second,source=1)) }
+        val expected=runBlocking { c.repo.history.todayOverview(c.currentUser.value?.id) }
         val calories=if(expected.caloriesPresent==expected.count) String.format(Locale.getDefault(),"%.0f",expected.calories!!) else "—"
         compose.waitUntil(30000) { compose.onAllNodesWithText(calories).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("today-metric-2").assertTextContains(expected.count.toString())

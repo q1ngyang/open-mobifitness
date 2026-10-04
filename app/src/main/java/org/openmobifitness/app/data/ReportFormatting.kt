@@ -16,11 +16,14 @@ fun Session.reportResistanceRange(): ResistanceRange? = runCatching {
     ResistanceRange(snapshot.getDouble("resistanceMin"),snapshot.getDouble("resistanceMax"),snapshot.getDouble("resistanceIncrement"))
 }.getOrNull()
 
-/** Display rounded levels and their matching percentage; keep stored/CSV statistics precise. */
+/** Shared by performance and chart summaries; stored/CSV statistics keep their precision. */
 fun ReportMetricDescriptor.performanceValue(imperial: Boolean,locale: Locale,range: ResistanceRange?): Pair<String,String> {
     if(metric!=MetricId.RESISTANCE) return reportValue(imperial,locale)
-    val level=value?.takeIf { it.isFinite() }?.roundToInt() ?: return "—" to ""
-    return String.format(locale,"%d",level) to (range?.takeIf { it.max>0 }?.percentage(level.toDouble())?.let { "$it%" } ?: "")
+    val raw=value?.takeIf { it.isFinite() } ?: return "—" to ""
+    val average=aggregation==ReportAggregation.AVERAGE
+    val level=if(average) raw else raw.roundToInt().toDouble()
+    val number=if(average) String.format(locale,"%.1f",level) else String.format(locale,"%d",level.toInt())
+    return number to (range?.takeIf { it.max>0 }?.percentage(level)?.let { "$it%" } ?: "")
 }
 
 /** Read archived units, never infer a capability from a device name or a desired target. */

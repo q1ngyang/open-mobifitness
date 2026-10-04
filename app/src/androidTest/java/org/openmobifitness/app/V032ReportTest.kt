@@ -140,7 +140,7 @@ class V032ReportTest {
             device="v0.3.2 UI fixture",machine=machine,protocol=Protocol.DEMO,demo=true,status="completed",elapsedMs=60000,caloriesKcal=9.0,distanceM=160.0,capabilitySnapshot=snapshot)
         val samples=(0..60).map { second ->
             val phase=(second%3)-1
-            Sample(id,second*1000L,Metrics(cadence=56.0+phase*6,resistance=8.0+phase*4,speedMps=if(case.contains("long")) .25+phase*.01 else (9.6+phase*.8)/3.6,
+            Sample(id,second*1000L,Metrics(cadence=56.0+phase*6,resistance=listOf(4.0,8.0,8.0,8.0,10.0)[second%5],speedMps=if(case.contains("long")) .25+phase*.01 else (9.6+phase*.8)/3.6,
                 heartBpm=if(case.contains("missing-heart")) null else 132+phase*10,powerW=136.0+phase*6,strokes=second/2,
                 inclinePercent=6.0+phase*2,strideM=.86+phase*.1,forceN=120.0+phase*20,stepRate=160.0+phase*10,stepCount=second*2,
                 jumpCount=second*2,continuousJumps=second,jumpInterruptions=2,repetitions=second/2,loadKg=12.5+phase*2.5))
@@ -151,9 +151,9 @@ class V032ReportTest {
         } }
         return id
     }
-    private fun inspectText() {
+    private fun inspectText(rootTag: String="report-performance") {
         val nodes=compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),useUnmergedTree=true).fetchSemanticsNodes().filter { node ->
-            generateSequence(node.parent) { it.parent }.any { it.config.contains(SemanticsProperties.TestTag) && it.config[SemanticsProperties.TestTag]=="report-performance" }
+            generateSequence(node.parent) { it.parent }.any { it.config.contains(SemanticsProperties.TestTag) && it.config[SemanticsProperties.TestTag]==rootTag }
         }
         assertTrue("Performance text is exposed",nodes.isNotEmpty())
         val typography=mutableMapOf<String,Float>()
@@ -178,7 +178,7 @@ class V032ReportTest {
                 }
             }
         } }
-        typography.filterKeys { it.endsWith("-average") }.forEach { (key,size) ->
+        typography.filterKeys { rootTag=="report-performance" && it.endsWith("-average") }.forEach { (key,size) ->
             typography[key.removeSuffix("-average")+"-maximum"]?.let { assertTrue("Average retains stronger hierarchy",size>it) }
         }
     }
@@ -200,9 +200,9 @@ class V032ReportTest {
                 assertTrue("Family stays horizontally inside its card",family.left>=card.left && family.right<=card.right)
                 if(metric==SeriesMetric.RESISTANCE) {
                     val average=compose.onNodeWithTag("performance-RESISTANCE-average")
-                    average.assert(hasAnyDescendant(hasText("8")))
+                    average.assert(hasAnyDescendant(hasText(String.format(compose.activity.resources.configuration.locales[0],"%.1f",7.6))))
                     if(!case.contains("missing-heart")) {
-                        val percent=when(machine) { Machine.ELLIPTICAL -> "33%"; Machine.BIKE -> "25%"; else -> "50%" }
+                        val percent=when(machine) { Machine.ELLIPTICAL -> "32%"; Machine.BIKE -> "24%"; else -> "48%" }
                         average.assert(hasAnyDescendant(hasText(percent)))
                     }
                     screen("performance-${machine.name.lowercase()}-resistance")
@@ -216,6 +216,20 @@ class V032ReportTest {
                 screen("performance-rower-pace")
             }
             inspectText()
+            if(SeriesMetric.RESISTANCE in series) {
+                reveal("report-series-RESISTANCE")
+                compose.onNodeWithTag("report-series-RESISTANCE").performScrollTo().performClick()
+                reveal("report-group-RESISTANCE",true)
+                val numbers=listOf(String.format(compose.activity.resources.configuration.locales[0],"%.1f",7.6),"10","4")
+                val percentages=when(machine) { Machine.ELLIPTICAL -> listOf("32%","42%","17%"); Machine.BIKE -> listOf("24%","31%","13%"); else -> listOf("48%","63%","25%") }
+                listOf("average","maximum","minimum").forEachIndexed { i,kind ->
+                    val cell=compose.onNodeWithTag("chart-resistance-$kind")
+                    cell.assert(hasAnyDescendant(hasText(numbers[i])))
+                    if(!case.contains("missing-heart")) cell.assert(hasAnyDescendant(hasText(percentages[i])))
+                }
+                inspectText("report-group-RESISTANCE")
+                screen("chart-${machine.name.lowercase()}-resistance")
+            }
             compose.onNodeWithTag("detail-back").performClick()
             assertEquals(1,compose.activity.page.value)
         }

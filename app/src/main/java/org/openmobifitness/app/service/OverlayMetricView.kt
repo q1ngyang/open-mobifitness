@@ -1,7 +1,6 @@
 package org.openmobifitness.app.service
 
 import android.content.Context
-import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -19,23 +18,15 @@ internal class OverlayMetricView(context: Context,private val ink: Int,private v
         setTextColor(muted); maxLines=2; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
         setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
     }
-    val value=TextView(context).apply {
-        setTextColor(ink); typeface=Typeface.create(Typeface.MONOSPACE,Typeface.BOLD); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(numberSize*resources.configuration.fontScale).toInt().coerceAtLeast(numberSize),1,TypedValue.COMPLEX_UNIT_DIP)
-    }
-    val unit=TextView(context).apply {
-        setTextColor(muted); maxLines=1; includeFontPadding=false; gravity=Gravity.CENTER_VERTICAL
-        setAutoSizeTextTypeUniformWithConfiguration((10*resources.configuration.fontScale).toInt(),(11*resources.configuration.fontScale).toInt().coerceAtLeast(11),1,TypedValue.COMPLEX_UNIT_DIP)
-    }
+    private val line=OverlayValueLine(context,ink,muted,numberSize)
+    val value get()=line.value
+    val unit get()=line.unit
     private var reading: MetricReading?=null
     init {
         orientation=VERTICAL; setPadding(dp(3),dp(2),dp(5),dp(2))
         addView(label,LayoutParams(LayoutParams.MATCH_PARENT,textHeight(if(resources.configuration.fontScale>=1.5f) 24 else 18)))
-        val row=LinearLayout(context).apply { orientation=HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         val numberHeight=if(numberSize>=30) 34 else 30
-        row.addView(value,LayoutParams(0,textHeight(numberHeight),1f))
-        row.addView(unit,LayoutParams(textHeight(32),textHeight(numberHeight)).apply { marginStart=dp(3) })
-        addView(row,LayoutParams(LayoutParams.MATCH_PARENT,textHeight(numberHeight)))
+        addView(line,LayoutParams(LayoutParams.MATCH_PARENT,textHeight(numberHeight)))
     }
     fun bind(next: MetricReading) {
         if(next==reading) return
@@ -44,10 +35,6 @@ internal class OverlayMetricView(context: Context,private val ink: Int,private v
         label.text=SpannableString(title).apply {
             if(next.estimated) setSpan(ForegroundColorSpan(android.graphics.Color.argb(145,android.graphics.Color.red(muted),android.graphics.Color.green(muted),android.graphics.Color.blue(muted))),next.label.length,title.length,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        if(value.text.toString()!=next.value) value.text=next.value
-        unit.text=next.unit
-        unit.visibility=if(next.unit.isEmpty()) GONE else VISIBLE
-        // Unit widths depend only on the unit, never on the number of digits in a reading.
-        (unit.layoutParams as LayoutParams).apply { width=textHeight(if(next.unit=="km/h" || next.unit=="/500 m") 38 else 30) }.also { unit.layoutParams=it }
+        line.bind(next.value,next.unit,next.label+"|"+next.unit.filterNot(Char::isDigit))
     }
 }

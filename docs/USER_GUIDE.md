@@ -47,9 +47,10 @@
 
 ## 查看记录与备份
 
-- 首页「今日已记录」统计今天已保存的非演示训练，点它可进入记录。
+- 首页「今日已记录」统计当前用户今天已保存的训练；包含演示记录时会显示演示次数说明，其他用户和未保存的运动不会计入。点它可进入记录。
 - 「记录」默认展示周概览，可按用户、设备、来源筛选和搜索，并切换月／年趋势。查看其他人的记录不会切换当前训练用户。列表默认显示本月及之前五个月，较早的记录在「全部记录」按年／月查找。
 - 点击记录查看时长、热量、距离，以及按同类指标分组的均值／极值；默认展示有数据的功率折线图。内容取决于器材提供的数据，缺测不补零、不跨缺测区间连线。
+- 运动表现和阻力折线图下方的统计一致：平均阻力保留一位小数，最大／最低为整数档位，旁边显示整数百分比。百分比使用该次记录保存的设备档位范围；缺少范围的旧记录不推算百分比。
 - 「记录 → ⋮ → 导出统计 CSV」适合用表格软件查看；它不是备份文件，不能重新导入。
 - 换设备或重装前，到「设置 → 数据管理 → 导出完整备份」。备份包含全部保留的用户、头像、个人设置、方案及记录。在新设备同一页面选择「导入文件」，预览后确认；已有档案与个人设置默认不覆盖，共享偏好按所选组恢复。重复记录跳过，内容冲突则取消导入。v0.3.0 新备份需要兼容的新版本读取。卸载会删除 App 内数据。
 
@@ -106,9 +107,10 @@ Hints compare readings with your entered range without inferring personal zones,
 
 ### History and backups
 
-- Recorded today counts saved, non-demo workouts from the current day. Tap it to open History.
+- Recorded today counts the current user's saved workouts for the current day and labels any included demo workouts. Other users and unsaved activity are excluded. Tap it to open History.
 - History opens to the weekly overview. Search or filter by user, equipment and source, and switch to monthly/yearly trends. Viewing another user's history does not change the training user. The list shows this month and the previous five months; use All records for older workouts.
 - Open a workout for duration, energy, distance and grouped averages/extremes. Available power is the default line chart. Missing intervals are neither filled with zero nor joined by a line.
+- Performance and the resistance chart summary use the same values: average resistance has one decimal place, maximum/minimum use integer levels, and adjacent percentages are integers. Percentages use the equipment range archived with that workout; legacy records without that range do not infer a percentage.
 - History → ⋮ → Export summary CSV creates a readable spreadsheet report. This report cannot be imported as a backup.
 - Before reinstalling or moving devices, use Settings → Data management → Export full backup. It includes all retained profiles, avatars, personal settings, plans and records. Choose Import file on the new device and review the preview. Existing profiles and personal preferences are not overwritten by default; shared settings follow your selected groups. Identical records are skipped; conflicting content cancels the import. New v0.3.0 backups require a compatible new app. Uninstalling removes local app data.
 

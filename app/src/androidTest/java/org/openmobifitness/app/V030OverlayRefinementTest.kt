@@ -76,6 +76,18 @@ class V030OverlayRefinementTest {
             } }
             assertNotNull(plus)
             val before=c.controlResistance()!!; plus!!.click(); await { c.controlResistance()!!>before }
+            // The largest numeric shapes reserve room once. Smaller live values must not
+            // move the percentage back and forth, even though the visible digits change.
+            var percentLeft: Int?=null
+            for(level in listOf(24.0,11.0,9.0,24.0,1.0)) {
+                main { c.adjustTo(level) }; await { c.controlResistance()==level }
+                val percent="${c.range()!!.percentage(level)}%"
+                assertTrue(device.wait(Until.hasObject(By.text(percent)),15000))
+                val label=device.findObject(By.text(percent))
+                val left=label.visibleBounds.left
+                if(percentLeft==null) percentLeft=left else assertEquals("Percentage remains anchored",percentLeft!!,left)
+            }
+            screenshot("resistance-close")
             device.findObject(By.desc(text(R.string.start_recording))).click(); await { c.state.value.session!=null }
             assertTrue(device.wait(Until.hasObject(By.desc(text(R.string.pause_short))),30000))
             screenshot("expanded-recording")

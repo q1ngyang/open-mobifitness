@@ -100,6 +100,25 @@ class HistoryStoreTest {
         assertEquals(0L to Long.MAX_VALUE,RecordDates.selected(0,0,zone))
     }
 
+    @Test fun homeTodayIncludesSavedDemoAndRealRecordsOnlyForTheCurrentUser()=runBlocking {
+        val owner=UserProfile(name="Owner"); val other=UserProfile(name="Other")
+        repo.saveUser(owner); repo.saveUser(other)
+        val zone=ZoneId.of("Europe/Berlin"); val day=LocalDate.of(2026,3,29)
+        val range=RecordDates.today(day,zone)
+        fun record(at: Long,demo: Boolean=false,user: String?=owner.id,status: String="completed")=Session(
+            ownerUserId=user,start=Instant.ofEpochMilli(at).toString(),status=status,demo=demo,
+            elapsedMs=60000,caloriesKcal=10.0,distanceM=100.0)
+        listOf(record(range.first-1),record(range.first),record(range.second-1,true).copy(archived=true),
+            record(range.second),record(range.first+1000,user=other.id),record(range.first+2000,status="active"),
+            record(range.first+3000,user=null)).forEach { repo.save(it) }
+        val summary=repo.history.todayOverview(owner.id,day,zone)
+        assertEquals(2,summary.count); assertEquals(1,summary.demoCount)
+        assertEquals(120000L,summary.elapsedMs); assertEquals(20.0,summary.calories!!,0.0)
+        assertEquals(200.0,summary.distanceM!!,0.0)
+        assertEquals(1,repo.history.todayOverview(other.id,day,zone).count)
+        assertEquals(0,repo.history.todayOverview(null,day,zone).count)
+    }
+
     @Test fun todaySummaryUsesLocalCalendarAndOnlySavedRealWorkouts()=runBlocking {
         val zone=ZoneId.of("Europe/Berlin")
         val range=RecordDates.today(LocalDate.of(2026,3,29),zone)

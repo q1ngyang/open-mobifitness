@@ -51,10 +51,10 @@ private val HeroSecondary=Color(0xFFCCD5E1)
     val revision by c.repo.revision.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
     val day by produceState(LocalDate.now()) { while(true) { delay(60000); value=LocalDate.now() } }
-    var summary by remember(day) { mutableStateOf<HistoryOverview?>(null) }
-    var failed by remember(day) { mutableStateOf(false) }
+    var summary by remember(day,user?.id) { mutableStateOf<HistoryOverview?>(null) }
+    var failed by remember(day,user?.id) { mutableStateOf(false) }
     LaunchedEffect(day,revision,state.ready,user?.id) {
-        if(state.ready) runCatching { val dates=RecordDates.today(day); c.repo.history.overview(HistoryQuery(dates.first,dates.second,source=1,owner=user?.id ?: "none")) }
+        if(state.ready) runCatching { c.repo.history.todayOverview(user?.id,day) }
             .onSuccess { summary=it; failed=false }.onFailure { summary=null; failed=true; AppLog.exception("home_summary",it) }
     }
     Surface(color=HeroInk,contentColor=Color.White,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().testTag("free-training-card")) {
@@ -165,6 +165,7 @@ private val HeroSecondary=Color(0xFFCCD5E1)
                                 }
                             }
                     }
+                    if((stats?.demoCount ?: 0)>0) Text(stringResource(R.string.stats_demo_count,stats!!.demoCount),Modifier.testTag("today-demo-note"),style=MaterialTheme.typography.labelSmall,color=HeroSecondary)
                 }
             }
             if(wide) Row(horizontalArrangement=Arrangement.spacedBy(24.dp),verticalAlignment=Alignment.CenterVertically) {

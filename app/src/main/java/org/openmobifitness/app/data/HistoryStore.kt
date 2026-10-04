@@ -19,6 +19,12 @@ data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val ma
 data class HistoryPage(val rows: List<Session>, val count: Int)
 data class HistoryOverview(val count: Int=0, val elapsedMs: Long=0, val calories: Double?=null, val distanceM: Double?=null, val estimated: Boolean=false, val days: List<Pair<LocalDate,Long>> = emptyList(), val caloriesPresent: Int=0, val demoCount: Int=0, val distanceEstimated: Boolean=false, val distancePresent: Int=0)
 class HistoryStore(private val db: MobiDatabase) {
+    /** Saved records for this user, including clearly labelled demo records. */
+    suspend fun todayOverview(ownerId: String?,today: LocalDate=LocalDate.now(),zone: ZoneId=ZoneId.systemDefault()): HistoryOverview {
+        val dates=RecordDates.today(today,zone)
+        return overview(HistoryQuery(dates.first,dates.second,owner=ownerId ?: "none"),zone)
+    }
+
     private fun where(q: HistoryQuery, includeArchive: Boolean=false): Pair<String,List<Any>> {
         val clauses=mutableListOf("status!='active'","startEpoch>=?","startEpoch<?")
         val args=mutableListOf<Any>(q.from,q.until)

@@ -49,8 +49,7 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
     private val remaining=text(if(expanded) 21 else 11,8,numeric=true,bold=expanded).apply { if(expanded) setTextColor(palette.ink) }
     private val elapsed=if(expanded) OverlayMetricView(context,palette.ink,palette.muted,true,32) else null
     private val progress=OverlayProgress(context,palette.track,palette.primary)
-    private var resistanceValue: TextView?=null
-    private var resistancePercent: TextView?=null
+    private var resistanceReading: OverlayValueLine?=null
     private var resistanceMode: TextView?=null
     private var resistanceTitle: TextView?=null
     private var resistanceBlock: View?=null
@@ -141,13 +140,11 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         plus=iconButton(OverlayGlyph.PLUS,R.string.increase,OverlayAction.PLUS,true)
         resistanceTitle=text(11,9).apply { setTextColor(palette.ink) }
         resistanceMode=text(10,7).apply { gravity=Gravity.CENTER; background=shape(palette.soft,14); setTextColor(palette.primary); setPadding(dp(5),0,dp(5),0) }
-        resistanceValue=text(25,16,true,true).apply { gravity=Gravity.CENTER; setTextColor(palette.ink) }
-        resistancePercent=text(11,9,true).apply { gravity=Gravity.CENTER }
+        resistanceReading=OverlayValueLine(context,palette.ink,palette.muted,25,centered=true)
         row.addView(resistanceTitle,LayoutParams(0,textHeight(30),1.6f))
         row.addView(resistanceMode,LayoutParams(0,textHeight(26),1.1f).apply { marginEnd=dp(3) })
         row.addView(minus,LayoutParams(dp(48),dp(48)))
-        row.addView(resistanceValue,LayoutParams(0,textHeight(36),.8f))
-        row.addView(resistancePercent,LayoutParams(0,textHeight(30),.75f))
+        row.addView(resistanceReading,LayoutParams(0,textHeight(36),1.55f))
         row.addView(plus,LayoutParams(dp(48),dp(48)))
         resistance.addView(row,LayoutParams(MATCH,maxOf(dp(52),textHeight(36))))
         pendingLabel.maxLines=2
@@ -223,8 +220,7 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         resistanceTitle?.text=model.resistance.label
         resistanceMode?.maxLines=if(model.controlMode in setOf(context.getString(R.string.overlay_manual),context.getString(R.string.overlay_auto))) 1 else 2
         resistanceMode?.text=model.controlMode
-        resistanceValue?.text=model.resistance.value
-        resistancePercent?.text=model.resistance.unit
+        resistanceReading?.bind(model.resistance.value,model.resistance.unit,"resistance")
         pendingLabel.text=model.pending
         pendingLabel.visibility=if(model.pending.isEmpty()) GONE else VISIBLE
         listOfNotNull(minus,plus).forEach { it.isEnabled=model.canAdjust; it.alpha=if(model.canAdjust) 1f else .35f }

@@ -95,13 +95,13 @@ import kotlin.math.abs
         val resistanceRange=remember(s.capabilitySnapshot) { s.reportResistanceRange() }
         val measurements: @Composable ()->Unit = { ReportPerformanceCard(performance,imperial,stringResource(sessionStatus(s.status)),s.machine==Machine.DUMBBELL,resistanceRange) }
         val chart: @Composable ()->Unit = { DetailCard {
-            Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) { availableSeries.forEach { m -> FilterChip(selected=chosen==m,onClick={ selected=m.name },label={ Text(stringResource(seriesResource(m,s.machine))) }) } }
+            Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) { availableSeries.forEach { m -> FilterChip(selected=chosen==m,onClick={ selected=m.name },modifier=Modifier.testTag("report-series-${m.name}"),label={ Text(stringResource(seriesResource(m,s.machine))) }) } }
             val metric=stats.metrics.getValue(chosen)
             val representative=descriptors.first { it.series==chosen }
             val unit=representative.reportValue(imperial,locale).second
             val scale=if(imperial) when(chosen) { SeriesMetric.SPEED -> 1/1.609344; SeriesMetric.STRIDE -> 3.280839895; SeriesMetric.LOAD -> 2.204622622; else -> 1.0 } else 1.0
             DetailChart(metric.points.map { it.copy(value=it.value*scale) },s.elapsedMs,stringResource(seriesResource(chosen,s.machine)),if(chosen==SeriesMetric.PACE) "s / 500m" else unit,if(chosen==SeriesMetric.HEART) Color(0xFFE63D77) else MaterialTheme.colorScheme.primary)
-            ReportGroups(descriptors.filter { it.series==chosen },imperial)
+            ReportGroups(descriptors.filter { it.series==chosen },imperial,resistanceRange)
             Text(stringResource(R.string.coverage_format,shortDuration(metric.coverageMs),shortDuration(s.elapsedMs)),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(chosen==SeriesMetric.PACE) Text(stringResource(R.string.report_pace_basis),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
@@ -142,7 +142,7 @@ import kotlin.math.abs
 }
 
 /** A metric family never shares a row with an unrelated statistic. */
-@Composable private fun ReportGroups(entries: List<ReportMetricDescriptor>,imperial: Boolean) {
+@Composable private fun ReportGroups(entries: List<ReportMetricDescriptor>,imperial: Boolean,resistanceRange: ResistanceRange?) {
     val context=LocalContext.current
     val locale=androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val scalars=entries.filter { it.series==null }
@@ -162,7 +162,12 @@ import kotlin.math.abs
                         val label=if(d.metric==MetricId.PACE && d.aggregation in setOf(ReportAggregation.MINIMUM,ReportAggregation.MAXIMUM)) context.reportLabel(d) else stringResource(when(d.aggregation) { ReportAggregation.AVERAGE -> R.string.average_value; ReportAggregation.MAXIMUM -> R.string.maximum_value; ReportAggregation.MINIMUM -> R.string.minimum_value; else -> R.string.status_label })
                         Column(modifier,verticalArrangement=Arrangement.spacedBy(3.dp)) {
                             Text(label,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                            NumberText(d.reportValue(imperial,locale).first,26,Modifier.fillMaxWidth().height(34.dp*LocalDensity.current.fontScale))
+                            if(d.metric==MetricId.RESISTANCE) {
+                                val (number,percent)=d.performanceValue(imperial,locale,resistanceRange)
+                                Box(Modifier.fillMaxWidth().height(34.dp*LocalDensity.current.fontScale).testTag("chart-resistance-${d.aggregation.name.lowercase()}")) {
+                                    MetricValueLine(number,percent,26,unitSp=13)
+                                }
+                            } else NumberText(d.reportValue(imperial,locale).first,26,Modifier.fillMaxWidth().height(34.dp*LocalDensity.current.fontScale))
                         }
                     }
                     if(columns==3) Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
