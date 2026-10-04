@@ -48,7 +48,7 @@ fun Context.reading(id: MetricId,c: Controller): MetricReading {
         MetricId.INCLINE -> n(m.inclinePercent) to "%"
         MetricId.STEP_RATE -> n(m.stepRate) to "spm"
         MetricId.STRIDE -> { estimated=protocol==Protocol.V2 && m.strideM!=null; n(m.strideM?.times(100),0) to "cm" }
-        MetricId.TARGET_CADENCE -> (if(machine==Machine.ROWER) c.display.targetCadence.value.toString() else "—") to "spm"
+        MetricId.TARGET_CADENCE -> (if(machine==Machine.ROWER) (c.state.value.selected?.steps?.getOrNull(c.state.value.stage)?.frequency?.resolve(c.state.value.selected!!.hints.frequency)?.let { range -> listOfNotNull(range.lower,range.upper).takeIf { range.enabled }?.joinToString("–") { "%.0f".format(it) } } ?: "—") else "—") to "spm"
         MetricId.POWER -> { estimated=m.powerEstimated; n(m.powerW,0) to "W" }
         MetricId.JUMPS -> (s.jumpCount?.toString() ?: "—") to ""
         MetricId.JUMP_RATE -> n(m.cadence.takeIf { machine==Machine.JUMP_ROPE },0) to "/min"

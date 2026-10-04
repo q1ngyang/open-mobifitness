@@ -4,16 +4,16 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 
-data class Archive(val sessions: List<Session> = emptyList(), val samples: List<Sample> = emptyList(), val workouts: List<Workout> = emptyList())
+data class Archive(val sessions: List<Session> = emptyList(), val samples: List<Sample> = emptyList(), val workouts: List<Workout> = emptyList(), val users: List<UserProfile> = emptyList())
 class ImportProblem(val row: Int, val reason: String) : IllegalArgumentException("$row:$reason")
 
 object Csv {
     /** Bounded row parser for large files. Limits cells/columns, never total row count. */
     fun stream(reader: java.io.Reader,consume: (List<String>)->Unit) {
         val input=java.io.PushbackReader(reader.buffered(),1)
-        var row=mutableListOf<String>(); val cell=StringBuilder(); var quoted=false; var afterQuote=false; var line=1; var first=true
-        fun endCell() { row.add(cell.toString()); cell.setLength(0); afterQuote=false; if(row.size>32) throw ImportProblem(line,"size") }
-        fun endRow() { endCell(); if(row.any { it.isNotEmpty() }) { consume(row); line++ }; row=mutableListOf() }
+        var row=mutableListOf<String>(); val cell=StringBuilder(); var quoted=false; var afterQuote=false; var line=1; var first=true; var rowCharacters=0
+        fun endCell() { rowCharacters+=cell.length; row.add(cell.toString()); cell.setLength(0); afterQuote=false; if(row.size>128) throw ImportProblem(line,"size") }
+        fun endRow() { endCell(); if(row.any { it.isNotEmpty() }) { consume(row); line++ }; row=mutableListOf(); rowCharacters=0 }
         while(true) {
             val code=input.read(); if(code<0) break
             val c=code.toChar(); if(first) { first=false; if(c=='\uFEFF') continue }
@@ -26,7 +26,7 @@ object Csv {
                 '\r','\n' -> { if(c=='\r') { val next=input.read(); if(next>=0 && next!='\n'.code) input.unread(next) }; endRow() }
                 else -> { if(afterQuote) throw ImportProblem(line,"quote"); cell.append(c) }
             }
-            if(cell.length>4096) throw ImportProblem(line,"size")
+            if(cell.length>1024*1024 || rowCharacters+cell.length>3*1024*1024) throw ImportProblem(line,"size")
         }
         if(quoted) throw ImportProblem(line,"quote")
         if(cell.isNotEmpty() || row.isNotEmpty() || afterQuote) endRow()
@@ -52,7 +52,7 @@ object Csv {
                 '\r','\n' -> { if(c=='\r' && i<t.length && t[i]=='\n') i++; endRow() }
                 else -> { if(afterQuote) throw ImportProblem(result.size+1,"quote"); cell.append(c) }
             }
-            if(cell.length > 4096 || row.size > 32) throw ImportProblem(result.size+1,"size")
+            if(cell.length > 1024*1024 || row.size > 128) throw ImportProblem(result.size+1,"size")
         }
         if(quoted) throw ImportProblem(result.size+1,"quote")
         if(cell.isNotEmpty() || row.isNotEmpty() || afterQuote) endRow()
@@ -66,44 +66,58 @@ object Exchange {
     private val sessionsV2 = sessionsHeader + listOf("calories_kcal","calories_estimated","distance_estimated","weight_kg","met")
     private val sessionsV4 = sessionsV2 + listOf("workout_id","workout_title","archived")
     private val sessionsV5 = sessionsV4 + "energy_model"
+    private val sessionsV6 = sessionsV5 + listOf("owner_user_id","started_user_id","started_user_name","weight_source","met_source","workout_snapshot","capability_snapshot","identity_version","owner_history","entered_stage_ids")
+    private val usersHeader = "schema,user_id,name,weight_kg,met,met_source,avatar,created_at,removed_at,deleted,preferences,legacy_hints".split(',')
     private val samplesV2 = samplesHeader + listOf("calories_kcal","incline_percent","stride_m","force_n","step_rate","step_count","target_cadence")
     private val samplesV3 = samplesV2 + "power_estimated"
     private val samplesV6 = samplesV3 + listOf("jump_count","continuous_jumps","jump_interruptions","repetitions","load_kg","device_duration_sec","dumbbell_few_actions","dumbbell_action_number")
     private val workoutsHeader = "schema,workout_id,title,step_index,condition,target,resistance_percent".split(',')
+    private val workoutsV2 = workoutsHeader + listOf("owner_user_id","machine","stage_id","stage_kind","frequency_mode","frequency_lower","frequency_upper","heart_mode","heart_lower","heart_upper","default_frequency_enabled","default_frequency_lower","default_frequency_upper","default_heart_enabled","default_heart_lower","default_heart_upper","sound","vibration","speed_target_mps","incline_target_percent","legacy_unclassified","cloned_from")
     private fun text(v: String) = "'$v" // Always escape text, including an original leading apostrophe; reversible.
     private fun untext(v: String) = v.removePrefix("'")
     private fun Any?.cell() = this?.toString() ?: ""
-    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV5) + items.map {
-        listOf("5",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString(),it.energyModel)
+    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV6) + items.map {
+        listOf("6",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString(),it.energyModel,it.ownerUserId.cell(),it.startedUserId.cell(),text(it.startedUserName),it.weightSource,it.metSource,text(it.workoutSnapshot),text(it.capabilitySnapshot),it.identityVersion.toString(),text(it.ownerHistory),text(it.enteredStageIds))
     })
     fun samples(items: List<Sample>) = Csv.write(listOf(samplesV6) + items.map { s -> s.metrics.let {
         listOf("6",s.sessionId,s.elapsedMs.toString(),it.cadence.cell(),it.resistance.cell(),it.speedMps.cell(),it.distanceM.cell(),it.heartBpm.cell(),it.powerW.cell(),it.strokes.cell(),it.caloriesKcal.cell(),it.inclinePercent.cell(),it.strideM.cell(),it.forceN.cell(),it.stepRate.cell(),it.stepCount.cell(),it.targetCadence.cell(),it.powerEstimated.toString(),it.jumpCount.cell(),it.continuousJumps.cell(),it.jumpInterruptions.cell(),it.repetitions.cell(),it.loadKg.cell(),it.deviceDurationSec.cell(),it.dumbbellFewActions.cell(),it.dumbbellActionNumber.cell())
     } })
-    fun workouts(items: List<Workout>) = Csv.write(listOf(workoutsHeader) + items.flatMap { w -> w.steps.mapIndexed { i,s ->
-        listOf("1",w.id,text(w.title),i.toString(),s.condition.name,s.target.toString(),s.resistancePercent.cell())
+    fun workouts(items: List<Workout>) = Csv.write(listOf(workoutsV2) + items.flatMap { w -> w.steps.mapIndexed { i,s ->
+        listOf("2",w.id,text(w.title),i.toString(),s.condition.name,s.target.toString(),s.resistancePercent.cell(),w.ownerUserId.cell(),w.machine?.name.orEmpty(),s.id,s.kind.name,s.frequency.mode.name,s.frequency.lower.cell(),s.frequency.upper.cell(),s.heart.mode.name,s.heart.lower.cell(),s.heart.upper.cell(),w.hints.frequency.enabled.toString(),w.hints.frequency.lower.cell(),w.hints.frequency.upper.cell(),w.hints.heart.enabled.toString(),w.hints.heart.lower.cell(),w.hints.heart.upper.cell(),w.hints.sound.toString(),w.hints.vibration.toString(),s.speedTargetMps.cell(),s.inclineTargetPercent.cell(),w.legacyUnclassified.toString(),text(w.clonedFrom))
     } })
+    fun users(items: List<UserProfile>) = Csv.write(listOf(usersHeader)+items.map { u -> listOf("1",u.id,text(u.name),u.weightKg.cell(),u.met.toString(),u.metSource,u.avatar,u.createdAt.toString(),u.removedAt.cell(),u.deleted.toString(),text(u.preferences),text(u.legacyHints)) })
     fun parse(content: String): Archive {
         val rows=Csv.read(content); if(rows.isEmpty()) throw ImportProblem(1,"header")
         val header=rows.first()
-        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,sessionsV5,samplesV2,samplesV3,samplesV6,workoutsHeader)) throw ImportProblem(1,"header")
+        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6,samplesV2,samplesV3,samplesV6,workoutsHeader,workoutsV2,usersHeader)) throw ImportProblem(1,"header")
         val sessions=mutableListOf<Session>(); val samples=mutableListOf<Sample>()
-        val sessionIds=HashSet<String>()
+        val sessionIds=HashSet<String>(); val users=mutableListOf<UserProfile>(); val metadata=mutableMapOf<String,Workout>()
         val steps=linkedMapOf<String,Pair<String,MutableList<Step>>>()
         rows.drop(1).forEachIndexed { index,r ->
             try {
-                require(r.size==header.size && r[0]==when(header) { samplesV6 -> "6"; sessionsV5 -> "5"; sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
+                require(r.size==header.size && r[0]==when(header) { samplesV6,sessionsV6 -> "6"; workoutsV2 -> "2"; sessionsV5 -> "5"; sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
                 fun number(i: Int,max: Double,min: Double=0.0): Double? = r[i].takeIf { it.isNotEmpty() }?.toDouble()?.also { require(it.isFinite() && it in min..max) }
                 fun integer(i: Int,max: Int): Int? = r[i].takeIf { it.isNotEmpty() }?.toInt()?.also { require(it in 0..max) }
                 fun bool(i: Int): Boolean { require(r[i] in listOf("true","false")); return r[i].toBoolean() }
                 fun ms(i: Int) = r[i].toLong().also { require(it in 0..604800000L) }
                 when(header) {
-                    sessionsHeader,sessionsV2,sessionsV4,sessionsV5 -> {
+                    sessionsHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6 -> {
                         UUID.fromString(r[1]); Instant.parse(r[2]); if(r[3].isNotEmpty()) Instant.parse(r[3]); ZoneId.of(r[4])
                         require(r[10] in listOf("true","false") && r[11] in listOf("active","completed","interrupted","stopped"))
                         val s=Session(r[1],r[2],r[3],r[4],untext(r[5]),Machine.valueOf(r[6]),Protocol.valueOf(r[7]),ms(8),number(9,10_000_000.0),r[10].toBoolean(),r[11],
-                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4,sessionsV5) && bool(13),header in listOf(sessionsV2,sessionsV4,sessionsV5) && bool(14),
-                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4,sessionsV5)) number(16,20.0,1.0) else null,
-                            if(header in listOf(sessionsV4,sessionsV5)) untext(r[17]) else "",if(header in listOf(sessionsV4,sessionsV5)) untext(r[18]) else "",header in listOf(sessionsV4,sessionsV5) && bool(19),if(header==sessionsV5) r[20].also { require(it in setOf("","device","legacy-v1","legacy-mobi","legacy-rowing","met","mixed")) } else "")
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6) && bool(13),header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6) && bool(14),
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(16,20.0,1.0) else null,
+                            if(header in listOf(sessionsV4,sessionsV5,sessionsV6)) untext(r[17]) else "",if(header in listOf(sessionsV4,sessionsV5,sessionsV6)) untext(r[18]) else "",header in listOf(sessionsV4,sessionsV5,sessionsV6) && bool(19),if(header in listOf(sessionsV5,sessionsV6)) r[20].also { require(it in setOf("","device","legacy-v1","legacy-mobi","legacy-rowing","met","mixed")) } else "",
+                            if(header==sessionsV6) r[21].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
+                            if(header==sessionsV6) r[22].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
+                            if(header==sessionsV6) untext(r[23]) else "",if(header==sessionsV6) r[24] else "",if(header==sessionsV6) r[25] else "",
+                            if(header==sessionsV6) untext(r[26]) else "",if(header==sessionsV6) untext(r[27]) else "",if(header==sessionsV6) r[28].toInt() else 0,if(header==sessionsV6) untext(r[29]) else "",if(header==sessionsV6) untext(r[30]) else "")
+                        require(s.identityVersion in 0..1 && (s.identityVersion==0 || s.startedUserId!=null && s.ownerUserId!=null))
+                        require(s.startedUserName.length<=96 && s.weightSource in setOf("","user","default","legacy") && s.metSource in setOf("","user","default","legacy"))
+                        require(s.workoutSnapshot.length<=524288 && s.capabilitySnapshot.length<=4096)
+                        if(s.workoutSnapshot.isNotEmpty()) { require(Csv.read(s.workoutSnapshot).firstOrNull() in listOf(workoutsHeader,workoutsV2)); require(parse(s.workoutSnapshot).workouts.size==1) }
+                        require(s.ownerHistory.length<=262144)
+                        require(s.enteredStageIds.length<=16200 && (s.enteredStageIds.isEmpty() || s.enteredStageIds.split(';').let { ids -> ids.size<=200 && ids.distinct()==ids && ids.all { it.matches(Regex("[A-Za-z0-9_-]{1,80}")) } }))
                         require(s.workoutId.length<=80 && s.workoutTitle.length<=120 && s.device.length<=120 && sessionIds.add(s.id)); sessions.add(s)
                     }
                     samplesHeader,samplesV2,samplesV3,samplesV6 -> {
@@ -123,19 +137,29 @@ object Exchange {
                             if(header==samplesV6) number(22,6553.5) else null,if(header==samplesV6) integer(23,65535) else null,
                             if(header==samplesV6) integer(24,255) else null,if(header==samplesV6) integer(25,255) else null)))
                     }
-                    workoutsHeader -> {
+                    usersHeader -> {
+                        val u=UserProfile(r[1],untext(r[2]),number(3,300.0,20.0),number(4,20.0,1.0)!!,r[5],r[6],r[7].toLong(),r[8].takeIf(String::isNotEmpty)?.toLong(),bool(9),untext(r[10]),untext(r[11]))
+                        require(users.none { it.id==u.id }); users.add(u)
+                    }
+                    workoutsHeader,workoutsV2 -> {
                         require(r[1].matches(Regex("[A-Za-z0-9_-]{1,80}")))
                         val title=untext(r[2]); val pair=steps.getOrPut(r[1]) { title to mutableListOf() }
                         require(pair.first==title && r[3].toInt()==pair.second.size && pair.second.size<200)
-                        pair.second.add(Step(Condition.valueOf(r[4]),r[5].toDouble(),integer(6,100)))
+                        val step=if(header==workoutsHeader) Step(Condition.valueOf(r[4]),r[5].toDouble(),integer(6,100)) else Step(Condition.valueOf(r[4]),r[5].toDouble(),integer(6,100),r[9],StageKind.valueOf(r[10]),StageRange(HintMode.valueOf(r[11]),number(12,Double.MAX_VALUE),number(13,Double.MAX_VALUE)),StageRange(HintMode.valueOf(r[14]),number(15,Double.MAX_VALUE,1.0),number(16,Double.MAX_VALUE,1.0)),number(25,100.0),number(26,100.0,-100.0))
+                        pair.second.add(step)
+                        if(header==workoutsV2) {
+                            val meta=Workout(r[1],title,listOf(Step(target=1.0)),ownerUserId=r[7].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) },machine=r[8].takeIf(String::isNotEmpty)?.let(Machine::valueOf),hints=WorkoutHints(PersonalRange(bool(17),number(18,Double.MAX_VALUE),number(19,Double.MAX_VALUE)),PersonalRange(bool(20),number(21,Double.MAX_VALUE,1.0),number(22,Double.MAX_VALUE,1.0)),bool(23),bool(24)),legacyUnclassified=bool(27),clonedFrom=untext(r[28]))
+                            require(metadata[r[1]]==null || metadata[r[1]]==meta); metadata[r[1]]=meta
+                        }
                     }
                 }
             } catch(e: Exception) { throw ImportProblem(index+2,"value") }
         }
         val keys=HashSet<Pair<String,Long>>()
         samples.forEach { require(keys.add(it.sessionId to it.elapsedMs)) { "duplicate_sample" } }
-        val workouts=steps.map { (id,pair) -> Workout(id,pair.first,pair.second) }
-        return Archive(sessions,samples,workouts)
+        val workouts=steps.map { (id,pair) -> metadata[id]?.copy(steps=pair.second) ?: Workout(id,pair.first,pair.second) }
+        workouts.forEach(WorkoutPolicy::validate)
+        return Archive(sessions,samples,workouts,users)
     }
     fun validateReferences(archive: Archive, existing: List<Session>) {
         val ids=(existing+archive.sessions).associateBy { it.id }

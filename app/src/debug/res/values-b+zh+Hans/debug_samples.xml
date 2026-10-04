@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">一键加载演示数据</string>
+    <string name="debug_samples_clear">清除内置演示数据</string>
+    <string name="debug_samples_help">4 个档案 · 6 类器材 · 36 个月 · 780 条记录。仅在点击加载后写入。</string>
+    <string name="debug_samples_count">当前已存：%1$d 个档案 · %2$d 条内置记录</string>
+    <string name="debug_samples_working">处理中 · %1$d%%</string>
+    <string name="debug_samples_view">查看记录</string>
+    <string name="debug_samples_preview">将清除 %1$d 条内置记录，移除 %2$d 个空演示档案；保留 %3$d 个有关联记录、方案或历史引用的档案。</string>
+    <string name="debug_samples_conflict">内置 ID 与现有数据冲突，或演示档案已彻底删除。本次未覆盖现有数据。</string>
+    <string name="debug_samples_failed">操作未完成，数据修改已回滚。请在空闲状态下重试。</string>
+    <string name="debug_samples_locked">请先结束或取消当前记录、开始确认或数据恢复。</string>
+    <string name="debug_user_a">演示 A</string>
+    <string name="debug_user_b">演示 B</string>
+    <string name="debug_user_c">演示 C</string>
+    <string name="debug_user_d">演示 D</string>
+</resources>

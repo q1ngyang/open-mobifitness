@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">デモデータを読み込む</string>
+    <string name="debug_samples_clear">内蔵デモデータを消去</string>
+    <string name="debug_samples_help">4人・6種類・36か月・780件。操作したときだけ追加します。</string>
+    <string name="debug_samples_count">保存済み：%1$d人・%2$d件の内蔵記録</string>
+    <string name="debug_samples_working">処理中 · %1$d%%</string>
+    <string name="debug_samples_view">記録を見る</string>
+    <string name="debug_samples_preview">内蔵記録%1$d件と空のデモ利用者%2$d人を整理します。他の記録・プラン・履歴を持つ%3$d人は保持します。</string>
+    <string name="debug_samples_conflict">内蔵IDの競合、または利用者の完全削除があります。既存データは上書きされていません。</string>
+    <string name="debug_samples_failed">操作を完了できませんでした。変更は取り消されました。待機中に再試行してください。</string>
+    <string name="debug_samples_locked">記録・開始確認・復元を終了または中止してください。</string>
+    <string name="debug_user_a">デモ A</string>
+    <string name="debug_user_b">デモ B</string>
+    <string name="debug_user_c">デモ C</string>
+    <string name="debug_user_d">デモ D</string>
+</resources>

@@ -45,15 +45,29 @@ data class Session(
     val elapsedMs: Long = 0, val distanceM: Double? = null, val demo: Boolean = false, val status: String = "active",
     val caloriesKcal: Double? = null, val caloriesEstimated: Boolean = false, val distanceEstimated: Boolean = false,
     val weightKg: Double? = null, val met: Double? = null,
-    val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false, val energyModel: String = ""
+    val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false, val energyModel: String = "",
+    val ownerUserId: String?=null, val startedUserId: String?=null, val startedUserName: String="",
+    val weightSource: String="", val metSource: String="", val workoutSnapshot: String="",
+    val capabilitySnapshot: String="", val identityVersion: Int=0, val ownerHistory: String="", val enteredStageIds: String=""
 )
 data class Sample(val sessionId: String, val elapsedMs: Long, val metrics: Metrics)
 enum class Condition { TIME, DISTANCE, STROKES }
-data class Step(val condition: Condition = Condition.TIME, val target: Double, val resistancePercent: Int? = null) {
-    init { require(target.isFinite() && target > 0 && target <= 86400); require(resistancePercent == null || resistancePercent in 0..100) }
+data class Step(val condition: Condition = Condition.TIME, val target: Double, val resistancePercent: Int? = null,
+    val id: String="", val kind: StageKind=StageKind.TRAINING,
+    val frequency: StageRange=StageRange(),val heart: StageRange=StageRange(),
+    val speedTargetMps: Double?=null,val inclineTargetPercent: Double?=null) {
+    init {
+        require(target.isFinite() && target > 0 && target <= 86400); require(resistancePercent == null || resistancePercent in 0..100)
+        require(id.length<=80 && (id.isEmpty() || id.matches(Regex("[A-Za-z0-9_-]+"))))
+        require(speedTargetMps==null || speedTargetMps.isFinite() && speedTargetMps in 0.0..100.0)
+        require(inclineTargetPercent==null || inclineTargetPercent.isFinite() && inclineTargetPercent in -100.0..100.0)
+        require(listOfNotNull(heart.lower,heart.upper).all { it>0 && it%1.0==0.0 })
+    }
 }
-data class Workout(val id: String = UUID.randomUUID().toString(), val title: String, val steps: List<Step>, val builtin: Boolean = false) {
-    init { require(title.isNotBlank() && title.length <= 120 && steps.size in 1..200) }
+data class Workout(val id: String = UUID.randomUUID().toString(), val title: String, val steps: List<Step>, val builtin: Boolean = false,
+    val ownerUserId: String?=null,val machine: Machine?=null,val hints: WorkoutHints=WorkoutHints(),
+    val legacyUnclassified: Boolean=false,val clonedFrom: String="") {
+    init { require(title.isNotBlank() && title.length <= 120 && steps.size in 1..200); require(steps.map { it.id }.filter { it.isNotEmpty() }.let { it.distinct()==it }) }
 }
 object Presets {
     // Original, editable templates. Device-range targets are not physiological intensity measurements.

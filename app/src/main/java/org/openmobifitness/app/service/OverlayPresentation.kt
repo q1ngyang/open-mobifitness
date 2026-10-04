@@ -22,7 +22,9 @@ internal data class OverlayPresentation(
     val countdownValue: String?=null,
     val controlOnly: Boolean=false,
     val canResume: Boolean=true,
-    val pending: String=""
+    val pending: String="",
+    val userName: String="",
+    val showResistance: Boolean=true
 )
 
 internal fun overlayClock(ms: Long): String {
@@ -40,7 +42,7 @@ internal fun Context.overlayPresentation(c: Controller,expanded: Boolean): Overl
         state.paused -> OverlayStatus.PAUSED
         else -> OverlayStatus.ACTIVE
     }
-    val statusText=when {
+    val connectionText=when {
         disconnected -> getString(R.string.disconnected)
         state.controlOnly -> "${getString(R.string.control_only)} · ${getString(R.string.not_recording)}"
         state.demo && state.paused -> "${getString(R.string.demo)} · ${getString(R.string.paused)}"
@@ -48,6 +50,8 @@ internal fun Context.overlayPresentation(c: Controller,expanded: Boolean): Overl
         state.paused -> getString(R.string.paused)
         else -> getString(R.string.connected)
     }
+    val statusText=connectionText
+    val userName=state.session?.startedUserName ?: c.currentUser.value?.name.orEmpty()
     val workout=state.selected.takeIf { state.session!=null }
     val stage=when {
         state.done -> getString(R.string.completed)
@@ -64,7 +68,7 @@ internal fun Context.overlayPresentation(c: Controller,expanded: Boolean): Overl
     val readings=c.display.selected(if(expanded) DisplayScope.EXPANDED else DisplayScope.COMPACT,c.displayMachine(),state.controlOnly).map { id ->
         reading(id,c).let { if(id==MetricId.TIME && state.session!=null) it.copy(value=elapsed) else it }
     }
-    val can=state.demo || (link.phase=="ready" && link.writable && link.range!=null && c.controlResistance()!=null && !link.busy)
+    val can=state.demo && c.range()!=null || (link.phase=="ready" && link.writable && link.range!=null && c.controlResistance()!=null && !link.busy)
     val controlMode=getString(when {
         state.pendingResistance!=null -> R.string.overlay_pending
         !state.demo && (!link.writable || link.range==null) -> R.string.overlay_monitor
@@ -75,5 +79,19 @@ internal fun Context.overlayPresentation(c: Controller,expanded: Boolean): Overl
         if(workout!=null) (if(state.done) 1f else state.progress.coerceIn(0f,1f)) else null,
         reading(MetricId.RESISTANCE,c).let { if(link.resistanceFeedback || state.demo) it else it.copy(label=getString(R.string.resistance_commanded),value=WorkoutService.number(c.controlResistance()),unit="") },controlMode,statusText,status,state.paused,can,
         state.remainingMs?.takeIf { workout!=null && !state.done }?.let { minutesSeconds(it) },state.controlOnly,!disconnected,
-        (state.pendingResistance ?: link.requested)?.let { "${getString(R.string.target)} ${WorkoutService.number(it)} · ${getString(R.string.overlay_pending)}" } ?: "")
+        (state.pendingResistance ?: link.requested)?.let { "${getString(R.string.target)} ${WorkoutService.number(it)} · ${getString(R.string.overlay_pending)}" } ?: "",userName,c.range()!=null)
+}
+
+/** Content geometry only; the service caps it to the usable display and keeps scrolling. */
+internal fun overlayContentHeight(expanded: Boolean,model: OverlayPresentation,fontScale: Float): Int {
+    val scale=fontScale.coerceAtLeast(1f)
+    val count=model.readings.size.coerceAtMost(if(expanded) 6 else 2)
+    val rows=if(scale>=1.5f) count else (count+1)/2
+    val metrics=if(scale>=1.5f) rows*64*scale else rows*56*scale
+    val resistance=if(model.showResistance) 1+maxOf(52f,36*scale)+(if(model.pending.isEmpty()) 0f else 28*scale) else 0f
+    val footer=(if(scale>=1.5f) 28 else 24)*scale
+    val height=if(expanded) 24+7+48+metrics+rows+resistance+footer+4+48+6+
+        (if(model.controlOnly) 0f else 60*scale)+(if(model.stageProgress!=null) 18 else 0)
+        else 16+7+48+maxOf(56*scale,metrics)+footer+5+(if(model.stageProgress!=null) 8 else 0)
+    return kotlin.math.ceil(height.toDouble()).toInt()
 }

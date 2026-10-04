@@ -34,10 +34,17 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
     private val palette=OverlayPalette.create(dark)
     private fun dp(n: Int)=(n*resources.displayMetrics.density).toInt()
     private fun textHeight(n: Int)=dp((n*resources.configuration.fontScale).toInt())
+    private val largeFont get()=resources.configuration.fontScale>=1.5f
+    private val footerHeight get()=textHeight(if(largeFont) 28 else 24)
     private val cells=mutableListOf<OverlayMetricView>()
     val dragHandle: View
-    private val statusDot=View(context)
     private val statusLabel=text(10,8)
+    private val userName=text(11,9)
+    private val recordingState=text(10,8)
+    private val metricRows=mutableListOf<View>()
+    private val metricDividers=mutableListOf<Pair<Int,View>>()
+    private val separators=mutableListOf<View>()
+    private val pendingLabel=text(10,9)
     private val stageLabel=text(11,8,bold=true)
     private val remaining=text(if(expanded) 21 else 11,8,numeric=true,bold=expanded).apply { if(expanded) setTextColor(palette.ink) }
     private val elapsed=if(expanded) OverlayMetricView(context,palette.ink,palette.muted,true,32) else null
@@ -45,6 +52,8 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
     private var resistanceValue: TextView?=null
     private var resistancePercent: TextView?=null
     private var resistanceMode: TextView?=null
+    private var resistanceTitle: TextView?=null
+    private var resistanceBlock: View?=null
     private var minus: View?=null
     private var plus: View?=null
     private var pause: ActionButton?=null
@@ -62,9 +71,14 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         val header=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
         val brand=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
         brand.addView(OverlayBrand(context),LayoutParams(dp(20),dp(18)))
-        brand.addView(text(12,10,bold=true).apply { text="OpenMOBI"; setTextColor(palette.ink) },LayoutParams(0,MATCH,1f).apply { marginStart=dp(5) })
-        statusDot.background=shape(palette.primary,20)
-        header.addView(brand,LayoutParams(0,MATCH,1f))
+        brand.addView(text(12,10,bold=true).apply {
+            text="OpenMOBI"; setTextColor(palette.ink)
+            // The wordmark is a bounded brand asset; reserve room for its full name.
+            setAutoSizeTextTypeUniformWithConfiguration(if(largeFont) 12 else 10,if(largeFont) 16 else 12,1,TypedValue.COMPLEX_UNIT_DIP)
+        },LayoutParams(0,MATCH,1f).apply { marginStart=dp(5) })
+        header.addView(brand,LayoutParams(dp(if(largeFont) 110 else 94),MATCH))
+        userName.gravity=Gravity.END or Gravity.CENTER_VERTICAL
+        header.addView(userName,LayoutParams(0,MATCH,1f).apply { marginStart=dp(3) })
         dragHandle=brand
         if(expanded) {
             header.addView(iconButton(OverlayGlyph.TUNE,R.string.choose_metrics,OverlayAction.METRICS),LayoutParams(dp(48),dp(48)))
@@ -74,8 +88,6 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
             isClickable=true; setOnClickListener { action(OverlayAction.EXPAND) }
         }
         addView(header,LayoutParams(MATCH,dp(48)))
-        statusLabel.apply { setTextColor(palette.primary); typeface=Typeface.DEFAULT_BOLD; background=shape(palette.soft,14); setPadding(dp(10),dp(3),dp(10),dp(3)); maxLines=2 }
-        addView(statusLabel,LayoutParams(MATCH,minOf(textHeight(28),dp(40))).apply { topMargin=dp(2); bottomMargin=dp(4) })
         if(expanded) buildExpanded() else buildCompact()
     }
 
@@ -87,10 +99,11 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         } else addView(metrics,LayoutParams(MATCH,0,1f))
         addView(progress,LayoutParams(MATCH,dp(3)).apply { topMargin=dp(4); bottomMargin=dp(1) })
         val footer=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
-        footer.addView(stageLabel,LayoutParams(0,MATCH,1f))
+        footer.addView(stageLabel,LayoutParams(WRAP,MATCH))
+        footer.addView(View(context),LayoutParams(0,1,1f))
         remaining.gravity=Gravity.END or Gravity.CENTER_VERTICAL
-        footer.addView(remaining,LayoutParams(0,MATCH,1.12f).apply { marginStart=dp(5) })
-        addView(footer,LayoutParams(MATCH,textHeight(24)))
+        footer.addView(remaining,LayoutParams(WRAP,MATCH).apply { marginStart=dp(5) })
+        addView(footer,LayoutParams(MATCH,footerHeight).apply { topMargin=dp(5) })
     }
 
     private fun buildExpanded() {
@@ -105,10 +118,12 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         information.addView(hero,LayoutParams(MATCH,textHeight(60)))
         this.hero=hero
         information.addView(progress,LayoutParams(MATCH,dp(4)).apply { topMargin=dp(7); bottomMargin=dp(7) })
-        information.addView(divider(),LayoutParams(MATCH,dp(1)))
-        information.addView(metricRow(0,true),LayoutParams(MATCH,WRAP))
-        information.addView(divider(),LayoutParams(MATCH,dp(1)))
-        information.addView(metricRow(2,true),LayoutParams(MATCH,WRAP))
+        repeat(3) { index ->
+            val line=divider(); separators.add(line)
+            information.addView(line,LayoutParams(MATCH,dp(1)))
+            val row=metricRow(index*2,true); metricRows.add(row)
+            information.addView(row,LayoutParams(MATCH,WRAP))
+        }
         val scroll=ScrollView(context).apply {
             isFillViewport=false; isVerticalScrollBarEnabled=true; isScrollbarFadingEnabled=false
             scrollBarSize=dp(2).coerceAtLeast(1); verticalScrollbarThumbDrawable=shape(palette.muted,2)
@@ -119,22 +134,30 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
 
         // The action dock stays fixed. Readings and resistance can scroll in short or large-font windows.
         val resistance=LinearLayout(context).apply { orientation=VERTICAL }
+        resistanceBlock=resistance
         resistance.addView(divider(),LayoutParams(MATCH,dp(1)))
         val row=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
         minus=iconButton(OverlayGlyph.MINUS,R.string.decrease,OverlayAction.MINUS,true)
         plus=iconButton(OverlayGlyph.PLUS,R.string.increase,OverlayAction.PLUS,true)
+        resistanceTitle=text(11,9).apply { setTextColor(palette.ink) }
+        resistanceMode=text(10,7).apply { gravity=Gravity.CENTER; background=shape(palette.soft,14); setTextColor(palette.primary); setPadding(dp(5),0,dp(5),0) }
+        resistanceValue=text(25,16,true,true).apply { gravity=Gravity.CENTER; setTextColor(palette.ink) }
+        resistancePercent=text(11,9,true).apply { gravity=Gravity.CENTER }
+        row.addView(resistanceTitle,LayoutParams(0,textHeight(30),1.6f))
+        row.addView(resistanceMode,LayoutParams(0,textHeight(26),1.1f).apply { marginEnd=dp(3) })
         row.addView(minus,LayoutParams(dp(48),dp(48)))
-        val level=LinearLayout(context).apply { orientation=VERTICAL; gravity=Gravity.CENTER }
-        resistanceMode=text(10,8).apply { gravity=Gravity.CENTER }
-        resistanceValue=text(24,12,true,true).apply { gravity=Gravity.CENTER; setTextColor(palette.ink) }
-        resistancePercent=text(10,8,true).apply { gravity=Gravity.CENTER }
-        level.addView(resistanceMode,LayoutParams(MATCH,textHeight(14)))
-        level.addView(resistanceValue,LayoutParams(MATCH,textHeight(27)))
-        level.addView(resistancePercent,LayoutParams(MATCH,textHeight(13)))
-        row.addView(level,LayoutParams(0,textHeight(54),1f))
+        row.addView(resistanceValue,LayoutParams(0,textHeight(36),.8f))
+        row.addView(resistancePercent,LayoutParams(0,textHeight(30),.75f))
         row.addView(plus,LayoutParams(dp(48),dp(48)))
-        resistance.addView(row,LayoutParams(MATCH,textHeight(55)))
-        information.addView(resistance,LayoutParams(MATCH,textHeight(56)))
+        resistance.addView(row,LayoutParams(MATCH,maxOf(dp(52),textHeight(36))))
+        pendingLabel.maxLines=2
+        resistance.addView(pendingLabel,LayoutParams(MATCH,textHeight(28)))
+        information.addView(resistance,LayoutParams(MATCH,WRAP))
+        val footer=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
+        footer.addView(statusLabel,LayoutParams(WRAP,MATCH))
+        footer.addView(View(context),LayoutParams(0,1,1f))
+        footer.addView(recordingState,LayoutParams(WRAP,MATCH))
+        addView(footer,LayoutParams(MATCH,footerHeight).apply { topMargin=dp(4) })
         val dock=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
         pause=ActionButton(OverlayGlyph.PAUSE,context.getString(R.string.pause_short),true).apply { setOnClickListener { action(if(lastPresentation?.canResume==false) OverlayAction.RECONNECT else OverlayAction.PAUSE) } }
         dock.addView(pause,LayoutParams(0,MATCH,1f))
@@ -149,7 +172,10 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         orientation=if(stacked) VERTICAL else HORIZONTAL
         gravity=Gravity.CENTER_VERTICAL
         repeat(2) { index ->
-            if(index==1) addView(divider(),if(stacked) LayoutParams(MATCH,dp(1)) else LayoutParams(dp(1),textHeight(38)).apply { marginStart=dp(5); marginEnd=dp(7) })
+            if(index==1) {
+                val line=divider();metricDividers.add(start to line)
+                addView(line,if(stacked) LayoutParams(MATCH,dp(1)) else LayoutParams(dp(1),textHeight(38)).apply { marginStart=dp(5); marginEnd=dp(7) })
+            }
             val cell=OverlayMetricView(context,palette.ink,palette.muted,large)
             cell.tag="overlay-metric-${start+index}"
             cells.add(cell)
@@ -162,12 +188,18 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         lastPresentation=model
         cells.forEachIndexed { index,cell ->
             val reading=model.readings.getOrNull(index)
-            cell.visibility=if(reading!=null) VISIBLE else INVISIBLE
+            cell.visibility=if(reading!=null) VISIBLE else if(resources.configuration.fontScale>=1.5f) GONE else INVISIBLE
             if(reading!=null) cell.bind(reading)
+        }
+        metricDividers.forEach { (start,line) -> line.visibility=if(model.readings.size>start+1) VISIBLE else GONE }
+        userName.text=model.userName
+        metricRows.forEachIndexed { index,row ->
+            row.visibility=if(model.readings.size>index*2) VISIBLE else GONE
+            separators[index].visibility=row.visibility
         }
         elapsed?.bind(MetricReading(context.getString(R.string.duration),model.elapsed,""))
         hero?.visibility=if(model.controlOnly) GONE else VISIBLE
-        stageLabel.text=model.stage
+        stageLabel.text=if(!expanded && model.status==OverlayStatus.DISCONNECTED) model.statusText else model.stage
         val countdown=model.countdownValue
         remaining.text=if(expanded && countdown!=null && model.remaining.contains(countdown)) SpannableString(model.remaining).apply {
             val begin=model.remaining.indexOf(countdown); val end=begin+countdown.length
@@ -178,16 +210,23 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         } else model.remaining
         progress.progress=model.stageProgress
         progress.visibility=if(model.stageProgress==null) GONE else VISIBLE
-        statusLabel.text=model.statusText
-        (statusDot.background as GradientDrawable).setColor(when(model.status) {
-            OverlayStatus.ACTIVE -> 0xFF23945A.toInt()
-            OverlayStatus.DEMO -> 0xFFC48E18.toInt()
-            OverlayStatus.PAUSED -> palette.muted
-            OverlayStatus.DISCONNECTED -> 0xFFDE535E.toInt()
-        })
-        resistanceMode?.text="${model.resistance.label} · ${model.controlMode}"
+        statusLabel.text=if(model.controlOnly && model.status!=OverlayStatus.DISCONNECTED) context.getString(R.string.control_only) else model.statusText
+        recordingState.text=if(model.controlOnly) "● "+context.getString(R.string.not_recording) else ""
+        recordingState.visibility=if(model.controlOnly) VISIBLE else GONE
+        stylePill(statusLabel,false)
+        stylePill(recordingState,true)
+        if(!expanded) {
+            stylePill(stageLabel,false)
+            stylePill(remaining,model.controlOnly || model.status==OverlayStatus.DISCONNECTED)
+        }
+        resistanceBlock?.visibility=if(model.showResistance) VISIBLE else GONE
+        resistanceTitle?.text=model.resistance.label
+        resistanceMode?.maxLines=if(model.controlMode in setOf(context.getString(R.string.overlay_manual),context.getString(R.string.overlay_auto))) 1 else 2
+        resistanceMode?.text=model.controlMode
         resistanceValue?.text=model.resistance.value
-        resistancePercent?.text=model.pending.ifEmpty { model.resistance.unit }
+        resistancePercent?.text=model.resistance.unit
+        pendingLabel.text=model.pending
+        pendingLabel.visibility=if(model.pending.isEmpty()) GONE else VISIBLE
         listOfNotNull(minus,plus).forEach { it.isEnabled=model.canAdjust; it.alpha=if(model.canAdjust) 1f else .35f }
         pause?.setState(if(model.paused || model.controlOnly || !model.canResume) OverlayGlyph.PLAY else OverlayGlyph.PAUSE,context.getString(if(!model.canResume) R.string.reconnect else if(model.controlOnly) R.string.start_recording else if(model.paused) R.string.resume else R.string.pause_short))
         // A non-focusable overlay can keep stale accessibility descendants even when the
@@ -197,6 +236,19 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
             event.contentChangeTypes=AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE
             sendAccessibilityEventUnchecked(event)
         }
+    }
+
+    private fun stylePill(label: TextView,warning: Boolean) {
+        val dark=palette.surface!=Color.WHITE
+        label.setTextColor(if(warning) (if(dark) 0xFFFFD08A.toInt() else 0xFF995800.toInt()) else palette.primary)
+        label.background=shape(if(warning) (if(dark) 0xFF49351C.toInt() else 0xFFFFF2DB.toInt()) else palette.soft,14)
+        label.setPadding(dp(7),dp(2),dp(7),dp(2))
+        // WRAP_CONTENT views must have a stable text size before measuring.
+        label.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_NONE)
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP,10f)
+        label.maxWidth=Int.MAX_VALUE
+        label.maxLines=if(largeFont) 2 else 1
+        if(warning) label.typeface=Typeface.DEFAULT
     }
 
     private fun text(size: Int,min: Int,numeric: Boolean=false,bold: Boolean=false)=TextView(context).apply {
@@ -242,7 +294,7 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         private const val MATCH=LayoutParams.MATCH_PARENT
         private const val WRAP=LayoutParams.WRAP_CONTENT
         const val COMPACT_WIDTH=236
-        const val COMPACT_HEIGHT=192
+        const val COMPACT_HEIGHT=156
         const val EXPANDED_WIDTH=312
         const val EXPANDED_HEIGHT=416
     }

@@ -8,7 +8,9 @@ OpenMOBI is an independent Android app for using Mobi fitness equipment after th
 
 ## Download
 
-**[Download v0.2.0 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.2.0/OpenMOBI-0.2.0.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.2.0.md#english)
+**[Download v0.3.0 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.0/OpenMOBI-0.3.0.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.0.md#english)
+
+**v0.3.0** adds local profiles, 70 plans across four equipment types, grouped training reports and improved tablet, phone and floating-panel layouts. [Upgrade and feature guide](docs/V030_GUIDE.md#english)
 
 Requires Android 10 or later on a 64-bit phone or tablet. It can be installed alongside the original app.
 
@@ -18,7 +20,8 @@ So far, user hardware feedback covers **Mobi MB-EP ellipticals using the V1 prot
 
 ## What you can do
 
-- **Record when you want:** view readings and adjust resistance in control-only mode, then start recording when ready. Follow one of 21 built-in plans or create your own.
+- **Record when you want:** view readings and adjust resistance in control-only mode, then start recording when ready. Follow one of 70 built-in plans across four equipment types or create your own.
+- **Share equipment, keep personal history:** local profiles have photo avatars, separate records, plans and preferences, with identity confirmation before recording.
 - **Watch while you train:** use the full workout screen or two floating-panel sizes, with selected metrics, saved positions and resistance presets.
 - **Set your own pace:** enter frequency or heart-rate ranges for optional hints. They never adjust resistance automatically.
 - **Keep your history:** today's totals, past workouts and details, plus readable CSV reports, full backups and settings transfer.
@@ -26,11 +29,9 @@ So far, user hardware feedback covers **Mobi MB-EP ellipticals using the V1 prot
 
 ## Screenshots
 
-<img src="docs/screenshots/overview.png" alt="v0.2.0 phone screens: home, control only and free recording" width="1000">
+<img src="docs/screenshots/v030-metric-units-tablet.png" alt="v0.3.0 tablet workout: progress, six readings and one row of resistance presets" width="1000">
 
-<img src="docs/screenshots/floating-panels.png" alt="Compact and expanded floating panels: readings, resistance controls, pause and return to the app" width="1000">
-
-Actual v0.2.0 captures with Debug demo data; the presentation layout does not change the app interface. [Tablet and more screenshots](docs/SCREENSHOTS.md)
+Actual v0.3.0 capture with Debug demo data. [Phones, floating panels and more screenshots](docs/SCREENSHOTS.md)
 
 ## Bluetooth trouble? Please report it
 

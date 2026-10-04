@@ -24,9 +24,13 @@ import kotlinx.coroutines.launch
 import org.openmobifitness.app.*
 import org.openmobifitness.app.R
 import org.openmobifitness.app.data.*
+import org.openmobifitness.core.*
 
 @Composable internal fun SettingsScreen(activity: MainActivity,c: Controller) {
     val section by activity.settingsSection
+    val user by c.currentUser.collectAsStateWithLifecycle()
+    val policy by c.identityPolicy.collectAsStateWithLifecycle()
+    var editUser by rememberSaveable { mutableStateOf(false) }
     val theme by c.theme.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
     val floating by c.display.floatingEnabled.collectAsStateWithLifecycle()
@@ -34,27 +38,38 @@ import org.openmobifitness.app.data.*
     var dialog by rememberSaveable { mutableStateOf("") }
     BackHandler(section.isNotEmpty()) { activity.settingsSection.value="" }
     val languages=listOf("" to stringResource(R.string.system),"zh-Hans" to "简体中文","zh-Hant" to "繁體中文","en" to "English","ja" to "日本語","ko" to "한국어","de" to "Deutsch")
-    val title=when(section) { "personal"->R.string.personal_hints; "diagnostics"->R.string.diagnostics; "about"->R.string.about; "floating"->R.string.floating_settings; "display"->R.string.display_settings; "data"->R.string.data_management; else->R.string.settings }
+    val title=when(section) { "users"->R.string.user_manage; "diagnostics"->R.string.diagnostics; "about"->R.string.about; "floating"->R.string.floating_settings; "display"->R.string.display_settings; "data"->R.string.data_management; else->R.string.settings }
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
         PageTitle(stringResource(title),if(section.isNotEmpty()) ({ activity.settingsSection.value="" }) else null)
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val wide=maxWidth>=800.dp
+            val wide=maxWidth/androidx.compose.ui.platform.LocalDensity.current.fontScale>=800.dp
             Column(Modifier.widthIn(max=1080.dp).fillMaxWidth().align(Alignment.TopCenter).verticalScroll(rememberScrollState()).testTag("settings-list").padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
                 if(section.isEmpty()) {
+                    user?.let { current -> SettingsGroup("") {
+                        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                            UserAvatar(c,current.name,current.avatar,56.dp)
+                            Column(Modifier.weight(1f)) { Text(current.name,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold); Text(stringResource(R.string.user_current),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                            IconButton(onClick={ editUser=true },enabled=c.dataActionsAllowed) { Icon(Icons.Default.Edit,stringResource(R.string.user_edit)) }
+                        }
+                    } }
                     val preferences: @Composable ()->Unit = {
-                        SettingsGroup(stringResource(R.string.preferences_group)) {
-                            SettingsRow(Icons.Default.Settings,stringResource(R.string.language),languages.firstOrNull { it.first==activity.currentLanguage() }?.second ?: stringResource(R.string.system),"setting-language",inlineValue=true,symbol=R.drawable.ic_language) { dialog="language" }
+                        SettingsGroup(stringResource(R.string.user_personal_settings)) {
                             SettingsRow(Icons.Default.Settings,stringResource(R.string.theme),stringResource(when(theme) { "light"->R.string.light; "dark"->R.string.dark; else->R.string.system }),"setting-theme",inlineValue=true,symbol=R.drawable.ic_theme) { dialog="theme" }
                             SettingsRow(Icons.Default.Settings,stringResource(R.string.units),stringResource(if(imperial) R.string.imperial else R.string.metric),"setting-units",inlineValue=true,symbol=R.drawable.ic_ruler) { dialog="units" }
                         }
                         SettingsGroup(stringResource(R.string.train)) {
                             SettingsRow(Icons.Default.List,stringResource(R.string.display_settings),stringResource(R.string.display_settings_summary),"setting-display",symbol=R.drawable.ic_display) { activity.settingsSection.value="display" }
                             SettingsRow(Icons.Default.Home,stringResource(R.string.floating_settings),stringResource(if(!floating) R.string.disabled else if(automatic) R.string.auto_floating else R.string.enabled),"setting-floating",symbol=R.drawable.ic_float) { activity.settingsSection.value="floating" }
-                            SettingsRow(Icons.Default.Favorite,stringResource(R.string.personal_hints),stringResource(R.string.personal_hints_help),"setting-personal") { activity.settingsSection.value="personal" }
-                            SettingsRow(Icons.Default.Info,stringResource(R.string.estimation_settings),stringResource(R.string.estimation_summary),"setting-estimates") { dialog="estimates" }
+                        }
+                        SettingsGroup(stringResource(R.string.user_manage)) {
+                            SettingsRow(Icons.Default.Person,stringResource(R.string.user_manage),tag="setting-users") { activity.settingsSection.value="users" }
+                            SettingsRow(Icons.Default.Lock,stringResource(R.string.user_identity_policy),stringResource(when(policy) { IdentityPolicy.EACH_RECORDING -> R.string.user_policy_recording; IdentityPolicy.STARTUP -> R.string.user_policy_startup; IdentityPolicy.REMEMBER -> R.string.user_policy_remember })) { dialog="identity" }
                         }
                     }
                     val support: @Composable ()->Unit = {
+                        SettingsGroup(stringResource(R.string.user_shared_settings)) {
+                            SettingsRow(Icons.Default.Settings,stringResource(R.string.language),languages.firstOrNull { it.first==activity.currentLanguage() }?.second ?: stringResource(R.string.system),"setting-language",inlineValue=true,symbol=R.drawable.ic_language) { dialog="language" }
+                        }
                         SettingsGroup(stringResource(R.string.support_group)) {
                             SettingsRow(Icons.Default.List,stringResource(R.string.data_management),stringResource(R.string.data_management_summary),"setting-data") { activity.settingsSection.value="data" }
                             SettingsRow(Icons.Default.Settings,stringResource(R.string.diagnostics),stringResource(R.string.diagnostics_summary),"setting-diagnostics",onClick=activity::openDiagnostics)
@@ -69,7 +84,7 @@ import org.openmobifitness.app.data.*
                         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(16.dp)) { support() }
                     } else { preferences(); support() }
                 } else when(section) {
-                    "personal"->PersonalHintsSettings(c)
+                    "users"->UserManagement(c)
                     "diagnostics"->DiagnosticsSettings(activity,c)
                     "about"->AboutSettings(activity,c)
                     "floating"->SettingsGroup(stringResource(R.string.floating_settings)) {
@@ -92,7 +107,13 @@ import org.openmobifitness.app.data.*
             }
         }
     }
-    if(dialog=="estimates") EstimateDialog(c) { dialog="" }
+    if(editUser) UserEditor(c,user,onClose={ editUser=false },onSaved={ editUser=false })
+    if(dialog=="identity") AlertDialog(onDismissRequest={ dialog="" },title={ Text(stringResource(R.string.user_identity_policy)) },text={ Column(Modifier.verticalScroll(rememberScrollState())) {
+        IdentityPolicy.entries.forEach { option -> Row(Modifier.fillMaxWidth().heightIn(min=56.dp).clickable { c.setIdentityPolicy(option); dialog="" },verticalAlignment=Alignment.CenterVertically) {
+            RadioButton(policy==option,null)
+            Text(stringResource(when(option) { IdentityPolicy.EACH_RECORDING -> R.string.user_policy_recording; IdentityPolicy.STARTUP -> R.string.user_policy_startup; IdentityPolicy.REMEMBER -> R.string.user_policy_remember }),Modifier.weight(1f))
+        } }
+    } },confirmButton={ TextButton(onClick={ dialog="" }) { Text(stringResource(R.string.close)) } })
     else if(dialog.isNotEmpty()) AlertDialog(onDismissRequest={ dialog="" },title={ Text(stringResource(when(dialog) { "language"->R.string.language; "theme"->R.string.theme; else->R.string.units })) },text={
         Column(Modifier.verticalScroll(rememberScrollState())) {
             val options=when(dialog) { "language"->languages; "theme"->listOf("system" to stringResource(R.string.system),"light" to stringResource(R.string.light),"dark" to stringResource(R.string.dark)); else->listOf("metric" to stringResource(R.string.metric),"imperial" to stringResource(R.string.imperial)) }

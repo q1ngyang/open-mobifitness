@@ -14,29 +14,38 @@ object PortablePreferences {
         key in setOf("theme","imperial","weight_kg","estimate_met","target_cadence") -> PreferenceGroup.APPEARANCE
         key=="favorite_workouts" || DisplayScope.entries.any { key==it.key || Machine.entries.any { m -> key=="${it.key}.${m.name}" } } -> PreferenceGroup.METRICS
         key=="personal_hints" -> PreferenceGroup.HINTS
-        key=="saved_devices" || key.startsWith("presets.") && key.length in 9..100 -> PreferenceGroup.DEVICES
+        key in setOf("saved_devices","language","packet_logs","identity_policy") || key.startsWith("presets.") && key.length in 9..100 -> PreferenceGroup.DEVICES
         key in setOf("floating_enabled","auto_floating","overlay_position.portrait.x","overlay_position.portrait.y","overlay_position.landscape.x","overlay_position.landscape.y") -> PreferenceGroup.OVERLAY
         else -> null
     }
     fun export(prefs: SharedPreferences): String {
         val values=JSONObject()
-        prefs.all.forEach { (key,value) -> if(group(key)!=null) values.put(key,if(value is Set<*>) JSONArray(value.toList()) else value) }
-        return JSONObject().put("version",1).put("groups",JSONArray(PreferenceGroup.entries.map { it.name })).put("values",values).toString().also { validate(it) }
+        prefs.all.forEach { (key,value) -> if(group(key)!=null && key !in setOf("personal_hints","target_cadence")) values.put(key,if(value is Set<*>) JSONArray(value.toList()) else value) }
+        return JSONObject().put("version",2).put("groups",JSONArray(PreferenceGroup.entries.map { it.name })).put("values",values).toString().also { validate(it) }
+    }
+    fun exportShared(prefs: SharedPreferences): String {
+        val root=validate(export(prefs)); val values=root.getJSONObject("values")
+        values.keys().asSequence().toList().filter(ProfilePreferences::personal).forEach(values::remove)
+        root.put("groups",JSONArray(listOf(PreferenceGroup.DEVICES.name)))
+        return root.toString().also(::validate)
     }
     fun select(json: String,groups: Set<PreferenceGroup>): String {
         val source=validate(json); val values=JSONObject()
         source.getJSONObject("values").let { all -> all.keys().forEach { key -> if(group(key) in groups) values.put(key,all.get(key)) } }
-        return JSONObject().put("version",1).put("groups",JSONArray(groups.map { it.name })).put("values",values).toString()
+        return JSONObject().put("version",source.getInt("version")).put("groups",JSONArray(groups.map { it.name })).put("values",values).toString()
     }
     fun validate(json: String): JSONObject {
         require(json.length<=1024*1024)
-        val root=JSONObject(json); require(root.getInt("version")==1)
+        val root=JSONObject(json); require(root.getInt("version") in 1..2)
         val groups=root.getJSONArray("groups"); val selected=(0 until groups.length()).map { PreferenceGroup.valueOf(groups.getString(it)) }.toSet()
         val values=root.getJSONObject("values"); require(values.length()<=256)
         values.keys().forEach { key ->
             require(group(key) in selected)
             val value=values.get(key)
             when {
+                key=="language" -> require(value is String && value in setOf("","en","zh-Hans","zh-Hant","ja","de","ko"))
+                key=="packet_logs" -> require(value is Boolean)
+                key=="identity_policy" -> { require(value is String); IdentityPolicy.valueOf(value) }
                 key=="theme" -> require(value in setOf("system","light","dark"))
                 key in setOf("imperial","floating_enabled","auto_floating") -> require(value is Boolean)
                 key=="target_cadence" -> require(value is Number && value.toDouble()%1.0==0.0 && value.toInt() in 1..300)

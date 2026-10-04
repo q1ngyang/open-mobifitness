@@ -12,7 +12,7 @@ data class TransferStatus(val phase: TransferPhase,val progress: Long=0,val erro
     val cancellable get()=phase in setOf(TransferPhase.READING,TransferPhase.EXPORTING,TransferPhase.RESTORING)
 }
 /** Application lifetime owner: rotation never loses a staged preview or an active transfer. */
-class BackupManager(private val context: Context,private val repo: Repository,private val prefs: SharedPreferences,private val scope: CoroutineScope,private val restored: ()->Unit) {
+class BackupManager(private val context: Context,private val repo: Repository,private val prefs: SharedPreferences,private val scope: CoroutineScope,private val restored: ()->Unit,private val exclusive: suspend (suspend ()->Unit)->Unit = { it() }) {
     val preview=MutableStateFlow<StagedBackup?>(null)
     val status=MutableStateFlow<TransferStatus?>(null)
     private var job: Job?=null
@@ -49,7 +49,7 @@ class BackupManager(private val context: Context,private val repo: Repository,pr
         status.value=TransferStatus(TransferPhase.EXPORTING)
         job=scope.launch {
             try {
-                val settings=if(includePreferences) PortablePreferences.export(prefs) else null
+                val settings=if(includePreferences) PortablePreferences.exportShared(prefs) else null
                 withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri,"wt")!!.use { BackupTransfer.export(repo,it,settings) { bytes -> status.value=TransferStatus(TransferPhase.EXPORTING,bytes) } } }
                 status.value=TransferStatus(TransferPhase.COMPLETE)
             } catch(e: Exception) {
@@ -58,13 +58,14 @@ class BackupManager(private val context: Context,private val repo: Repository,pr
             }
         }
     }
-    fun restore(groups: Set<PreferenceGroup>) {
+    fun restore(groups: Set<PreferenceGroup>,overwriteProfiles: Boolean=false) {
         if(job?.isActive==true) return
         val source=preview.value ?: return
         status.value=TransferStatus(TransferPhase.RESTORING); preview.value=null
         job=scope.launch {
             try {
-                val count=BackupTransfer.restore(repo,source,groups,{ rows -> status.value=TransferStatus(TransferPhase.RESTORING,rows) },{ status.value=TransferStatus(TransferPhase.FINALIZING) })
+                var count=0L
+                exclusive { count=BackupTransfer.restore(repo,source,groups,{ rows -> status.value=TransferStatus(TransferPhase.RESTORING,rows) },{ status.value=TransferStatus(TransferPhase.FINALIZING) },overwriteProfiles) }
                 restored(); status.value=TransferStatus(TransferPhase.COMPLETE,count,restoredPreferences=groups.isNotEmpty())
             } catch(e: CancellationException) { status.value=TransferStatus(TransferPhase.CANCELLED) }
             catch(e: Exception) { failure(e) }

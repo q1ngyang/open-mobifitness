@@ -45,7 +45,7 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
         PageTitle(stringResource(R.string.devices))
         BoxWithConstraints(Modifier.weight(1f)) {
-            val wide=maxWidth>=780.dp || (maxWidth>=480.dp && maxHeight<440.dp)
+            val wide=maxWidth/androidx.compose.ui.platform.LocalDensity.current.fontScale>=780.dp || (maxWidth/androidx.compose.ui.platform.LocalDensity.current.fontScale>=600.dp && maxHeight<440.dp)
             val connection: @Composable ()->Unit = {
                 SettingsGroup(stringResource(R.string.equipment_connection)) {
                     Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
@@ -80,6 +80,8 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                 if(saved.any { it.address!=link.address && !it.heart }) SettingsGroup(stringResource(R.string.saved_devices)) {
                     saved.filter { it.address!=link.address && !it.heart }.forEach { device -> SavedDeviceRow(activity,c,state,device) { editing=device } }
                 }
+            }
+            val accessories: @Composable ()->Unit = {
                 if(heart.phase=="disconnected") SettingsGroup(stringResource(R.string.heart_device)) {
                     if(saved.any { it.heart }) saved.filter { it.heart }.forEach { device -> SavedDeviceRow(activity,c,state,device) { editing=device } }
                     else SettingsRow(Icons.Default.Favorite,stringResource(R.string.add_heart),stringResource(R.string.optional_heart)) { activity.scan() }
@@ -101,7 +103,7 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                     SettingsRow(Icons.Default.Info,stringResource(R.string.connection_help),null,"connection-help") { help=true }
                 }
                 Text(stringResource(R.string.hardware_validation),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                if(BuildConfig.DEBUG) DemoPanel(activity,c,state)
+                DemoPanel(activity,c,state)
             }
             val nearbyHeader: @Composable ()->Unit = {
                 FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
@@ -126,9 +128,15 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                 item { Text(stringResource(R.string.permission_help),Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             if(wide) Row(Modifier.fillMaxSize(),horizontalArrangement=Arrangement.spacedBy(24.dp)) {
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).testTag("device-connections").padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { connection(); support() }
-                LazyColumn(Modifier.weight(1f).testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp),content=nearby)
-            } else LazyColumn(Modifier.fillMaxSize().testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { connection() } }; nearby(); item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { support() } } }
+                LazyColumn(Modifier.weight(1f).testTag("device-connections"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                    item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { connection() } }
+                    if(BuildConfig.DEBUG) nearby()
+                }
+                LazyColumn(Modifier.weight(1f).testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                    if(!BuildConfig.DEBUG) nearby()
+                    item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { accessories(); support() } }
+                }
+            } else LazyColumn(Modifier.fillMaxSize().testTag("device-list"),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) { item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { connection(); accessories() } }; nearby(); item { Column(verticalArrangement=Arrangement.spacedBy(16.dp)) { support() } } }
         }
     }
     editing?.let { device ->
@@ -168,16 +176,6 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
         } }
     }
 }
-@Composable private fun DemoPanel(activity: MainActivity,c: Controller,state: ExerciseState) {
-    SettingsGroup(stringResource(R.string.demo)+" · Debug") {
-        Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.demo_description),style=MaterialTheme.typography.bodySmall)
-            FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) { listOf(Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.TREADMILL).forEach { m -> FilterChip(state.demo && state.demoMachine==m,onClick={ c.setDemo(true,m) },enabled=state.session==null,label={ Text(machineName(m)) }) } }
-            OutlinedButton(onClick={ val enabled=!state.demo; c.setDemo(enabled); if(enabled) activity.page.value=0 },enabled=state.session==null) { Text(stringResource(if(state.demo) R.string.exit_demo else R.string.start_demo)) }
-        }
-    }
-}
-
 @Composable private fun SavedDeviceRow(activity: MainActivity,c: Controller,state: ExerciseState,device: SavedDevice,edit: ()->Unit) {
     val link by c.ble.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {

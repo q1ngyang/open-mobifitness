@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.openmobifitness.app.ble.*
-import org.openmobifitness.app.data.Repository
+import org.openmobifitness.app.data.*
+import org.json.JSONObject
+import java.util.UUID
 import org.openmobifitness.core.*
 import android.os.SystemClock
 import java.time.Instant
@@ -24,6 +26,8 @@ fun Context.localized(): Context {
     if(tag.isEmpty()) return this
     return createConfigurationContext(Configuration(resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) })
 }
+data class StartRequest(val id: String=UUID.randomUUID().toString(),val generation: Long,val connection: Long,val machine: Machine,val workoutId: String?)
+
 enum class UseMode { IDLE, CONTROL_ONLY, RECORDING, PAUSED }
 data class ExerciseState(
     val session: Session? = null, val paused: Boolean = false, val selected: Workout? = null,
@@ -48,13 +52,23 @@ class Controller(val app: Application,
     val heart=BleClient(app,scope)
     val state=MutableStateFlow(ExerciseState())
     val finishedSession=MutableStateFlow(app.getSharedPreferences("preferences",Context.MODE_PRIVATE).getString("finished_detail_id",null))
-    val prefs=app.getSharedPreferences("preferences",Context.MODE_PRIVATE)
+    val prefs=repo.profilePreferences
+    val currentUser=MutableStateFlow<UserProfile?>(null)
+    val pendingStart=MutableStateFlow<StartRequest?>(null)
+    val userPicker=MutableStateFlow(false)
+    val identityPolicy=MutableStateFlow(runCatching { IdentityPolicy.valueOf(repo.preferences.getString("identity_policy",null) ?: "EACH_RECORDING") }.getOrDefault(IdentityPolicy.EACH_RECORDING))
+    val activeHints=MutableStateFlow(HintPreferences())
+    val historyScope=MutableStateFlow("current")
+    val historyRequest=MutableStateFlow<HistoryQuery?>(null)
+    private var identityGeneration=0L
+    private var startupConfirmed=false
+    private val hintThrottle=SessionHintThrottle()
     val theme=MutableStateFlow(prefs.getString("theme","system") ?: "system")
     val imperial=MutableStateFlow(prefs.getBoolean("imperial",false))
     val display=DisplayPreferences(prefs)
     val local=LocalPreferences(prefs)
-    val backup=org.openmobifitness.app.data.BackupManager(app,repo,prefs,scope,::reloadPreferences)
-    private var hintKey: Pair<Machine,HintPreferences>?=null
+    val backup=org.openmobifitness.app.data.BackupManager(app,repo,repo.preferences,scope,::reloadPreferences,::restoreOperation)
+    private var hintKey: Triple<String?,Int,HintPreferences>?=null
     private val frequencyHint=RangeHint()
     private val heartHint=RangeHint()
     private val sessionLock=Mutex()
@@ -85,17 +99,65 @@ class Controller(val app: Application,
     fun dismissResult() { finishedSession.value=null; prefs.edit().remove("finished_detail_id").apply() }
     fun setTheme(value: String) { prefs.edit().putString("theme",value).apply(); theme.value=value }
     fun setImperial(value: Boolean) { prefs.edit().putBoolean("imperial",value).apply(); imperial.value=value }
-    fun reloadPreferences() { display.reload(); local.reload(); theme.value=prefs.getString("theme","system") ?: "system"; imperial.value=prefs.getBoolean("imperial",false) }
-    fun select(workout: Workout?) { if(state.value.session==null) state.value=state.value.copy(selected=workout) }
+    fun reloadPreferences() {
+        val previous=currentUser.value
+        currentUser.value=repo.users.value.firstOrNull { it.id==prefs.userId && it.available }
+        val weightChanged=previous!=null && previous.id==currentUser.value?.id && previous.weightKg!=currentUser.value?.weightKg
+        display.reload(); local.reload(); theme.value=prefs.getString("theme","system") ?: "system"; imperial.value=prefs.getBoolean("imperial",false)
+        display.weight.value=currentUser.value?.weightKg ?: 70.0; display.met.value=currentUser.value?.met ?: 5.0
+        ble.userWeightKg=display.weight.value.toInt()
+        if(weightChanged && ble.state.value.protocol==Protocol.HUANTONG && ble.state.value.phase!="disconnected") { invalidateControl(); ble.disconnect(); state.value=state.value.copy(metrics=Metrics()); error(R.string.user_reconnect_required) }
+        identityPolicy.value=runCatching { IdentityPolicy.valueOf(repo.preferences.getString("identity_policy",null) ?: "EACH_RECORDING") }.getOrDefault(IdentityPolicy.EACH_RECORDING)
+        if(android.os.Build.VERSION.SDK_INT>=33 && repo.preferences.contains("language")) app.getSystemService(android.app.LocaleManager::class.java).applicationLocales=android.os.LocaleList.forLanguageTags(repo.preferences.getString("language","").orEmpty())
+    }
+    val identityLocked get()=state.value.session!=null || state.value.starting || repo.maintenance.value || backup.status.value?.phase in setOf(TransferPhase.RESTORING,TransferPhase.FINALIZING)
+    val dataActionsAllowed get()=state.value.ready && !identityLocked && pendingStart.value==null
+    fun setIdentityPolicy(policy: IdentityPolicy) { repo.preferences.edit().putString("identity_policy",policy.name).apply(); identityPolicy.value=policy }
+    fun cancelStart() { pendingStart.value=null }
+    fun discardAvatars(candidates: Set<String>)=scope.launch { sessionLock.withLock {
+        runCatching { repo.discardAvatars(candidates) }.onFailure { org.openmobifitness.app.data.AppLog.exception("avatar_cleanup",it) }
+    } }
+    fun historyOwner(): String = if(historyScope.value=="current") currentUser.value?.id ?: "none" else historyScope.value
+    suspend fun idleOperation(action: suspend ()->Unit) {
+        check(backup.status.value?.phase !in setOf(TransferPhase.RESTORING,TransferPhase.FINALIZING)) { "identity_locked" }
+        restoreOperation(action)
+    }
+    private suspend fun restoreOperation(action: suspend ()->Unit) = sessionLock.withLock {
+        check(state.value.ready && state.value.session==null && !state.value.starting && !repo.maintenance.value && pendingStart.value==null) { "identity_locked" }
+        repo.maintenance.value=true
+        try { action() } finally { repo.maintenance.value=false; reloadPreferences() }
+    }
+    suspend fun saveProfile(profile: UserProfile,requestId: String?=null)=sessionLock.withLock {
+        check(state.value.ready && !identityLocked && (pendingStart.value==null || pendingStart.value?.id==requestId)) { "identity_locked" }
+        repo.maintenance.value=true
+        try { repo.saveUser(profile); reloadPreferences() } finally { repo.maintenance.value=false }
+    }
+    fun switchUser(id: String)=scope.launch { sessionLock.withLock {
+        if(identityLocked) { error(R.string.identity_locked); return@withLock }
+        pendingStart.value=null; repo.maintenance.value=true
+        try { prepareUser(id); startupConfirmed=true } catch(_: Exception) { error(R.string.storage_failed) } finally { repo.maintenance.value=false }
+    } }
+    private suspend fun prepareUser(id: String) {
+        val user=withContext(Dispatchers.IO) { PortablePreferences.export(prefs.forUser(id)); repo.db.records().user(id)?.model()?.takeIf { it.available } } ?: error("user_required")
+        if(currentUser.value?.id==id) { currentUser.value=user; return }
+        withContext(Dispatchers.IO) { prefs.select(id) }
+        identityGeneration++; invalidateControl(); heart.disconnect(); ble.clearUserContext(); totals.rebase()
+        state.value=state.value.copy(selected=null,metrics=Metrics(),frequencyHint=RangePosition.UNAVAILABLE,heartHint=RangePosition.UNAVAILABLE,hintsMuted=false)
+        reloadPreferences(); ble.userWeightKg=(user.weightKg ?: 70.0).toInt()
+        if(ble.state.value.protocol==Protocol.HUANTONG && ble.state.value.phase!="disconnected") { ble.disconnect(); error(R.string.user_reconnect_required) }
+    }
+    fun select(workout: Workout?) { if(!identityLocked) { pendingStart.value=null; state.value=state.value.copy(selected=workout) } }
     fun muteHints() { state.value=state.value.copy(hintsMuted=!state.value.hintsMuted) }
     fun setDemo(enabled: Boolean,machine: Machine=Machine.ELLIPTICAL) {
         if(!BuildConfig.DEBUG || state.value.session!=null || state.value.starting) return
+        pendingStart.value=null
         invalidateControl()
         ble.disconnect(); heart.disconnect(); demoResistance=1.0; demoStrokes=0.0
         state.value=state.value.copy(demo=enabled,controlOnly=false,demoMachine=machine,metrics=if(enabled) Metrics(cadence=0.0,resistance=1.0,distanceM=0.0,strokes=if(machine==Machine.ROWER) 0 else null) else Metrics())
     }
     fun connect(device: FoundDevice) {
         if(device.heart) { heart.connect(device); return }
+        pendingStart.value=null
         if(state.value.starting || (state.value.session!=null && (state.value.demo || device.address!=ble.state.value.address))) { error(R.string.workout_machine_changed); return }
         invalidateControl()
         state.value=state.value.copy(demo=false,paused=state.value.session!=null,pendingResistance=null)
@@ -105,7 +167,7 @@ class Controller(val app: Application,
         ble.connect(device)
         observedConnection=ble.connectionId
     }
-    fun range() = if(state.value.demo) ResistanceRange(1.0,24.0) else ble.state.value.range
+    fun range() = if(state.value.demo) if(state.value.demoMachine in setOf(Machine.ELLIPTICAL,Machine.BIKE)) ResistanceRange(1.0,24.0) else null else ble.state.value.range
     fun controlResistance() = if(state.value.demo) demoResistance else ble.state.value.metrics.resistance ?: ble.state.value.commandedResistance
     fun displayMachine() = if(state.value.demo) state.value.demoMachine else ble.state.value.machine.takeIf { it!=Machine.UNKNOWN } ?: state.value.session?.machine ?: Machine.UNKNOWN
     fun canStart() = state.value.ready && (state.value.demo || ble.state.value.phase=="ready") &&
@@ -135,35 +197,72 @@ class Controller(val app: Application,
         ble.disconnect(); heart.disconnect()
     }
     fun disconnectEquipment() {
+        pendingStart.value=null
         invalidateControl(); totals.rebase(); ble.disconnect()
         if(state.value.session!=null) state.value=state.value.copy(paused=true,error=R.string.connection_lost)
     }
-    fun start() = scope.launch { sessionLock.withLock {
-        if(state.value.session!=null || state.value.starting || !canStart()) { error(R.string.connect_first); return@withLock }
+    fun start(): Job {
+        val generation=identityGeneration; val blocked=identityLocked
+        return scope.launch { sessionLock.withLock {
+            if(blocked || generation!=identityGeneration || identityLocked || pendingStart.value!=null || !canStart()) { if(!canStart()) error(R.string.connect_first); return@withLock }
+            val request=StartRequest(generation=identityGeneration,connection=ble.connectionId,machine=displayMachine(),workoutId=state.value.selected?.id)
+            if(currentUser.value==null || identityPolicy.value==IdentityPolicy.EACH_RECORDING || identityPolicy.value==IdentityPolicy.STARTUP && !startupConfirmed) pendingStart.value=request
+            else beginRecording()
+        } }
+    }
+    fun confirmStart(requestId: String,userId: String)=scope.launch { sessionLock.withLock {
+        val request=pendingStart.value ?: return@withLock
+        if(request.id!=requestId) return@withLock
+        if(request.generation!=identityGeneration || request.connection!=ble.connectionId || request.machine!=displayMachine() || request.workoutId!=state.value.selected?.id || identityLocked) { pendingStart.value=null; return@withLock }
+        try {
+            val plan=state.value.selected
+            repo.maintenance.value=true
+            try { prepareUser(userId) } finally { repo.maintenance.value=false }
+            if(plan!=null && !WorkoutPolicy.compatible(plan,displayMachine(),userId)) { pendingStart.value=null; error(R.string.workout_machine_changed); return@withLock }
+            state.value=state.value.copy(selected=plan)
+            pendingStart.value=null; startupConfirmed=true
+            beginRecording()
+        } catch(e: Exception) { pendingStart.value=null; error(R.string.storage_failed) }
+    } }
+    private fun capabilitySnapshot(): String {
+        val link=ble.state.value; val range=range()
+        return JSONObject().put("version",1).put("machine",displayMachine().name).put("model",link.model).put("protocol",if(state.value.demo) "DEMO" else link.protocol.name).put("evidence","driver-v0.3.0")
+            .put("resistanceWrite",if((state.value.demo || link.writable) && range!=null) "supported" else "unknown")
+            .put("speedWrite","unsupported").put("inclineWrite","unsupported")
+            .put("resistanceFeedback",if(link.protocol==Protocol.HUANTONG) "unsupported" else if(range!=null && link.resistanceFeedback) "supported" else "unknown")
+            .put("units",JSONObject().put("frequency",if(displayMachine() in setOf(Machine.ROWER,Machine.TREADMILL)) "spm" else "rpm").put("speed","m/s").put("incline","percent").put("resistance","level").put("power","W").put("force","N").put("load","kg"))
+            .put("observed",JSONObject().apply { SeriesMetric.entries.forEach { metric -> put(metric.name,if(metric.value(state.value.metrics)!=null) "supported" else "unknown") } })
+            .put("resistanceMin",range?.min).put("resistanceMax",range?.max).put("resistanceIncrement",range?.increment).toString()
+    }
+    private suspend fun beginRecording() {
+        if(state.value.session!=null || state.value.starting || !canStart()) { error(R.string.connect_first); return }
+        val user=currentUser.value?.takeIf { it.available } ?: return
+        if(state.value.selected?.let { !WorkoutPolicy.compatible(it,displayMachine(),user.id) }==true) { error(R.string.workout_machine_changed); return }
         if(state.value.selected?.steps?.any { (it.condition==Condition.DISTANCE && state.value.metrics.distanceM==null) || (it.condition==Condition.STROKES && state.value.metrics.strokes==null) }==true) {
-            error(R.string.sensor_required); return@withLock
+            error(R.string.sensor_required); return
         }
         if(!state.value.inUse) state.value=state.value.copy(hintsMuted=false)
         invalidateControl()
         state.value=state.value.copy(starting=true)
         try {
-        if(!state.value.demo && !ble.beginLiveUse()) { error(R.string.control_unavailable); return@withLock }
+        if(!state.value.demo && !ble.beginLiveUse()) { error(R.string.control_unavailable); return }
         dismissResult()
+        state.value.selected?.let { plan -> state.value=state.value.copy(selected=plan.copy(steps=plan.steps.mapIndexed { i,step -> if(step.id.isEmpty()) step.copy(id=UUID.nameUUIDFromBytes("${plan.id}/$i".toByteArray()).toString()) else step })) }
         val s=Session(device=if(state.value.demo) "OpenMOBI Demo" else ble.state.value.name,
             machine=if(state.value.demo) state.value.demoMachine else ble.state.value.machine,
-            protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=display.weight.value,met=display.met.value,workoutId=state.value.selected?.id ?: "free",workoutTitle=state.value.selected?.let { app.localized().workoutName(it) } ?: app.localized().getString(R.string.free_training))
+            protocol=if(state.value.demo) Protocol.DEMO else ble.state.value.protocol,demo=state.value.demo,weightKg=user.weightKg ?: 70.0,met=user.met,ownerUserId=user.id,startedUserId=user.id,startedUserName=user.name,weightSource=if(user.weightKg==null) "default" else if(user.id==LEGACY_USER_ID) "legacy" else "user",metSource=user.metSource,identityVersion=1,workoutSnapshot=state.value.selected?.let { Exchange.workouts(listOf(it)) }.orEmpty(),capabilitySnapshot=capabilitySnapshot(),enteredStageIds=state.value.selected?.steps?.firstOrNull()?.id.orEmpty(),workoutId=state.value.selected?.id ?: "free",workoutTitle=state.value.selected?.let { app.localized().workoutName(it) } ?: app.localized().getString(R.string.free_training))
         try { repo.save(s) } catch(e: Exception) {
-            error(R.string.storage_failed); return@withLock
+            error(R.string.storage_failed); return
         }
-        engine=state.value.selected?.let { TrainingEngine(it) }
+        engine=state.value.selected?.let { TrainingEngine(it) }; hintThrottle.reset(); hintKey=null; frequencyHint.reset(); heartHint.reset()
         lastTick=clock(); lastAuto=0L
         totals=TelemetryTotals(state.value.metrics)
         org.openmobifitness.app.data.AppLog.event("session_start","${s.machine} ${s.protocol} demo=${s.demo}")
         engine?.resetBaseline(0,0.0,0)
         val connected=state.value.demo || ble.state.value.phase=="ready"
-        state.value=state.value.copy(session=s,controlOnly=false,pendingResistance=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null,paused=!connected,stage=0,progress=0f,remainingMs=engine?.remainingMs(0),automatic=state.value.demo || (ble.state.value.writable && ble.state.value.range!=null),done=false,error=if(connected) null else R.string.connection_lost)
+        state.value=state.value.copy(session=s,controlOnly=false,pendingResistance=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null,paused=!connected,stage=0,progress=0f,remainingMs=engine?.remainingMs(0),automatic=range()!=null && (state.value.demo || ble.state.value.writable),done=false,error=if(connected) null else R.string.connection_lost)
         } finally { state.value=state.value.copy(starting=false) }
-    } }
+    }
     fun pauseResume() = changePause(state.value.session?.id,false)
     fun pauseForServiceLoss(sessionId: String) = changePause(sessionId,true)
     private fun changePause(sessionId: String?,pauseOnly: Boolean) = scope.launch { sessionLock.withLock {
@@ -248,31 +347,26 @@ class Controller(val app: Application,
                     ?: link.metrics.heartBpm.takeIf { now-link.heartAt<10000 })
         }
         state.value=state.value.copy(metrics=metrics)
-        val config=local.hints.value; val machine=displayMachine(); val key=machine to config
-        if(hintKey!=key) { hintKey=key; frequencyHint.reset(); heartHint.reset() }
-        val active=old.inUse && !old.paused && (old.demo || ble.state.value.phase=="ready")
-        val frequency=when(machine) { Machine.TREADMILL -> metrics.stepRate; Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.JUMP_ROPE -> metrics.cadence; else -> null }
-        val f=frequencyHint.update(now,frequency,config.frequency[machine] ?: PersonalRange(),active)
-        val h=heartHint.update(now,metrics.heartBpm?.toDouble(),config.heart,active)
-        state.value=state.value.copy(frequencyHint=f.position,heartHint=h.position,hintEvent=old.hintEvent+if(!old.hintsMuted && (f.notify || h.notify)) 1 else 0)
         if(ble.state.value.phase=="ready" && state.value.error==R.string.connection_lost) state.value=state.value.copy(error=null)
-        if(current==null) return
+        if(current==null) { updateHints(now,metrics); return }
         if(!old.demo && (ble.state.value.phase!="ready" || ble.state.value.machine!=current.machine)) {
             totals.rebase()
             if(!old.paused) state.value=state.value.copy(paused=true,error=R.string.connection_lost)
-            return
+            updateHints(now,metrics); return
         }
         totals.update(metrics,delta,!old.paused,current.machine,current.protocol,current.weightKg ?: 70.0,current.met ?: 5.0,if(metrics.cadence!=null) ble.legacyEnergyPower() else null,if(metrics.cadence!=null) ble.legacyEnergyRate() else null)
-        if(old.paused) return
-        val session=current.copy(elapsedMs=current.elapsedMs+delta,distanceM=totals.distanceM ?: current.distanceM,
+        if(old.paused) { updateHints(now,metrics); return }
+        var session=current.copy(elapsedMs=current.elapsedMs+delta,distanceM=totals.distanceM ?: current.distanceM,
             caloriesKcal=totals.caloriesKcal,energyModel=totals.energyModel,caloriesEstimated=totals.caloriesEstimated,distanceEstimated=totals.distanceEstimated)
         val training=engine
         val previousStage=training?.index
         training?.tick(session.elapsedMs,totals.distanceM,totals.strokes)
+        if(training!=null) session=session.copy(enteredStageIds=training.workout.steps.take(training.index+1).joinToString(";") { it.id })
         if(training?.index!=previousStage) org.openmobifitness.app.data.AppLog.event("stage","${training?.index}")
         state.value=state.value.copy(session=session,strokeCount=totals.strokes,jumpCount=totals.jumps,repetitions=totals.repetitions,jumpInterruptions=totals.jumpInterruptions,stage=training?.index ?: 0,
             progress=training?.progress(session.elapsedMs,totals.distanceM,totals.strokes)?.toFloat() ?: 0f,
             remainingMs=training?.remainingMs(session.elapsedMs),done=training?.done ?: false)
+        updateHints(now,metrics)
         try { repo.save(session,Sample(session.id,session.elapsedMs,metrics.copy(distanceM=totals.distanceM,strokes=totals.strokes,caloriesKcal=totals.caloriesKcal,stepCount=totals.steps,jumpCount=totals.jumps,repetitions=totals.repetitions,jumpInterruptions=totals.jumpInterruptions))) }
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); org.openmobifitness.app.data.AppLog.exception("recording",e); return }
         if(training!=null && !training.done && state.value.automatic && now-lastAuto>=2000) {
@@ -287,4 +381,20 @@ class Controller(val app: Application,
             }
         }
     }
+    private fun updateHints(now: Long,metrics: Metrics) {
+        val state=state.value; val plan=state.selected; val stage=plan?.steps?.getOrNull(state.stage)
+        val frequency=stage?.frequency?.resolve(plan.hints.frequency) ?: PersonalRange()
+        val heart=stage?.heart?.resolve(plan.hints.heart) ?: PersonalRange()
+        val machine=displayMachine()
+        val config=HintPreferences(mapOf(machine to frequency),heart,plan?.hints?.sound==true,plan?.hints?.vibration==true)
+        activeHints.value=config
+        val key=Triple(plan?.id,state.stage,config)
+        if(hintKey!=key) { hintKey=key; frequencyHint.reset(); heartHint.reset() }
+        val active=state.session!=null && !state.paused && !state.done && (state.demo || ble.state.value.phase=="ready")
+        val value=when(machine) { Machine.TREADMILL -> metrics.stepRate; Machine.ELLIPTICAL,Machine.BIKE,Machine.ROWER,Machine.JUMP_ROPE -> metrics.cadence; else -> null }
+        val f=frequencyHint.update(now,value,frequency,active); val h=heartHint.update(now,metrics.heartBpm?.toDouble(),heart,active)
+        val alert=hintThrottle.accept(now,!state.hintsMuted && (f.notify || h.notify))
+        this.state.value=this.state.value.copy(frequencyHint=f.position,heartHint=h.position,hintEvent=state.hintEvent+if(alert) 1 else 0)
+    }
+
 }

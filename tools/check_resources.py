@@ -29,3 +29,14 @@ assert not manifest.findall(f".//activity[@{android}screenOrientation]")
 assert "org.openmobifitness.app" in (root / "app/build.gradle.kts").read_text()
 assert "supportsPictureInPicture" not in (root / "app/src/main/AndroidManifest.xml").read_text()
 print(f"OK: {len(reference)} keys, 6 complete language sets, identity and responsive manifest")
+
+debug_resources = root / "app/src/debug/res"
+debug_reference = strings(debug_resources / "values")
+for folder in ("values-b+zh+Hans", "values-b+zh+Hant", "values-ja", "values-ko", "values-de"):
+    translated = strings(debug_resources / folder)
+    assert translated.keys() == debug_reference.keys(), (folder, "debug keys")
+    for key, value in debug_reference.items():
+        assert sorted(re.findall(r"%\d+\$[dsf]", value)) == sorted(re.findall(r"%\d+\$[dsf]", translated[key])), (folder, key)
+        assert translated[key].strip(), (folder, key)
+assert not (set(debug_reference) & set(reference)), "Debug strings must remain variant-only"
+print(f"OK: {len(debug_reference)} debug-only keys, 6 complete language sets")

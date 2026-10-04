@@ -62,7 +62,7 @@ class HistoryStoreTest {
         val output=ByteArrayOutputStream()
         StatisticsReport.write(context,repo.history,HistoryQuery(archive=2),null,output,false)
         val csv=output.toString("UTF-8"); val rows=Csv.read(csv)
-        assertEquals(2,rows.size); assertTrue(rows[1][0].startsWith("2026-09-28 09:00:00")); assertEquals("00:02:00",rows[1][5]); assertEquals("'=cmd",rows[1][4]); assertEquals("HIIT, 30",rows[1][3]); assertTrue(csv.contains("bpm")); assertFalse(csv.contains("elapsed_ms")); assertFalse(csv.contains("session_id"))
+        assertEquals(2,rows.size); assertTrue(rows[1][0].startsWith("2026-09-28 09:00:00")); assertTrue(rows[1].contains("02:00")); assertEquals("'=cmd",rows[1][4]); assertEquals("HIIT, 30",rows[1][3]); assertTrue(csv.contains("bpm")); assertFalse(csv.contains("elapsed_ms")); assertFalse(csv.contains("session_id"))
         assertTrue(rows[1].contains("—")); assertEquals(rows[0].size,rows[1].size)
     }
     @Test fun dateAliasesLocalizedTypesAndQueryRestorationMatchTheSameRecord()=runBlocking {

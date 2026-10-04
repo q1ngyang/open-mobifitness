@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +64,8 @@ private val lightColors=lightColorScheme(
     val link by controller.ble.state.collectAsStateWithLifecycle()
     val pageState=androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val page by activity.page
+    val userPicker by controller.userPicker.collectAsStateWithLifecycle()
+    val pendingStart by controller.pendingStart.collectAsStateWithLifecycle()
     val focused by activity.focusTraining
     val dark=theme=="dark" || (theme=="system" && isSystemInDarkTheme())
     SideEffect { WindowCompat.getInsetsController(activity.window,activity.window.decorView).apply { isAppearanceLightStatusBars=!dark; isAppearanceLightNavigationBars=!dark } }
@@ -70,6 +73,7 @@ private val lightColors=lightColorScheme(
         Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
             BoxWithConstraints(Modifier.safeDrawingPadding()) {
                 if(focused && state.inUse) { TrainingScreen(activity,controller,state,link) } else {
+                val contentWidth=maxWidth
                 val shortLayout=maxHeight<480.dp
                 val rail=maxWidth>=720.dp || (maxWidth>=520.dp && shortLayout)
                 val labels=listOf(R.string.train,R.string.history,R.string.devices,R.string.settings)
@@ -78,19 +82,18 @@ private val lightColors=lightColorScheme(
                     if(rail) NavigationRail(containerColor=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxHeight().width(100.dp)) {
                         BrandMark(dark,Modifier.size(if(shortLayout) 40.dp else 76.dp))
                         Spacer(Modifier.height(if(shortLayout) 4.dp else 32.dp))
-                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.inUse) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({ Text(stringResource(id)) }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
+                        labels.forEachIndexed { i,id -> NavigationRailItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.inUse) activity.focusTraining.value=true },icon={ Icon(icons[i],stringResource(id)) },label=if(shortLayout) null else ({
+                            BasicText(stringResource(id),Modifier.widthIn(max=92.dp),style=LocalTextStyle.current.copy(color=LocalContentColor.current,textAlign=TextAlign.Center,letterSpacing=0.sp),maxLines=1,overflow=TextOverflow.Ellipsis,autoSize=TextAutoSize.StepBased(8.sp,12.sp,1.sp))
+                        }),modifier=Modifier.padding(vertical=if(shortLayout) 0.dp else 8.dp)) }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
-                        if(!shortLayout || !rail) FlowRow(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                            Row(Modifier.padding(end=12.dp).heightIn(min=36.dp),verticalAlignment=Alignment.CenterVertically) {
-                                if(!rail) { BrandMark(dark,Modifier.size(36.dp)); Spacer(Modifier.width(10.dp)) }
-                                BasicText("OpenMOBI",Modifier.weight(1f,fill=false),style=MaterialTheme.typography.titleLarge.copy(color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.ExtraBold),maxLines=1,
-                                    autoSize=TextAutoSize.StepBased(minFontSize=18.sp,maxFontSize=22.sp,stepSize=1.sp))
-                                BrandSignature(Modifier.padding(start=10.dp))
+                        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                            if(!rail) BrandMark(dark,Modifier.size(32.dp))
+                            Row(Modifier.weight(1f),verticalAlignment=Alignment.CenterVertically) {
+                                BasicText("OpenMOBI",Modifier.weight(1f,false),style=MaterialTheme.typography.titleLarge.copy(color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.ExtraBold),maxLines=1,autoSize=TextAutoSize.StepBased(minFontSize=14.sp,maxFontSize=22.sp,stepSize=1.sp))
+                                if(contentWidth>=400.dp) BrandSignature(Modifier.padding(start=8.dp))
                             }
-                            Box(Modifier.heightIn(min=36.dp),contentAlignment=Alignment.Center) {
-                                BadgeText(if(state.demo) stringResource(R.string.demo) else stringResource(R.string.local_only),if(state.demo) Yellow else Blue)
-                            }
+                            UserChip(controller) { controller.userPicker.value=true }
                         }
                         if(state.error!=null) Surface(color=MaterialTheme.colorScheme.errorContainer,modifier=Modifier.fillMaxWidth().padding(horizontal=20.dp),shape=RoundedCornerShape(16.dp)) {
                             Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -114,8 +117,8 @@ private val lightColors=lightColorScheme(
                         }
                         if(!rail) NavigationBar(containerColor=MaterialTheme.colorScheme.surface) {
                             labels.forEachIndexed { i,id -> NavigationBarItem(selected=page==i,onClick={ activity.page.value=i; if(i==0 && state.inUse) activity.focusTraining.value=true },icon={ Icon(icons[i],null) },label={
-                                BasicText(stringResource(id),style=LocalTextStyle.current.copy(color=LocalContentColor.current,textAlign=TextAlign.Center,letterSpacing=0.sp),maxLines=2,
-                                    autoSize=TextAutoSize.StepBased(minFontSize=10.sp,maxFontSize=12.sp,stepSize=1.sp))
+                                BasicText(stringResource(id),style=LocalTextStyle.current.copy(color=LocalContentColor.current,textAlign=TextAlign.Center,letterSpacing=0.sp),maxLines=1,overflow=TextOverflow.Ellipsis,
+                                    autoSize=TextAutoSize.StepBased(minFontSize=8.sp,maxFontSize=12.sp,stepSize=1.sp))
                             }) }
                         }
                     }
@@ -133,6 +136,7 @@ private val lightColors=lightColorScheme(
         }
         activity.metricScope.value?.let { scope -> MetricPicker(controller,scope) { activity.metricScope.value=null; activity.intent.removeExtra("metrics_scope") } }
         BackupDialogs(activity,controller)
+        if(userPicker || pendingStart!=null) UserPicker(controller,pendingStart,onClose={ controller.userPicker.value=false; controller.cancelStart() },onManage={ controller.userPicker.value=false; activity.focusTraining.value=false; activity.page.value=3; activity.settingsSection.value="users" })
 
     }
 }
@@ -142,42 +146,6 @@ private val lightColors=lightColorScheme(
 @Composable private fun BadgeText(text: String,color: Color) {
     Surface(color=color.copy(alpha=.13f),shape=RoundedCornerShape(30.dp)) {
         Text(text,Modifier.padding(horizontal=12.dp,vertical=7.dp),style=MaterialTheme.typography.labelMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
-    }
-}
-private data class Draft(val condition: Condition,val target: String,val resistance: String)
-@Composable internal fun WorkoutEditor(workout: Workout,range: ResistanceRange?=null,onDismiss: ()->Unit,onSave: (Workout)->Unit) {
-    val originalName=if(workout.title.isEmpty()) "" else workoutTitle(workout)
-    var title by remember { mutableStateOf(originalName) }; var invalid by remember { mutableStateOf(false) }
-    val steps=remember { mutableStateListOf<Draft>().apply { addAll(workout.steps.map { Draft(it.condition,num(it.target),(it.resistancePercent ?: 0).toString()) }) } }
-    Dialog(onDismissRequest=onDismiss,properties=DialogProperties(usePlatformDefaultWidth=false)) {
-        Surface(Modifier.fillMaxWidth(.94f).widthIn(max=740.dp).fillMaxHeight(.92f).imePadding(),shape=RoundedCornerShape(24.dp)) {
-            Column(Modifier.padding(20.dp)) {
-                Text(stringResource(R.string.new_workout),style=MaterialTheme.typography.titleLarge)
-                LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(16.dp),contentPadding=PaddingValues(vertical=20.dp)) {
-                    item { OutlinedTextField(title,{ title=it },label={ Text(stringResource(R.string.title)) },modifier=Modifier.fillMaxWidth(),singleLine=true) }
-                    items(steps.size) { i -> val draft=steps[i]
-                        Card { Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                            Text(stringResource(R.string.stage_format,i+1,steps.size),fontWeight=FontWeight.Bold)
-                            FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                                Condition.entries.forEach { condition -> FilterChip(selected=draft.condition==condition,onClick={ steps[i]=draft.copy(condition=condition) },label={ Text(stringResource(when(condition) { Condition.TIME -> R.string.seconds; Condition.DISTANCE -> R.string.meters; Condition.STROKES -> R.string.strokes })) }) }
-                            }
-                            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                                OutlinedTextField(draft.target,{ steps[i]=draft.copy(target=it) },label={ Text(stringResource(R.string.target)) },modifier=Modifier.weight(1f),singleLine=true)
-                                OutlinedTextField(draft.resistance,{ steps[i]=draft.copy(resistance=it) },label={ Text(stringResource(R.string.resistance_percent)) },modifier=Modifier.weight(1f),singleLine=true)
-                            }
-                            draft.resistance.toIntOrNull()?.takeIf { it in 0..100 }?.let { percent -> range?.let { r -> Text(stringResource(R.string.mapped_target,num(r.percent(percent)),r.percentage(r.percent(percent))),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary) } }
-                            if(steps.size>1) TextButton(onClick={ steps.removeAt(i) }) { Text(stringResource(R.string.remove_step)) }
-                        } }
-                    }
-                    item { TextButton(enabled=steps.size<200,onClick={ steps.add(Draft(Condition.TIME,"60","20")) }) { Icon(Icons.Default.Add,null); Text(stringResource(R.string.add_step)) } }
-                }
-                if(invalid) Text(stringResource(R.string.invalid_input),color=MaterialTheme.colorScheme.error)
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
-                    TextButton(onClick=onDismiss) { Text(stringResource(R.string.cancel)) }
-                    Button(onClick={ try { onSave(Workout(if(workout.builtin) UUID.randomUUID().toString() else workout.id,title.trim(),steps.map { Step(it.condition,it.target.toDouble(),it.resistance.toInt()) })) } catch(e: Exception) { invalid=true } }) { Text(stringResource(R.string.save)) }
-                }
-            }
-        }
     }
 }
 @Composable internal fun workoutTitle(workout: Workout): String = LocalContext.current.workoutName(workout)

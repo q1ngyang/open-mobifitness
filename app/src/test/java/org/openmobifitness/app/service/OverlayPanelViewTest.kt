@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.openmobifitness.app.*
 import org.openmobifitness.core.MetricId
 import java.util.Locale
@@ -96,6 +97,53 @@ class OverlayPanelViewTest {
             }
             val remaining=children(view).filterIsInstance<TextView>().first { it.text.toString()==c.getString(R.string.overlay_remaining,countdown) }
             assertEquals("The complete $tag countdown fits",0,remaining.layout.getEllipsisCount(0))
+        }
+    }
+
+    @Test fun contentHeightTracksMetricRowsAndDoesNotTrackChangingValues() {
+        val model=sample().copy(controlOnly=true,stageProgress=null,userName="林",readings=List(6) { MetricReading("Power","123","W") })
+        val heights=listOf(2,4,6).map { overlayContentHeight(true,model.copy(readings=model.readings.take(it)),1f) }
+        assertTrue(heights.zipWithNext().all { (a,b) -> b-a==57 })
+        assertEquals(heights.last(),overlayContentHeight(true,model.copy(readings=model.readings.map { it.copy(value="99999") }),1f))
+        assertTrue(overlayContentHeight(true,model.copy(controlOnly=false),1f)>heights.last())
+        assertTrue(overlayContentHeight(true,model.copy(showResistance=false),1f)<heights.last())
+        assertTrue(overlayContentHeight(true,model,2f)>heights.last())
+        val c=RuntimeEnvironment.getApplication()
+        val view=OverlayPanelView(c,true,false) {}
+        view.bind(model); val d=c.resources.displayMetrics.density
+        measure(view,(312*d).toInt(),(heights.last()*d).toInt())
+        assertEquals(6,children(view).count { it.tag?.toString()?.startsWith("overlay-metric-")==true && it.visibility==View.VISIBLE })
+        val name=children(view).filterIsInstance<TextView>().single { it.text.toString()=="林" }
+        val plus=children(view).first { it.contentDescription==c.getString(R.string.increase) }
+        assertEquals((48*d).toInt(),plus.height)
+        assertTrue(name.width>0)
+        val large=c.createConfigurationContext(Configuration(c.resources.configuration).apply { fontScale=2f })
+        val stacked=OverlayPanelView(large,true,false) {}
+        stacked.bind(model.copy(readings=model.readings.take(3)))
+        assertEquals("An odd metric count does not reserve an empty large-font row",View.GONE,stacked.findViewWithTag<View>("overlay-metric-3").visibility)
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun brandAndUnrecordedStateRemainReadableAtLargeFonts() {
+        val app=RuntimeEnvironment.getApplication()
+        for(tag in listOf("en","de")) for(scale in listOf(1f,2f)) for(expanded in listOf(false,true)) {
+            val c=app.createConfigurationContext(Configuration(app.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)); fontScale=scale })
+            val model=sample().copy(readings=sample().readings.take(2),controlOnly=true,stageProgress=null,
+                userName="林 Overlay",stage=c.getString(R.string.control_only),remaining=c.getString(R.string.not_recording),
+                resistance=MetricReading(c.getString(R.string.resistance),"24","100%"),controlMode=c.getString(R.string.overlay_manual))
+            val view=OverlayPanelView(c,expanded,false) {};view.bind(model)
+            val density=c.resources.displayMetrics.density
+            val width=((if(expanded) 312 else 236)+(120*(scale-1)).toInt()).coerceAtMost(374)
+            measure(view,(width*density).toInt(),(overlayContentHeight(expanded,model,scale)*density).toInt())
+            val expected=mutableListOf("OpenMOBI",c.getString(R.string.control_only),(if(expanded) "● " else "")+c.getString(R.string.not_recording))
+            if(expanded) expected+=listOf(c.getString(R.string.resistance),c.getString(R.string.overlay_manual),"24","100%")
+            for(value in expected) {
+                val label=children(view).filterIsInstance<TextView>().first { candidate -> candidate.text.toString()==value && generateSequence<View>(candidate) { it.parent as? View }.all { it.visibility==View.VISIBLE } }
+                assertTrue("$tag at $scale, expanded=$expanded: $value has a visible line",label.lineCount>0)
+                for(line in 0 until label.lineCount) assertEquals("$tag at $scale must preserve $value",0,label.layout.getEllipsisCount(line))
+                if(value==c.getString(R.string.overlay_manual)) assertEquals("A mode word stays on one line",1,label.lineCount)
+                assertTrue("$tag at $scale: $value fits vertically (layout=${label.layout.height}, height=${label.height}, padding=${label.paddingTop+label.paddingBottom}, text=${label.textSize})",label.layout.height<=label.height-label.paddingTop-label.paddingBottom)
+            }
         }
     }
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_device_disconnected">Device not connected</string>
+    <string name="plan_device_mismatch">Plan and equipment do not match</string>
+    <string name="plan_resistance_help">Resistance percentages describe the device range. Copy and adapt the plan to your effort; automatic resistance requires supported equipment.</string>
+    <string name="plan_rower_help">Focus on stroke rate and smooth technique. Set resistance on the rower to suit your effort. Copy the plan to adjust rate ranges and durations.</string>
+    <string name="plan_treadmill_help">Speed and incline are manual guidance. Copy and adapt them to your comfortable gait. Recording never starts the treadmill or changes speed or incline.</string>
+    <string name="plan_short_interval_help">The 10-minute interval is a short block. Warm up beforehand and cool down gradually afterwards; separate warm-up and cool-down plans are available.</string>
+    <string name="report_power_bars">Bars show sampled peaks per time interval; missing intervals remain empty.</string>
+    <string name="minimum_value">Minimum</string>
+</resources>

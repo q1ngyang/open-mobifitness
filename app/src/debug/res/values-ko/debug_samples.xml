@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">내장 데모 데이터 불러오기</string>
+    <string name="debug_samples_clear">내장 데모 데이터 지우기</string>
+    <string name="debug_samples_help">프로필 4개 · 기구 6종 · 36개월 · 기록 780개. 버튼을 눌러야 추가됩니다.</string>
+    <string name="debug_samples_count">저장됨: 프로필 %1$d개 · 내장 기록 %2$d개</string>
+    <string name="debug_samples_working">처리 중 · %1$d%%</string>
+    <string name="debug_samples_view">데모 기록 보기</string>
+    <string name="debug_samples_preview">내장 기록 %1$d개와 빈 데모 프로필 %2$d개를 정리합니다. 다른 기록, 계획 또는 참조가 있는 프로필 %3$d개는 유지합니다.</string>
+    <string name="debug_samples_conflict">내장 ID 충돌 또는 프로필 영구 삭제가 확인되었습니다. 기존 데이터를 덮어쓰지 않았습니다.</string>
+    <string name="debug_samples_failed">작업을 완료하지 못해 변경을 되돌렸습니다. 대기 상태에서 다시 시도하세요.</string>
+    <string name="debug_samples_locked">현재 기록, 시작 확인 또는 복원을 먼저 종료하거나 취소하세요.</string>
+    <string name="debug_user_a">데모 A</string>
+    <string name="debug_user_b">데모 B</string>
+    <string name="debug_user_c">데모 C</string>
+    <string name="debug_user_d">데모 D</string>
+</resources>

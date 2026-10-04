@@ -53,13 +53,17 @@ class WorkoutService : Service() {
         when(intent?.action) {
             SHOW -> { if(panel==null) { expanded=false; showPanel() } }
             HIDE -> hidePanel()
-            PAUSE -> if(controller.state.value.controlOnly) controller.start() else controller.pauseResume()
+            PAUSE -> if(controller.state.value.controlOnly) startFromService() else controller.pauseResume()
             DISCONNECT -> { controller.exitControl(); stopIfIdle() }
             STOP_IF_IDLE -> stopIfIdle()
             RECONNECT -> controller.prefs.getString("last_address",null)?.let { address -> controller.connect(org.openmobifitness.app.ble.FoundDevice(address,controller.prefs.getString("last_name","").orEmpty(),0)) }
             RESET_POSITION -> { savedX=dp(12); savedY=dp(64); restorePosition=true; if(panel!=null) { hidePanel(); showPanel() } }
         }
         return START_NOT_STICKY // Never reconnect or replay a control after process death.
+    }
+    private fun startFromService() = controller.scope.launch {
+        controller.start().join()
+        if(controller.pendingStart.value!=null) { hidePanel(); startActivity(openIntent().putExtra("training",true).putExtra("devices",false)) }
     }
     private fun openIntent() = Intent(this,MainActivity::class.java).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -87,7 +91,7 @@ class WorkoutService : Service() {
             if(ticking) s.session.device else "${elapsed(s.session.elapsedMs)} · ${s.session.device}"
         } else if(s.controlOnly) "${c.getString(R.string.not_recording)} · ${link.name}" else connection.name.ifBlank { c.getString(R.string.devices) }
         return NotificationCompat.Builder(this,"training").setSmallIcon(R.drawable.ic_openmobi_status).setLargeIcon(notificationBrand).setContentTitle(c.getString(title))
-            .setContentText(text).setContentIntent(content).setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
+            .setContentText(listOfNotNull((s.session?.startedUserName ?: controller.currentUser.value?.name)?.takeIf { it.isNotBlank() },text).joinToString(" · ")).setContentIntent(content).setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
             // SystemUI owns the running clock so its action buttons are not rebound
             // every second. Paused/disconnected records retain a fixed elapsed value.
             .setUsesChronometer(ticking).setWhen(if(ticking) System.currentTimeMillis()-(s.session?.elapsedMs ?: 0L) else System.currentTimeMillis())
@@ -127,7 +131,7 @@ class WorkoutService : Service() {
                 OverlayAction.COLLAPSE -> { expanded=false; rebuild() }
                 OverlayAction.METRICS -> { hidePanel(); startActivity(openIntent().putExtra("metrics_scope",DisplayScope.EXPANDED.name)) }
                 OverlayAction.OPEN -> { hidePanel(); startActivity(openIntent()) }
-                OverlayAction.PAUSE -> { if(controller.state.value.controlOnly) controller.start() else controller.pauseResume(); refresh() }
+                OverlayAction.PAUSE -> { if(controller.state.value.controlOnly) startFromService() else controller.pauseResume(); refresh() }
                 OverlayAction.RECONNECT -> { hidePanel(); startActivity(openIntent().putExtra("reconnect",true)) }
                 OverlayAction.MINUS -> { controller.adjust(-1); refresh() }
                 OverlayAction.PLUS -> { controller.adjust(1); refresh() }
@@ -173,11 +177,12 @@ class WorkoutService : Service() {
             root.post { if(panel===root) { clamp(root,params); runCatching { wm.updateViewLayout(root,params) } } }
         } catch(e: Exception) { controller.error(R.string.overlay_permission); AppLog.exception("overlay",e) }
     }
-    private fun panelSize(): Pair<Int,Int> {
+    private fun panelSize(model: OverlayPresentation=localized().overlayPresentation(controller,expanded)): Pair<Int,Int> {
         val area=bounds()
         val extra=(resources.configuration.fontScale-1f).coerceAtLeast(0f)
-        return minOf(dp((if(expanded) OverlayPanelView.EXPANDED_WIDTH else OverlayPanelView.COMPACT_WIDTH)+(extra*80).toInt()),(area.width()-dp(16)).coerceAtLeast(1)) to
-            minOf(dp((if(expanded) OverlayPanelView.EXPANDED_HEIGHT else OverlayPanelView.COMPACT_HEIGHT)+(extra*100).toInt()),(area.height()-dp(16)).coerceAtLeast(1))
+        val height=overlayContentHeight(expanded,model,resources.configuration.fontScale)
+        return minOf(dp((if(expanded) OverlayPanelView.EXPANDED_WIDTH else OverlayPanelView.COMPACT_WIDTH)+(extra*120).toInt()),(area.width()-dp(16)).coerceAtLeast(1)) to
+            minOf(dp(height),(area.height()-dp(16)).coerceAtLeast(1))
     }
     private fun rebuild() {
         val old=panel; val position=parameters
@@ -194,7 +199,7 @@ class WorkoutService : Service() {
         if(s.hintEvent!=lastHintEvent) {
             lastHintEvent=s.hintEvent
             if(s.inUse && !s.paused && !s.hintsMuted) {
-                val hints=controller.local.hints.value
+                val hints=controller.activeHints.value
                 if(hints.sound) runCatching { if(tone==null) tone=android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION,50); tone?.startTone(android.media.ToneGenerator.TONE_PROP_BEEP,180) }
                 if(hints.vibration) getSystemService(android.os.Vibrator::class.java)?.vibrate(android.os.VibrationEffect.createOneShot(180,android.os.VibrationEffect.DEFAULT_AMPLITUDE))
             }
@@ -205,7 +210,22 @@ class WorkoutService : Service() {
             wakeLock?.acquire(900_000); renewedAt=SystemClock.elapsedRealtime()
         } else if(!needsWake && wakeLock?.isHeld==true) wakeLock?.release()
         if(!s.inUse || !controller.display.floatingEnabled.value) hidePanel()
-        panel?.bind(c.overlayPresentation(controller,expanded))
+        panel?.let { view ->
+            val model=c.overlayPresentation(controller,expanded)
+            view.bind(model)
+            parameters?.let { params ->
+                val (width,height)=panelSize(model)
+                if(params.width!=width || params.height!=height) {
+                    val area=bounds()
+                    if(params.x+params.width/2>area.centerX()) params.x+=params.width-width
+                    if(params.y+params.height/2>area.height()/2) params.y+=params.height-height
+                    params.width=width; params.height=height
+                    params.x=params.x.coerceIn(area.left,(area.right-width).coerceAtLeast(area.left))
+                    params.y=params.y.coerceIn(0,(area.height()-height).coerceAtLeast(0))
+                    runCatching { wm.updateViewLayout(view,params) }
+                }
+            }
+        }
         if(!s.demo) {
             val current=notification(); val key=notificationKey(current)
             // Keep native controls stable for touch and accessibility. SystemUI

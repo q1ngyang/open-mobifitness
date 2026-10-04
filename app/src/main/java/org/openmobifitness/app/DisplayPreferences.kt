@@ -7,7 +7,7 @@ import org.openmobifitness.core.*
 enum class DisplayScope(val key: String,val limit: Int,val defaults: List<MetricId>) {
     TRAINING("training_metrics",12,listOf(MetricId.DISTANCE,MetricId.CALORIES,MetricId.CADENCE,MetricId.HEART,MetricId.POWER,MetricId.SPEED)),
     COMPACT("compact_metrics",2,listOf(MetricId.TIME,MetricId.RESISTANCE)),
-    EXPANDED("expanded_metrics",4,listOf(MetricId.DISTANCE,MetricId.CALORIES,MetricId.CADENCE,MetricId.HEART))
+    EXPANDED("expanded_metrics",6,listOf(MetricId.DISTANCE,MetricId.CALORIES,MetricId.CADENCE,MetricId.HEART,MetricId.POWER,MetricId.SPEED))
 }
 class DisplayPreferences(private val prefs: SharedPreferences) {
     val selections=MutableStateFlow(DisplayScope.entries.associateWith { scope ->
@@ -29,8 +29,8 @@ class DisplayPreferences(private val prefs: SharedPreferences) {
             MetricCatalog.filter(machine,listOf(frequency,MetricId.HEART)+it).distinct()
         }
         val defaults=if(controlOnly) instant.take(scope.limit) else when(scope) {
-            DisplayScope.TRAINING -> if(freeRecording && machine in setOf(Machine.ELLIPTICAL,Machine.BIKE)) listOf(MetricId.CADENCE,MetricId.HEART,MetricId.DISTANCE,MetricId.CALORIES) else MetricCatalog.trainingDefaults(machine)
-            DisplayScope.EXPANDED -> MetricCatalog.trainingDefaults(machine).take(4)
+            DisplayScope.TRAINING -> if(freeRecording && machine in setOf(Machine.ELLIPTICAL,Machine.BIKE)) listOf(MetricId.CADENCE,MetricId.HEART,MetricId.DISTANCE,MetricId.CALORIES,MetricId.POWER,MetricId.SPEED) else MetricCatalog.trainingDefaults(machine)
+            DisplayScope.EXPANDED -> MetricCatalog.trainingDefaults(machine).take(6)
             DisplayScope.COMPACT -> listOf(MetricId.TIME,when(machine) {
                 Machine.TREADMILL -> MetricId.SPEED
                 Machine.ROWER -> MetricId.STROKE_RATE

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_device_disconnected">Gerät nicht verbunden</string>
+    <string name="plan_device_mismatch">Plan passt nicht zum Gerät</string>
+    <string name="plan_resistance_help">Widerstandsprozente beziehen sich auf den Gerätebereich. Plan kopieren und der eigenen Belastung anpassen. Automatik erfordert ein unterstütztes Gerät.</string>
+    <string name="plan_rower_help">Auf Schlagfrequenz und flüssige Technik achten. Widerstand am Rudergerät passend einstellen. Plan zum Anpassen von Frequenz und Dauer kopieren.</string>
+    <string name="plan_treadmill_help">Geschwindigkeit und Steigung dienen als manuelle Orientierung. An die eigene Gangart anpassen. Die Aufzeichnung startet weder das Laufband noch ändert sie Tempo oder Steigung.</string>
+    <string name="plan_short_interval_help">Das 10-Minuten-Intervall ist ein kurzer Block. Vorher aufwärmen und danach allmählich abkühlen; separate Pläne stehen bereit.</string>
+    <string name="report_power_bars">Balken zeigen gemessene Spitzen je Zeitabschnitt; Datenlücken bleiben leer.</string>
+    <string name="minimum_value">Minimum</string>
+</resources>

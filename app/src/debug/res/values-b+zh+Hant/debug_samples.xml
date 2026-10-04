@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">一鍵載入演示資料</string>
+    <string name="debug_samples_clear">清除內建演示資料</string>
+    <string name="debug_samples_help">4 個檔案 · 6 類器材 · 36 個月 · 780 筆記錄。僅在點選載入後寫入。</string>
+    <string name="debug_samples_count">目前已存：%1$d 個檔案 · %2$d 筆內建記錄</string>
+    <string name="debug_samples_working">處理中 · %1$d%%</string>
+    <string name="debug_samples_view">查看記錄</string>
+    <string name="debug_samples_preview">將清除 %1$d 筆內建記錄，移除 %2$d 個空演示檔案；保留 %3$d 個有關聯記錄、方案或歷史引用的檔案。</string>
+    <string name="debug_samples_conflict">內建 ID 與現有資料衝突，或演示檔案已徹底刪除。本次未覆寫現有資料。</string>
+    <string name="debug_samples_failed">操作未完成，資料修改已回復。請在閒置狀態下重試。</string>
+    <string name="debug_samples_locked">請先結束或取消目前記錄、開始確認或資料還原。</string>
+    <string name="debug_user_a">演示 A</string>
+    <string name="debug_user_b">演示 B</string>
+    <string name="debug_user_c">演示 C</string>
+    <string name="debug_user_d">演示 D</string>
+</resources>

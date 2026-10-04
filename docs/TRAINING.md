@@ -47,7 +47,7 @@
 
 V1 功率采用官方旧版的数学模型，不是功率计读数，部分高档位会算出较高结果。已知 V1 的热量按功率和体重累计，MET 不影响这一路径；其他无热量读数的器材才用固定 MET 估算。
 
-请在「设置 → 热量估算」填写自己的体重。新参数从下一次训练生效；旧记录不会重新计算。默认体重 70 kg，备用 MET 为 5。要和官方 App 比较，需要相同体重、实际档位与频率，单看一个瞬间不容易判断。
+点击「设置」顶部当前用户卡的编辑按钮填写体重。新参数从下一次训练生效；旧记录不会重新计算。未填体重时按 70 kg 估算并标明来源，备用 MET 默认为 5。要和官方 App 比较，需要相同体重、实际档位与频率，单看一个瞬间不容易判断。
 
 详细公式与复核依据见[算法说明](ALGORITHM_AUDIT.md)。尚未完成仪器功率标定或个人热量测量。
 
@@ -98,6 +98,6 @@ Older V1 ellipticals use `rpm ÷ 2.68 ÷ 4` km/h; bikes omit the division by fou
 
 V1 power comes from the original app's mathematical model, not a power meter. It can produce high values at high resistance. Known V1 energy uses power and body weight; MET does not affect it. Other devices without energy readings use the fixed-MET fallback.
 
-Set your weight in Settings → Energy estimates. Changes apply to the next workout and do not recalculate history. Defaults are 70 kg and 5 MET for the fallback. Compare with the original app using the same weight, actual level and cadence; a single moment is rarely enough.
+Edit the current profile card at the top of Settings to set your weight. Changes apply to the next workout without recalculating history. Unknown weight uses a labeled 70 kg estimate; fallback MET defaults to 5. Compare with the original app using the same weight, actual level and cadence; a single moment is rarely enough.
 
 See [calculation details](ALGORITHM_AUDIT.md#english). These estimates have not been calibrated against measured mechanical power or personal energy expenditure.

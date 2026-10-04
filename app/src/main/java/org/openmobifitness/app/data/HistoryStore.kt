@@ -8,9 +8,13 @@ import org.openmobifitness.core.*
 import java.time.*
 
 /** Legacy archive flags remain backup-compatible; current UI selects all flags by date. */
-data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val machine: String="", val search: String="", val source: Int=0, val archive: Int=2, val machineWords: String="") {
-    fun encode()=JSONObject().put("from",from).put("until",until).put("machine",machine).put("search",search).put("source",source).put("archive",archive).put("machineWords",machineWords).toString()
-    companion object { fun decode(text: String?)=runCatching { JSONObject(text!!).let { HistoryQuery(it.getLong("from"),it.getLong("until"),it.getString("machine"),it.getString("search"),it.getInt("source"),it.getInt("archive"),it.optString("machineWords","")) } }.getOrDefault(HistoryQuery()) }
+data class HistoryQuery(val from: Long=0, val until: Long=Long.MAX_VALUE, val machine: String="", val search: String="", val source: Int=0, val archive: Int=2, val machineWords: String="", val owner: String="all") {
+    fun encode()=JSONObject().put("from",from).put("until",until).put("machine",machine).put("search",search).put("source",source).put("archive",archive).put("machineWords",machineWords).put("owner",owner).toString()
+    fun frozen(users: List<UserProfile>): HistoryQuery=when(owner) {
+        "all","removed" -> copy(owner="ids:"+users.filter { owner=="all" || !it.available }.joinToString(",") { it.id }+if(owner=="all") "|unassigned" else "")
+        else -> this
+    }
+    companion object { fun decode(text: String?)=runCatching { JSONObject(text!!).let { HistoryQuery(it.getLong("from"),it.getLong("until"),it.getString("machine"),it.getString("search"),it.getInt("source"),it.getInt("archive"),it.optString("machineWords",""),it.optString("owner","all")) } }.getOrDefault(HistoryQuery()) }
 }
 data class HistoryPage(val rows: List<Session>, val count: Int)
 data class HistoryOverview(val count: Int=0, val elapsedMs: Long=0, val calories: Double?=null, val distanceM: Double?=null, val estimated: Boolean=false, val days: List<Pair<LocalDate,Long>> = emptyList(), val caloriesPresent: Int=0, val demoCount: Int=0, val distanceEstimated: Boolean=false, val distancePresent: Int=0)
@@ -18,6 +22,19 @@ class HistoryStore(private val db: MobiDatabase) {
     private fun where(q: HistoryQuery, includeArchive: Boolean=false): Pair<String,List<Any>> {
         val clauses=mutableListOf("status!='active'","startEpoch>=?","startEpoch<?")
         val args=mutableListOf<Any>(q.from,q.until)
+        when(q.owner) {
+            "all" -> Unit
+            "unassigned" -> clauses+="ownerUserId IS NULL"
+            "removed" -> clauses+="ownerUserId IN (SELECT id FROM users WHERE removedAt IS NOT NULL)"
+            "none" -> clauses+="0"
+            else -> if(q.owner.startsWith("ids:")) {
+                val parts=q.owner.removePrefix("ids:").split('|'); require(parts.size<=2 && (parts.size==1 || parts[1]=="unassigned"))
+                val ids=parts[0].split(',').filter { it.isNotEmpty() }
+                require(ids.size<=20000 && ids.all { runCatching { java.util.UUID.fromString(it).toString()==it }.getOrDefault(false) })
+                val members=if(ids.isEmpty()) "0" else "ownerUserId IN (${ids.joinToString { "'$it'" }})"
+                clauses+="("+members+if(parts.size==2) " OR ownerUserId IS NULL)" else ")"
+            } else { require(runCatching { java.util.UUID.fromString(q.owner).toString()==q.owner }.getOrDefault(false)); clauses+="ownerUserId=?"; args+=q.owner }
+        }
         if(q.machine.isNotEmpty()) { clauses+="machine=?"; args+=q.machine }
         if(q.search.isNotBlank()) {
             // Literal substring search: user % and _ must not turn into SQL wildcards.
@@ -71,12 +88,23 @@ class HistoryStore(private val db: MobiDatabase) {
         val (where,args)=where(q)
         db.query(SimpleSQLiteQuery("SELECT id FROM sessions WHERE $where ORDER BY startEpoch DESC,id DESC",args.toTypedArray())).use { cursor -> buildList { while(cursor.moveToNext()) add(cursor.getString(0)) } }
     }
+    suspend fun ownerName(id: String?): String?=withContext(Dispatchers.IO) { id?.let { db.records().user(it)?.name } }
     suspend fun session(id: String): Session? = withContext(Dispatchers.IO) { db.records().session(id)?.model() }
     suspend fun detail(id: String): Pair<Session,SessionStats>? = withContext(Dispatchers.IO) {
         var result: Pair<Session,SessionStats>?=null
-        db.runInTransaction { db.records().session(id)?.let { result=it.model() to Statistics.summarize(db.records().samplesFor(id).map { row -> row.model().let { sample ->
-            if(it.protocol in setOf("V1","V2") && sample.metrics.speedMps==null) sample.copy(metrics=sample.metrics.copy(speedMps=Estimates.legacySpeed(sample.metrics.cadence,Machine.valueOf(it.machine)))) else sample
-        } }) } }
+        db.runInTransaction { db.records().session(id)?.let { row ->
+            val stats=Statistics.Accumulator(); var after=-1L
+            while(true) {
+                val page=db.records().samplesForPage(id,after,1000); if(page.isEmpty()) break
+                page.forEach { entry ->
+                    val sample=entry.model()
+                    val legacy=if(row.protocol in setOf("V1","V2","HUANTONG") && sample.metrics.speedMps==null) Estimates.legacySpeed(sample.metrics.cadence,Machine.valueOf(row.machine)) else null
+                    stats.add(if(legacy!=null) sample.copy(metrics=sample.metrics.copy(speedMps=legacy)) else sample,legacy!=null)
+                }
+                after=page.last().elapsedMs
+            }
+            result=row.model() to stats.finish()
+        } }
         result
     }
     fun archiveMatching(q: HistoryQuery): Int {

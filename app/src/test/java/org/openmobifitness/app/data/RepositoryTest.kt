@@ -21,7 +21,8 @@ class RepositoryTest {
         val s=Session(elapsedMs=2000,demo=true,status="completed",caloriesKcal=2.5,caloriesEstimated=true,weightKg=70.0,met=5.0,energyModel="legacy-v1")
         val sample=Sample(s.id,1000,Metrics(cadence=62.5,resistance=3.0,caloriesKcal=2.5,inclinePercent=4.0,forceN=10.0,strideM=0.7,stepRate=123.0,powerW=148.0,powerEstimated=true,jumpCount=50,continuousJumps=20,jumpInterruptions=2,repetitions=10,loadKg=12.5,deviceDurationSec=300,dumbbellFewActions=3,dumbbellActionNumber=10))
         repo.save(s,sample)
-        val workout=Workout(title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
+        val user=UserProfile(name="Test user"); repo.saveUser(user); repo.profilePreferences.select(user.id)
+        val workout=Workout(machine=Machine.ELLIPTICAL,title="间歇 / Intervall",steps=listOf(Step(target=30.0,resistancePercent=20)))
         repo.saveWorkout(workout)
         val original=repo.archive()
         val out=ByteArrayOutputStream(); Files.backup(out,original)
@@ -57,8 +58,8 @@ class RepositoryTest {
         assertEquals(4000L,repo.sessions.value.single().elapsedMs)
         assertEquals(1,repo.archive().samples.size)
     }
-    @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking {
-        for(version in 1..6) {
+    @Test fun databaseUpgradeKeepsVersionsOneAndTwoHistoryAndSamples() = runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        for(version in 1..7) {
         repo.db.close()
         val context=RuntimeEnvironment.getApplication()
         context.deleteDatabase("openmobi.db")
@@ -84,7 +85,9 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(7,repo.db.openHelper.readableDatabase.version)
+        assertEquals(8,repo.db.openHelper.readableDatabase.version)
+        assertNull(restored.sessions.single().ownerUserId)
+        assertEquals(LEGACY_USER_ID,repo.db.records().users().single().id)
         if(version==6) assertEquals(Metrics(cadence=62.0,repetitions=42,loadKg=12.5,jumpCount=800,continuousJumps=77,jumpInterruptions=3,deviceDurationSec=9,dumbbellFewActions=4,dumbbellActionNumber=5),restored.samples.single().metrics)
         else { assertNull(restored.samples.single().metrics.repetitions); assertNull(restored.samples.single().metrics.loadKg) }
         assertFalse(restored.samples.single().metrics.powerEstimated)

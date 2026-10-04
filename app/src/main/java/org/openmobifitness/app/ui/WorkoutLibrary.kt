@@ -34,6 +34,7 @@ import org.openmobifitness.app.*
 import org.openmobifitness.app.R
 import org.openmobifitness.app.ble.LinkState
 import org.openmobifitness.app.data.shortDuration
+import org.openmobifitness.app.data.rangeText
 import org.openmobifitness.app.service.WorkoutService
 import org.openmobifitness.core.*
 
@@ -60,92 +61,144 @@ import org.openmobifitness.core.*
 
 @Composable internal fun WorkoutLibrary(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
     val custom by c.repo.workouts.collectAsStateWithLifecycle()
+    val revision by c.repo.revision.collectAsStateWithLifecycle()
+    val user by c.currentUser.collectAsStateWithLifecycle()
     val context=LocalContext.current
+    val resources=androidx.compose.ui.platform.LocalResources.current
+    val imperial by c.imperial.collectAsStateWithLifecycle()
+    val ownerId=user?.id
     var search by rememberSaveable { mutableStateOf("") }
     var duration by rememberSaveable { mutableStateOf(PlanDuration.ALL.name) }
-    var intensity by rememberSaveable { mutableStateOf(PlanIntensity.ALL.name) }
     var source by rememberSaveable { mutableIntStateOf(0) }
-    var filters by rememberSaveable { mutableStateOf(false) }
-    var favorites by remember { mutableStateOf(c.prefs.getStringSet("favorite_workouts",emptySet())!!.toSet()) }
-    var detailId by rememberSaveable { mutableStateOf<String?>(null) }
-    var editor by remember { mutableStateOf<Workout?>(null) }
+    var equipment by rememberSaveable { mutableStateOf((if(state.demo) state.demoMachine else link.machine).takeIf { it in WorkoutPolicy.supported }?.name ?: Machine.ELLIPTICAL.name) }
+    val machine=Machine.valueOf(equipment)
+    var machineMenu by remember { mutableStateOf(false) }
+    var durationMenu by remember { mutableStateOf(false) }
+    var favorites by remember(ownerId) { mutableStateOf(WorkoutPolicy.favorites(c.prefs.getStringSet("favorite_workouts",emptySet()).orEmpty())) }
+    LaunchedEffect(ownerId,revision) { if(c.prefs.userId==ownerId) favorites=WorkoutPolicy.favorites(c.prefs.getStringSet("favorite_workouts",emptySet()).orEmpty()) }
+    var detailId by rememberSaveable(ownerId) { mutableStateOf<String?>(null) }
+    var editorCsv by rememberSaveable(ownerId) { mutableStateOf<String?>(null) }
     var deleting by remember { mutableStateOf<Workout?>(null) }
-    val all=Presets.all+custom
-    val filtered=all.filter { (search.isBlank() || context.workoutName(it).contains(search.trim(),true)) && PlanFilter.matches(it,PlanDuration.valueOf(duration),PlanIntensity.valueOf(intensity)) && (source==0 || source==1 && it.builtin || source==2 && !it.builtin) }
-    val filtering=search.isNotBlank() || duration!=PlanDuration.ALL.name || intensity!=PlanIntensity.ALL.name || source!=0
-    val groups=listOf(R.string.favorites to filtered.filter { it.id in favorites },R.string.custom to filtered.filter { !it.builtin && it.id !in favorites },R.string.builtin_plans to filtered.filter { it.builtin && it.id !in favorites })
-    val expanded=rememberSaveable { mutableStateOf(emptySet<Int>()) }
-    val collapsed=rememberSaveable { mutableStateOf(emptySet<Int>()) }
-    val newTitle=stringResource(R.string.new_workout)
-    fun favorite(w: Workout) { favorites=if(w.id in favorites) favorites-w.id else favorites+w.id; c.prefs.edit().putStringSet("favorite_workouts",favorites).apply() }
+    var legacyList by rememberSaveable(ownerId) { mutableStateOf(false) }
+    var classifyId by rememberSaveable(ownerId) { mutableStateOf<String?>(null) }
+    val personal=custom.filter { it.ownerUserId==ownerId && ownerId!=null }
+    val legacy=personal.filter { it.legacyUnclassified && personal.none { copy -> copy.clonedFrom==it.id && !copy.legacyUnclassified } }
+    val all=WorkoutPolicy.templates(machine)+personal.filter { it.machine==machine && !it.legacyUnclassified }
+    val filtered=all.filter { (search.isBlank() || context.workoutName(it).contains(search.trim(),true)) && PlanFilter.matches(it,PlanDuration.valueOf(duration),PlanIntensity.ALL) && when(source) { 1 -> !it.builtin; 2 -> it.id in favorites; 3 -> it.builtin; else -> true } }
+    fun favorite(w: Workout) {
+        if(ownerId==null) { c.userPicker.value=true; return }
+        if(c.currentUser.value?.id!=ownerId || c.repo.profilePreferences.userId!=ownerId) return
+        val stored=WorkoutPolicy.favorites(c.prefs.getStringSet("favorite_workouts",emptySet()).orEmpty())
+        favorites=if(w.id in stored) stored-w.id else stored+w.id
+        c.prefs.edit().putStringSet("favorite_workouts",favorites).apply()
+    }
+    fun edit(w: Workout,copy: Boolean=false) {
+        if(ownerId==null) { c.userPicker.value=true; return }
+        val draft=if(copy || w.builtin) w.copy(id=java.util.UUID.randomUUID().toString(),title=if(w.builtin) context.workoutName(w) else resources.getString(R.string.plan_saved_copy,w.title),builtin=false,ownerUserId=ownerId,clonedFrom=w.id) else w
+        editorCsv=Exchange.workouts(listOf(draft)); detailId=null
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compact=maxHeight<440.dp
-        val columns=if(maxWidth>=780.dp) 2 else 1
-        LazyColumn(Modifier.fillMaxSize().testTag("plan-library"),contentPadding=PaddingValues(if(compact) 12.dp else 16.dp),verticalArrangement=Arrangement.spacedBy(if(compact) 8.dp else 12.dp)) {
+        val padding=if(compact) 12.dp else 16.dp
+        val contentWidth=maxWidth-padding*2
+        val scale=androidx.compose.ui.platform.LocalDensity.current.fontScale
+        val minimum=300.dp*scale.coerceAtLeast(1f)
+        val columns=when { contentWidth>=940.dp && contentWidth>=minimum*3+32.dp -> 3; contentWidth>=616.dp && contentWidth>=minimum*2+16.dp -> 2; else -> 1 }
+        LazyColumn(Modifier.fillMaxSize().testTag("plan-library"),contentPadding=PaddingValues(padding),verticalArrangement=Arrangement.spacedBy(16.dp)) {
             item { FreeTrainingCard(activity,c,state,link,compact) }
-            item { Row(verticalAlignment=Alignment.CenterVertically) {
-                Text(stringResource(R.string.library),style=if(compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f),maxLines=1,overflow=TextOverflow.Ellipsis)
-                IconButton(onClick={ editor=Workout(title=newTitle,steps=listOf(Step(target=60.0))) }) { Icon(Icons.Default.Add,stringResource(R.string.new_workout)) }
-            } }
-            item { Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                SearchBox(search,{ search=it },stringResource(R.string.search_plans),Modifier.weight(1f),"plan-search")
-                FilledTonalIconButton(onClick={ filters=true },modifier=Modifier.size(48.dp)) { FilterGlyph(stringResource(R.string.filters)) }
-            } }
-            item { Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) { PlanDuration.entries.forEach { value -> FilterChip(selected=duration==value.name,onClick={ duration=value.name },label={ Text(stringResource(durationLabel(value))) }) } } }
-            if(intensity!=PlanIntensity.ALL.name || source!=0) item { TextButton(onClick={ intensity=PlanIntensity.ALL.name; source=0; duration=PlanDuration.ALL.name; search="" }) { Text(stringResource(R.string.reset_filters)) } }
-            if(filtered.isEmpty()) item { Text(stringResource(R.string.no_matches),Modifier.padding(vertical=24.dp)) }
-            groups.forEach { (label,plans) ->
-                if(plans.isNotEmpty() || !filtering && label in setOf(R.string.favorites,R.string.custom)) {
-                    item(key="header-$label") { Row(Modifier.fillMaxWidth().heightIn(min=48.dp).clickable { collapsed.value=if(label in collapsed.value) collapsed.value-label else collapsed.value+label },verticalAlignment=Alignment.CenterVertically) {
-                        Text(stringResource(label),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                        Text("  ${plans.size}",color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelMedium)
-                        Spacer(Modifier.weight(1f)); Icon(if(label in collapsed.value) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,stringResource(if(label in collapsed.value) R.string.show_all_count else R.string.show_less,plans.size))
-                    } }
-                    if(label !in collapsed.value) {
-                        if(plans.isEmpty() && label==R.string.favorites) item { Text(stringResource(R.string.favorites_empty),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-                        val shown=if(label in expanded.value) plans else plans.take(if(label==R.string.builtin_plans) 4 else 2)
-                        items(shown.chunked(columns),key={ it.joinToString { w->w.id } }) { group -> Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                            group.forEach { w -> WorkoutRow(w,w.id in favorites,Modifier.weight(1f),{ favorite(w) },{ detailId=w.id }) }
-                            if(group.size<columns) Spacer(Modifier.weight(1f))
-                        } }
-                        if(plans.size>if(label==R.string.builtin_plans) 4 else 2) item { TextButton(onClick={ expanded.value=if(label in expanded.value) expanded.value-label else expanded.value+label },modifier=Modifier.fillMaxWidth()) { Text(if(label in expanded.value) stringResource(R.string.show_less) else stringResource(R.string.show_all_count,plans.size)) } }
+            item {
+                val heading: @Composable (Modifier)->Unit = { modifier -> Text(stringResource(R.string.library),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=modifier) }
+                val create: @Composable ()->Unit = { if(machine in WorkoutPolicy.supported) FilledTonalButton(enabled=!c.identityLocked,onClick={ edit(Workout(title=resources.getString(R.string.new_workout),ownerUserId=ownerId,machine=machine,steps=listOf(Step(target=300.0,id=java.util.UUID.randomUUID().toString())))) },modifier=Modifier.testTag("new-plan")) { Icon(Icons.Default.Add,null,Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.new_workout)) } }
+                if(contentWidth/scale<340.dp) Column(verticalArrangement=Arrangement.spacedBy(8.dp)) { heading(Modifier.fillMaxWidth()); Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) { create() } }
+                else Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) { heading(Modifier.weight(1f)); create() }
+            }
+            item { Column {
+                val equipmentPicker: @Composable ()->Unit = { Box {
+                    OutlinedButton(onClick={ machineMenu=true },modifier=Modifier.testTag("plan-equipment")) { Text(machineName(machine)); Icon(Icons.Default.KeyboardArrowDown,null,Modifier.size(18.dp)) }
+                    DropdownMenu(machineMenu,onDismissRequest={ machineMenu=false }) { Machine.entries.filter { it !in setOf(Machine.UNKNOWN,Machine.HEART) }.forEach { m -> DropdownMenuItem(text={ Text(machineName(m)) },onClick={ equipment=m.name; detailId=null; machineMenu=false }) } }
+                } }
+                val tabs: @Composable (Modifier)->Unit = { modifier -> Row(modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    listOf(R.string.all_items,R.string.plan_my,R.string.favorites,R.string.builtin_plans).forEachIndexed { index,label -> FilterChip(source==index,onClick={ source=index },label={ Text(stringResource(label)) }) }
+                } }
+                val searchTools: @Composable (Modifier)->Unit = { modifier -> Row(modifier,verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    SearchBox(search,{ search=it },stringResource(R.string.search_plans),Modifier.weight(1f),"plan-search")
+                    Box {
+                        FilledTonalIconButton(onClick={ durationMenu=true },modifier=Modifier.size(48.dp)) { FilterGlyph(stringResource(R.string.plan_duration_filter)) }
+                        DropdownMenu(durationMenu,onDismissRequest={ durationMenu=false }) { PlanDuration.entries.forEach { value -> DropdownMenuItem(text={ Text(stringResource(durationLabel(value))) },leadingIcon={ if(duration==value.name) Icon(Icons.Default.Check,null) },onClick={ duration=value.name; durationMenu=false }) } }
                     }
+                } }
+                if(contentWidth/scale>=940.dp) Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                    equipmentPicker(); searchTools(Modifier.weight(1f)); tabs(Modifier.widthIn(max=450.dp))
+                } else Column(verticalArrangement=Arrangement.spacedBy(8.dp)) { equipmentPicker(); searchTools(Modifier.fillMaxWidth()); tabs(Modifier.fillMaxWidth()) }
+                if(duration!=PlanDuration.ALL.name) TextButton(onClick={ duration=PlanDuration.ALL.name },modifier=Modifier.padding(top=8.dp)) { Text(stringResource(durationLabel(PlanDuration.valueOf(duration)))); Icon(Icons.Default.Close,null,Modifier.padding(start=6.dp).size(16.dp)) }
+            } }
+            if(machine !in WorkoutPolicy.supported) item { Text(stringResource(R.string.plan_free_only),Modifier.padding(vertical=24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant) }
+            else if(filtered.isEmpty()) item { Text(stringResource(if(source==3 && WorkoutPolicy.templates(machine).isEmpty()) R.string.plan_no_templates else if(source==2) R.string.favorites_empty else R.string.no_matches),Modifier.padding(vertical=24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant) }
+            items(filtered.chunked(columns),key={ group -> group.joinToString { it.id } }) { group -> Row(horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                group.forEach { w -> WorkoutCard(w,w.id in favorites,user?.name.orEmpty(),Modifier.weight(1f),{ favorite(w) },{ detailId=w.id }) }
+                repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
+            } }
+            if(legacy.isNotEmpty()) item { TextButton(onClick={ legacyList=true },modifier=Modifier.fillMaxWidth()) { Text(stringResource(R.string.plan_legacy_count,legacy.size)); Icon(Icons.Default.KeyboardArrowRight,null) } }
+        }
+    }
+    all.firstOrNull { it.id==detailId }?.let { w ->
+        val connected=c.canStart() && WorkoutPolicy.compatible(w,if(state.demo) state.demoMachine else link.machine,ownerId)
+        val blockedLabel=if(!c.canStart()) R.string.plan_device_disconnected else R.string.plan_device_mismatch
+        PlanPage(context.workoutName(w),{ detailId=null },footer={
+            Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                if(!connected) Text(stringResource(blockedLabel),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(enabled=!c.identityLocked,onClick={ edit(w) }) { Text(stringResource(if(w.builtin) R.string.duplicate else R.string.edit)) }
+                    Button(enabled=!c.identityLocked,onClick={ if(connected) { c.select(w); detailId=null; activity.startTraining() } else { detailId=null; activity.page.value=2 } },modifier=Modifier.testTag("start-plan")) { Text(stringResource(if(connected) R.string.start else blockedLabel)) }
                 }
+            }
+        }) {
+            Text(machineName(w.machine ?: machine)+" · "+if(w.builtin) stringResource(R.string.builtin_plans) else user?.name.orEmpty(),color=MaterialTheme.colorScheme.primary)
+            MiniProfile(w,Modifier.fillMaxWidth().height(72.dp))
+            Text(stringResource(if(w.machine==Machine.TREADMILL) R.string.plan_treadmill_help else if(w.machine==Machine.ROWER) R.string.plan_rower_help else R.string.plan_resistance_help),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            if(w.builtin && w.id.startsWith("interval10_")) Text(stringResource(R.string.plan_short_interval_help),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            EditorSection(stringResource(R.string.plan_defaults)) {
+                Text(stringResource(metricLabel(frequencyMetric(machine)))+" · "+context.rangeText(w.hints.frequency,frequencyUnit(machine)))
+                Text(stringResource(R.string.heart_rate)+" · "+context.rangeText(w.hints.heart,"bpm"))
+            }
+            EditorSection(stringResource(R.string.stage_overview)) { w.steps.forEachIndexed { index,step ->
+                if(index>0) HorizontalDivider()
+                Text("${index+1}. "+stringResource(stageKindLabel(step.kind)),fontWeight=FontWeight.SemiBold)
+                Text(stepDescription(step))
+                step.speedTargetMps?.let { Text(stringResource(R.string.stage_speed_target)+" · "+WorkoutService.number(it*if(imperial) 2.236936292 else 3.6)+if(imperial) " mph" else " km/h") }
+                step.inclineTargetPercent?.let { Text(stringResource(R.string.stage_incline_target)+" · "+WorkoutService.number(it)) }
+                Text(stringResource(metricLabel(frequencyMetric(machine)))+" · "+context.rangeText(step.frequency.resolve(w.hints.frequency),frequencyUnit(machine)),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.heart_rate)+" · "+context.rangeText(step.heart.resolve(w.hints.heart),"bpm"),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            } }
+            if(!w.builtin) FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                TextButton(enabled=!c.identityLocked,onClick={ edit(w,true) }) { Text(stringResource(R.string.duplicate)) }
+                TextButton(enabled=!c.identityLocked,onClick={ deleting=w }) { Text(stringResource(R.string.delete),color=MaterialTheme.colorScheme.error) }
             }
         }
     }
-    if(filters) AlertDialog(onDismissRequest={ filters=false },title={ Text(stringResource(R.string.filters)) },text={ Column(Modifier.verticalScroll(rememberScrollState())) {
-        Text(stringResource(R.string.peak_target),fontWeight=FontWeight.Bold)
-        PlanIntensity.entries.forEach { value -> Row(Modifier.fillMaxWidth().clickable { intensity=value.name },verticalAlignment=Alignment.CenterVertically) { RadioButton(selected=intensity==value.name,onClick={ intensity=value.name }); Text(stringResource(intensityLabel(value))) } }
-        Text(stringResource(R.string.plan_type),fontWeight=FontWeight.Bold)
-        listOf(R.string.all_items,R.string.builtin_plans,R.string.custom).forEachIndexed { i,id -> Row(Modifier.fillMaxWidth().clickable { source=i },verticalAlignment=Alignment.CenterVertically) { RadioButton(selected=source==i,onClick={ source=i }); Text(stringResource(id)) } }
-    } },confirmButton={ TextButton(onClick={ filters=false }) { Text(stringResource(R.string.confirm)) } },dismissButton={ TextButton(onClick={ intensity=PlanIntensity.ALL.name; source=0; duration=PlanDuration.ALL.name; search=""; filters=false }) { Text(stringResource(R.string.reset_filters)) } })
-    all.find { it.id==detailId }?.let { w ->
-        AlertDialog(onDismissRequest={ detailId=null },title={ Text(workoutTitle(w)) },text={ Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            MiniProfile(w,Modifier.fillMaxWidth().height(42.dp))
-            if(w.builtin && w.id=="cardio40") { val kg by c.display.weight.collectAsStateWithLifecycle(); Text(stringResource(R.string.plan_energy_reference,WorkoutService.number(kg),(6*3.5*kg/200*40).toInt(),(8*3.5*kg/200*40).toInt()),style=MaterialTheme.typography.bodySmall) }
-            Text(stringResource(R.string.percentage_help),style=MaterialTheme.typography.bodySmall)
-            w.steps.forEachIndexed { i,step -> Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                Text("${i+1}",Modifier.width(22.dp),style=MaterialTheme.typography.bodySmall)
-                Text(if(step.condition==Condition.TIME) context.minutesSeconds((step.target*1000).toLong()) else "${WorkoutService.number(step.target)} ${if(step.condition==Condition.DISTANCE) "m" else stringResource(R.string.strokes)}",Modifier.weight(1f),style=MaterialTheme.typography.bodySmall)
-                Text(step.resistancePercent?.let { p -> c.range()?.let { r -> "${WorkoutService.number(r.percent(p))} · ${r.percentage(r.percent(p))}%" } ?: "$p%" } ?: "—",style=MaterialTheme.typography.bodySmall)
-            } }
-            Text(stringResource(R.string.plan_help),style=MaterialTheme.typography.bodySmall)
-            if(!w.builtin) TextButton(onClick={ deleting=w; detailId=null }) { Text(stringResource(R.string.delete),color=MaterialTheme.colorScheme.error) }
-        } },confirmButton={ TextButton(onClick={ c.select(w); detailId=null; activity.startTraining() }) { Text(stringResource(R.string.start)) } },dismissButton={ TextButton(onClick={ editor=w; detailId=null }) { Text(stringResource(if(w.builtin) R.string.duplicate else R.string.edit)) } })
-    }
-    deleting?.let { w -> AlertDialog(onDismissRequest={ deleting=null },title={ Text(stringResource(R.string.delete)) },text={ Text(workoutTitle(w)) },confirmButton={ TextButton(onClick={ c.scope.launch { runCatching { c.repo.deleteWorkout(w.id) }.onFailure { c.error(R.string.io_failed) } }; deleting=null }) { Text(stringResource(R.string.delete)) } },dismissButton={ TextButton(onClick={ deleting=null }) { Text(stringResource(R.string.cancel)) } }) }
-    editor?.let { WorkoutEditor(it,c.range(),onDismiss={ editor=null },onSave={ w -> c.scope.launch { runCatching { c.repo.saveWorkout(w) }.onFailure { c.error(R.string.storage_failed) } }; editor=null }) }
+    deleting?.let { w -> AlertDialog(onDismissRequest={ deleting=null },title={ Text(stringResource(R.string.delete)) },text={ Text(workoutTitle(w)) },confirmButton={ TextButton(onClick={ c.scope.launch { runCatching { c.idleOperation { c.repo.deleteWorkout(w.id,w.ownerUserId) } }.onSuccess { detailId=null }.onFailure { c.error(R.string.io_failed) } }; deleting=null }) { Text(stringResource(R.string.delete)) } },dismissButton={ TextButton(onClick={ deleting=null }) { Text(stringResource(R.string.cancel)) } }) }
+    if(legacyList) AlertDialog(onDismissRequest={ legacyList=false },title={ Text(stringResource(R.string.plan_assign_machine)) },text={ Column(Modifier.verticalScroll(rememberScrollState())) { Text(stringResource(R.string.plan_legacy_help)); legacy.forEach { w -> TextButton(onClick={ classifyId=w.id; legacyList=false }) { Text(w.title) } } } },confirmButton={ TextButton(onClick={ legacyList=false }) { Text(stringResource(R.string.close)) } })
+    legacy.firstOrNull { it.id==classifyId }?.let { old -> AlertDialog(onDismissRequest={ classifyId=null },title={ Text(old.title) },text={ Column(Modifier.verticalScroll(rememberScrollState())) {
+        Text(stringResource(R.string.plan_legacy_help)); Text(stringResource(R.string.plan_classify_targets),style=MaterialTheme.typography.bodySmall)
+        WorkoutPolicy.supported.forEach { m -> TextButton(onClick={ equipment=m.name; edit(old.copy(id=java.util.UUID.randomUUID().toString(),machine=m,legacyUnclassified=false,clonedFrom=old.id,steps=old.steps.map { it.copy(id=java.util.UUID.randomUUID().toString(),resistancePercent=if(m==Machine.TREADMILL) null else it.resistancePercent) })); classifyId=null }) { Text(machineName(m)) } }
+    } },confirmButton={ TextButton(onClick={ classifyId=null }) { Text(stringResource(R.string.cancel)) } }) }
+    editorCsv?.let { csv -> val draft=remember(csv) { Exchange.parse(csv).workouts.single() }; WorkoutEditor(c,draft,onDismiss={ editorCsv=null },onSaved={ editorCsv=null; source=1 }) }
 }
-@Composable private fun WorkoutRow(w: Workout,favorite: Boolean,modifier: Modifier,onFavorite: ()->Unit,onOpen: ()->Unit) {
-    Surface(onClick=onOpen,modifier=modifier.testTag("plan-${w.id}"),shape=RoundedCornerShape(12.dp),border=BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)) {
-        Row(Modifier.padding(start=12.dp,top=10.dp,bottom=10.dp,end=2.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-            MiniProfile(w,Modifier.width(28.dp).height(32.dp))
-            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                Text(workoutTitle(w),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.bodyMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
-                Text((if(w.steps.all { it.condition==Condition.TIME }) stringResource(R.string.minutes_format,(w.steps.sumOf { it.target }/60).toInt())+" · " else "")+stringResource(R.string.stages_format,w.steps.size),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+@Composable private fun WorkoutCard(w: Workout,favorite: Boolean,ownerName: String,modifier: Modifier,onFavorite: ()->Unit,onOpen: ()->Unit) {
+    Surface(onClick=onOpen,modifier=modifier.testTag("plan-${w.id}"),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.padding(start=18.dp,end=14.dp,top=12.dp,bottom=16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment=Alignment.Top) {
+                Column(Modifier.weight(1f).padding(top=8.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                    Text(workoutTitle(w),fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.titleMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
+                    Text((if(w.steps.all { it.condition==Condition.TIME }) stringResource(R.string.minutes_format,(w.steps.sumOf { it.target }/60).toInt())+" · " else "")+stringResource(R.string.stages_format,w.steps.size),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconToggleButton(checked=favorite,onCheckedChange={ onFavorite() },modifier=Modifier.testTag("favorite-${w.id}")) { FavoriteGlyph(favorite,stringResource(if(favorite) R.string.favorite_remove else R.string.favorite_add)) }
             }
-            IconToggleButton(checked=favorite,onCheckedChange={ onFavorite() },modifier=Modifier.testTag("favorite-${w.id}")) { FavoriteGlyph(favorite,stringResource(if(favorite) R.string.favorite_remove else R.string.favorite_add)) }
+            MiniProfile(w,Modifier.fillMaxWidth().height(36.dp))
+            FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text(if(w.builtin) stringResource(R.string.builtin_plans) else ownerName,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Surface(shape=RoundedCornerShape(6.dp),color=MaterialTheme.colorScheme.primaryContainer) { Text(stringResource(if(w.steps.none { it.resistancePercent!=null }) R.string.plan_control_manual else R.string.plan_control_auto),Modifier.padding(horizontal=7.dp,vertical=3.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onPrimaryContainer) }
+            }
         }
     }
 }
@@ -163,7 +216,17 @@ import org.openmobifitness.core.*
 }
 @Composable private fun MiniProfile(w: Workout,modifier: Modifier) {
     val color=MaterialTheme.colorScheme.primary
-    Canvas(modifier) { val width=size.width/w.steps.size; w.steps.forEachIndexed { i,s -> val h=size.height*(.15f+(s.resistancePercent ?: 0)/100f*.85f); drawRect(color.copy(alpha=.8f),Offset(i*width,size.height-h),Size((width-1).coerceAtLeast(.5f),h)) } }
+    val faint=MaterialTheme.colorScheme.primaryContainer
+    Canvas(modifier) {
+        val weights=w.steps.map { if(w.steps.all { it.condition==Condition.TIME }) it.target.toFloat() else 1f }; val total=weights.sum().coerceAtLeast(1f)
+        var x=0f
+        w.steps.forEachIndexed { i,step ->
+            val width=size.width*weights[i]/total
+            val h=size.height*(.24f+(step.resistancePercent ?: (step.speedTargetMps?.times(24)?.toInt() ?: step.frequency.resolve(w.hints.frequency).upper?.times(2)?.toInt() ?: 20)).coerceIn(0,100)/100f*.76f)
+            drawRoundRect(if(step.kind in setOf(StageKind.RECOVERY,StageKind.COOLDOWN)) faint else color.copy(alpha=.55f),Offset(x,size.height-h),Size((width-2.dp.toPx()).coerceAtLeast(.5f),h),androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
+            x+=width
+        }
+    }
 }
 private fun durationLabel(v: PlanDuration)=when(v) { PlanDuration.ALL->R.string.all_items; PlanDuration.SHORT->R.string.short_plans; PlanDuration.MEDIUM->R.string.medium_plans; PlanDuration.LONG->R.string.long_plans }
 private fun intensityLabel(v: PlanIntensity)=when(v) { PlanIntensity.ALL->R.string.all_items; PlanIntensity.LOW->R.string.low_target; PlanIntensity.MODERATE->R.string.medium_target; PlanIntensity.HIGH->R.string.high_target }

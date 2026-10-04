@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">Demo-Daten laden</string>
+    <string name="debug_samples_clear">Integrierte Demo-Daten entfernen</string>
+    <string name="debug_samples_help">4 Profile · 6 Gerätearten · 36 Monate · 780 Einträge. Nur auf Wunsch laden.</string>
+    <string name="debug_samples_count">Gespeichert: %1$d Profile · %2$d integrierte Einträge</string>
+    <string name="debug_samples_working">Verarbeitung · %1$d%%</string>
+    <string name="debug_samples_view">Demo-Verlauf ansehen</string>
+    <string name="debug_samples_preview">%1$d integrierte Einträge und %2$d leere Demo-Profile entfernen. %3$d Profile mit anderen Aufzeichnungen, Plänen oder Verweisen bleiben erhalten.</string>
+    <string name="debug_samples_conflict">Eine integrierte ID steht im Konflikt oder ein Profil wurde endgültig gelöscht. Bestehende Daten wurden nicht überschrieben.</string>
+    <string name="debug_samples_failed">Vorgang fehlgeschlagen. Datenänderungen wurden zurückgesetzt. Im Ruhezustand erneut versuchen.</string>
+    <string name="debug_samples_locked">Zuerst Aufzeichnung, Startbestätigung oder Wiederherstellung beenden.</string>
+    <string name="debug_user_a">Demo A</string>
+    <string name="debug_user_b">Demo B</string>
+    <string name="debug_user_c">Demo C</string>
+    <string name="debug_user_d">Demo D</string>
+</resources>

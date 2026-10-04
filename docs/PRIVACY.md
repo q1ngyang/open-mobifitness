@@ -6,7 +6,9 @@
 
 训练记录、方案和设置保存在本机，不需要账号，没有广告或使用统计服务。应用不会把器材注册到原厂服务器。系统云备份已关闭；请主动导出完整备份。卸载会清除应用数据。
 
-常用设备的蓝牙地址、备注、快捷档位、个人范围和悬浮位置也保存在本机。导出时勾选「包含个人偏好」才会把这些设置加入备份；恢复时可按组选择。备份不包含系统权限或蓝牙配对凭据，恢复设备后仍须手动连接。
+v0.3.0 的本地用户称呼、可选体重、头像、个人方案、收藏、显示设置和悬浮位置也保存在本机。头像通过系统图片选择器读取，只保留私有目录中的 512×512 JPEG，不保留外部图片路径或原图元数据。完整备份包含所有保留用户及其个人数据；仅本机共用设置可以选择是否附带。恢复默认不覆盖已有用户资料和个人设置。
+
+常用设备的蓝牙地址和备注属于本机共用设置。备份不包含系统权限或蓝牙配对凭据，恢复设备后仍须手动连接。默认移除用户保留历史；明确选择并确认删除数据后，只删除本机仍属于该用户的数据。已另存的备份文件由你自行管理。
 
 ## 什么时候联网？
 
@@ -34,7 +36,7 @@
 | 蓝牙报文 | 最多 30 分钟、32 KiB | 最近 30 分钟 |
 | 完整诊断文件 | 按需导出 | 小于 128 KiB |
 
-写入、启动或导出时清理过期内容。关闭报文开关会停止新增报文；已有内容到期删除，也可在「设置 → 设备诊断」手动清除。清日志不会删除运动记录。体重和估算参数只存本机，导出时可选择随个人偏好保存；每条运动记录仍保留其当时使用的估算参数。
+写入、启动或导出时清理过期内容。关闭报文开关会停止新增报文；已有内容到期删除，也可在「设置 → 设备诊断」手动清除。清日志不会删除运动记录。体重和估算参数保存在用户档案及完整备份中；每条运动记录仍保留其当时使用的估算参数与来源，更正记录归属不改这些历史值。
 
 ## English
 
@@ -42,7 +44,9 @@
 
 Workouts, plans and preferences stay on your device. There is no account, advertising or usage analytics service, and no equipment registration with the original servers. System cloud backup is disabled; export a full backup yourself. Uninstalling removes local app data.
 
-Saved-device Bluetooth addresses, notes, resistance presets, personal bounds and floating positions also stay local. They enter a backup only when Include personal preferences is selected, and can be restored by group. Backups exclude system permissions and Bluetooth pairing credentials. Restored devices require a manual connection.
+In v0.3.0, local names, optional weight, avatars, personal plans, favorites, display settings and floating positions also stay on the device. The system image picker grants access to the chosen photo; the app keeps a private 512×512 JPEG, without the external path or original image metadata. Full backups include all retained profiles and their personal data; shared device settings are optional. Existing profile/preference overwrite is off by default during restore.
+
+Saved-device Bluetooth addresses and notes are shared settings. Backups exclude system permissions and Bluetooth pairing credentials. Restored devices require a manual connection. Removing a profile preserves history by default; explicitly confirmed data deletion affects only local data still owned by that profile. Separately saved backups remain under your control.
 
 ### When does the app go online?
 
@@ -70,4 +74,4 @@ Record Bluetooth packets defaults to on and preserves an explicit choice to turn
 | Bluetooth packets | Up to 30 minutes and 32 KiB | Last 30 minutes |
 | Complete diagnostic export | Created on request | Under 128 KiB |
 
-Expired entries are cleared during startup, writes or export. Turning packet recording off stops new entries; existing entries expire or can be cleared in Settings → Device diagnostics. Clearing logs does not delete workouts. Weight and estimate settings stay local and can be exported with personal preferences. Each workout record retains the estimate parameters used for that session.
+Expired entries are cleared during startup, writes or export. Turning packet recording off stops new entries; existing entries expire or can be cleared in Settings → Device diagnostics. Clearing logs does not delete workouts. Weight and estimate settings are stored in profiles and full backups. Each workout retains the parameters and sources used for that session; correcting its owner does not rewrite those historical values.

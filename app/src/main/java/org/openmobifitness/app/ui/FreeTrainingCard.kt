@@ -47,13 +47,14 @@ private val HeroInk=Color(0xFF14263A)
 private val HeroSecondary=Color(0xFFCCD5E1)
 
 @Composable internal fun FreeTrainingCard(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState,compact: Boolean) {
+    val user by c.currentUser.collectAsStateWithLifecycle()
     val revision by c.repo.revision.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
     val day by produceState(LocalDate.now()) { while(true) { delay(60000); value=LocalDate.now() } }
     var summary by remember(day) { mutableStateOf<HistoryOverview?>(null) }
     var failed by remember(day) { mutableStateOf(false) }
-    LaunchedEffect(day,revision,state.ready) {
-        if(state.ready) runCatching { val dates=RecordDates.today(day); c.repo.history.overview(HistoryQuery(dates.first,dates.second,source=1)) }
+    LaunchedEffect(day,revision,state.ready,user?.id) {
+        if(state.ready) runCatching { val dates=RecordDates.today(day); c.repo.history.overview(HistoryQuery(dates.first,dates.second,source=1,owner=user?.id ?: "none")) }
             .onSuccess { summary=it; failed=false }.onFailure { summary=null; failed=true; AppLog.exception("home_summary",it) }
     }
     Surface(color=HeroInk,contentColor=Color.White,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().testTag("free-training-card")) {
@@ -77,7 +78,7 @@ private val HeroSecondary=Color(0xFFCCD5E1)
                         clipRect(left=0f,top=-16.dp.toPx(),right=size.width+if(wide) 0f else 16.dp.toPx(),bottom=size.height) {
                             val center=Offset(size.width-ringInset.toPx(),-ringLift.toPx())
                             brandColors.forEachIndexed { i,color ->
-                                drawCircle(color,ringRadius.toPx()*(28+18*i)/82f,center,style=Stroke(2.5.dp.toPx()))
+                                drawCircle(color,ringRadius.toPx()*(28+18*i)/82f,center,style=Stroke(4.dp.toPx()))
                             }
                         }
                     }

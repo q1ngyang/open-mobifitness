@@ -32,12 +32,12 @@ private fun groupLabel(group: PreferenceGroup)=when(group) {
     val state by c.state.collectAsStateWithLifecycle()
     SettingsGroup(stringResource(R.string.export_backup)) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.backup_records),style=MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.backup_all_users),style=MaterialTheme.typography.bodyLarge)
             HorizontalDivider()
             Row(Modifier.fillMaxWidth().clickable { include=!include },verticalAlignment=Alignment.CenterVertically) {
-                Checkbox(include,{ include=it }); Text(stringResource(R.string.backup_preferences),Modifier.weight(1f))
+                Checkbox(include,{ include=it }); Text(stringResource(R.string.backup_shared_optional),Modifier.weight(1f))
             }
-            if(include) PreferenceGroup.entries.forEach { Text(stringResource(groupLabel(it)),Modifier.padding(start=16.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+            if(include) Text(stringResource(R.string.user_shared_settings),Modifier.padding(start=16.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             if(state.session!=null) Text(stringResource(R.string.backup_active),style=MaterialTheme.typography.bodySmall)
             Button(onClick={ activity.includeBackupPreferences=include; activity.export("backup") },enabled=state.session==null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp).testTag("export-backup")) { Text(stringResource(R.string.export_backup)) }
         }
@@ -50,6 +50,7 @@ private fun groupLabel(group: PreferenceGroup)=when(group) {
     val preview by c.backup.preview.collectAsStateWithLifecycle()
     val status by c.backup.status.collectAsStateWithLifecycle()
     preview?.let { staged ->
+        var overwriteProfiles by remember(staged) { mutableStateOf(false) }
         var groups by remember(staged) { mutableStateOf(emptySet<PreferenceGroup>()) }
         val p=staged.preview
         Dialog(onDismissRequest=c.backup::discard,properties=DialogProperties(usePlatformDefaultWidth=false)) {
@@ -58,6 +59,9 @@ private fun groupLabel(group: PreferenceGroup)=when(group) {
                     Text(stringResource(R.string.import_preview),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
                     Column(Modifier.weight(1f,false).verticalScroll(rememberScrollState()).padding(vertical=14.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
                         Text(stringResource(R.string.import_summary,p.sessions,p.samples,p.workouts),style=MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.backup_profile_summary,p.users,p.removedUsers),style=MaterialTheme.typography.bodyMedium)
+                        if(p.users>0) Row(Modifier.fillMaxWidth().clickable { overwriteProfiles=!overwriteProfiles },verticalAlignment=Alignment.CenterVertically) { Checkbox(overwriteProfiles,{ overwriteProfiles=it }); Text(stringResource(R.string.backup_overwrite_profiles),Modifier.weight(1f)) }
+                        Text(stringResource(R.string.backup_removed_priority),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         FlowRow(horizontalArrangement=Arrangement.spacedBy(24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                             listOf(R.string.backup_new to p.added,R.string.backup_duplicate to p.duplicates,R.string.backup_conflict to p.conflicts).forEach { (label,count) ->
                                 Column { Text(stringResource(label),style=MaterialTheme.typography.labelLarge); Text(count.toString(),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold) }
@@ -67,7 +71,7 @@ private fun groupLabel(group: PreferenceGroup)=when(group) {
                         if(staged.preferences!=null) {
                             HorizontalDivider()
                             Text(stringResource(R.string.restore_preferences),style=MaterialTheme.typography.titleMedium)
-                            PreferenceGroup.entries.forEach { group ->
+                            (if(PortablePreferences.validate(staged.preferences).getInt("version")==2) listOf(PreferenceGroup.DEVICES) else PreferenceGroup.entries).forEach { group ->
                                 Row(Modifier.fillMaxWidth().clickable { groups=if(group in groups) groups-group else groups+group },verticalAlignment=Alignment.CenterVertically) {
                                     Checkbox(group in groups,{ groups=if(it) groups+group else groups-group })
                                     Text(stringResource(groupLabel(group)),Modifier.weight(1f))
@@ -78,7 +82,7 @@ private fun groupLabel(group: PreferenceGroup)=when(group) {
                     }
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(onClick=c.backup::discard,modifier=Modifier.weight(1f)) { Text(stringResource(R.string.cancel)) }
-                        Button(onClick={ c.backup.restore(groups) },enabled=p.conflicts==0L && exercise.session==null,modifier=Modifier.weight(1f).testTag("confirm-restore")) { Text(stringResource(R.string.confirm)) }
+                        Button(onClick={ c.backup.restore(groups,overwriteProfiles) },enabled=p.conflicts==0L && c.dataActionsAllowed,modifier=Modifier.weight(1f).testTag("confirm-restore")) { Text(stringResource(R.string.confirm)) }
                     }
                 }
             }

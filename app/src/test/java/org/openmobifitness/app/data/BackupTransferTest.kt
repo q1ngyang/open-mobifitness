@@ -38,20 +38,20 @@ class BackupTransferTest {
         // Keep local evidence on the configured development disk, while hosted CI
         // uses its own temporary workspace instead of requiring a local-only variable.
         val evidence=System.getenv("DEV_TEMP_BASE")?.let {
-            File(it,"work/open-mobifitness-v020/qa/large-backup-test").apply { check(isDirectory || mkdirs()) }
+            File(it,"work/openmobi-v030-implementation/evidence/large-backup").apply { check(isDirectory || mkdirs()) }
         } ?: java.nio.file.Files.createTempDirectory(
             File(System.getenv("RUNNER_TEMP") ?: System.getenv("TMPDIR") ?: System.getProperty("java.io.tmpdir")).toPath(),
             "openmobi-backup-test-"
         ).toFile()
-        val file=File(evidence,"360001-samples-v7.zip")
-        file.outputStream().use { BackupTransfer.export(repo,it,PortablePreferences.export(prefs)) }
+        val file=File(evidence,"360001-samples-v8.zip")
+        file.outputStream().use { BackupTransfer.export(repo,it,"""{"version":1,"groups":["APPEARANCE"],"values":{"theme":"dark","imperial":true,"target_cadence":27}}""") }
         assertTrue("compressed backup must also exceed old 32 MiB limit: ${file.length()}",file.length()>32*1024*1024)
         resetRecords(); prefs.edit().putString("theme","light").putBoolean("imperial",false).commit()
         file.inputStream().use { BackupTransfer.stage(context,repo,it) }.use { staged ->
             assertEquals(records.toLong(),staged.preview.samples); assertEquals(0L,staged.preview.conflicts)
             BackupTransfer.restore(repo,staged,setOf(PreferenceGroup.APPEARANCE))
         }
-        assertEquals(records.toLong(),repo.db.records().sampleCount()); assertEquals(digest,digest(repo.db)); assertEquals("dark",prefs.getString("theme",null)); assertEquals(27,prefs.getInt("target_cadence",0))
+        assertEquals(records.toLong(),repo.db.records().sampleCount()); assertEquals(digest,digest(repo.db)); assertEquals("light",prefs.getString("theme",null)); assertEquals("dark",repo.profilePreferences.forUser(LEGACY_USER_ID).getString("theme",null)); assertTrue(repo.db.records().user(LEGACY_USER_ID).legacyHints.contains("27"))
         file.inputStream().use { BackupTransfer.stage(context,repo,it) }.use { staged ->
             assertEquals(0L,staged.preview.added); assertEquals(1L,staged.preview.duplicates); assertEquals(0L,BackupTransfer.restore(repo,staged,emptySet()))
         }

@@ -13,6 +13,13 @@ import org.openmobifitness.core.Machine
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[34],application=Application::class)
 class ReleaseVariantTest {
+    @Test fun releaseContainsNeitherDatasetImplementationNorItsStrings() {
+        val app=RuntimeEnvironment.getApplication()
+        assertEquals(0,app.resources.getIdentifier("debug_samples_load","string",BuildConfig.APPLICATION_ID))
+        listOf("DebugDataset","DebugSamples","DebugSampleStore").forEach { name ->
+            try { Class.forName("org.openmobifitness.app.data.$name"); fail("Debug dataset leaked into Release") } catch(_: ClassNotFoundException) { }
+        }
+    }
     @Test fun releaseRejectsEverySimulatedDevice() {
         assertFalse(BuildConfig.DEBUG)
         assertEquals("org.openmobifitness.app",BuildConfig.APPLICATION_ID)

@@ -23,23 +23,24 @@ object Files {
         ZipInputStream(bytes.inputStream()).use { zip ->
             while(true) {
                 val entry=zip.nextEntry ?: break
-                require(!entry.isDirectory && entry.name in setOf("sessions.csv","samples.csv","workouts.csv","manifest.txt") && seen.add(entry.name))
+                require(!entry.isDirectory && entry.name in setOf("sessions.csv","samples.csv","workouts.csv","manifest.txt","sessions/0.csv","samples/0.csv","workouts/0.csv","users/0.csv") && seen.add(entry.name))
                 val part=zip.bounded(LIMIT-size); size+=part.size
-                if(entry.name=="manifest.txt") require(decode(part) in setOf("OpenMobi backup 1\n","OpenMobi backup 2\n","OpenMOBI backup 3\n","OpenMOBI backup 4\n","OpenMOBI backup 5\n","OpenMOBI backup 6\n"))
+                if(entry.name=="manifest.txt") require(decode(part) in setOf("OpenMobi backup 1\n","OpenMobi backup 2\n","OpenMOBI backup 3\n","OpenMOBI backup 4\n","OpenMOBI backup 5\n","OpenMOBI backup 6\n","OpenMOBI backup 8\n"))
                 else {
                     val text=decode(part)
-                    val prefix=when(entry.name) { "sessions.csv" -> "schema,session_id,start_utc,"; "samples.csv" -> "schema,session_id,elapsed_ms,"; else -> "schema,workout_id,title," }
+                    val prefix=when(entry.name) { "sessions.csv","sessions/0.csv" -> "schema,session_id,start_utc,"; "samples.csv","samples/0.csv" -> "schema,session_id,elapsed_ms,"; "users/0.csv" -> "schema,user_id,name,"; else -> "schema,workout_id,title," }
                     require(text.removePrefix("\uFEFF").startsWith(prefix))
                     pieces[entry.name]=Exchange.parse(text)
                 }
             }
         }
-        require(seen==setOf("sessions.csv","samples.csv","workouts.csv","manifest.txt"))
-        return Archive(pieces.values.flatMap { it.sessions },pieces.values.flatMap { it.samples },pieces.values.flatMap { it.workouts })
+        require(seen==setOf("sessions.csv","samples.csv","workouts.csv","manifest.txt") || seen==setOf("sessions/0.csv","samples/0.csv","workouts/0.csv","users/0.csv","manifest.txt"))
+        return Archive(pieces.values.flatMap { it.sessions },pieces.values.flatMap { it.samples },pieces.values.flatMap { it.workouts },pieces.values.flatMap { it.users })
     }
     fun backup(output: OutputStream,archive: Archive) {
+        require(archive.users.none { it.avatar.isNotEmpty() }) { "Use BackupTransfer for avatar resources" }
         ZipOutputStream(output).use { zip ->
-            val entries=linkedMapOf("manifest.txt" to "OpenMOBI backup 6\n","sessions.csv" to Exchange.sessions(archive.sessions),"samples.csv" to Exchange.samples(archive.samples),"workouts.csv" to Exchange.workouts(archive.workouts))
+            val entries=linkedMapOf("manifest.txt" to "OpenMOBI backup 8\n","users/0.csv" to Exchange.users(archive.users),"sessions/0.csv" to Exchange.sessions(archive.sessions),"samples/0.csv" to Exchange.samples(archive.samples),"workouts/0.csv" to Exchange.workouts(archive.workouts))
             entries.forEach { (name,text) -> zip.putNextEntry(ZipEntry(name)); zip.write(text.toByteArray(Charsets.UTF_8)); zip.closeEntry() }
         }
     }

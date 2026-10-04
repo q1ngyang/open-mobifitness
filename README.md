@@ -8,7 +8,9 @@ OpenMOBI 是一款独立开发的 Android 应用，让莫比健身器材在官�
 
 ## 下载
 
-**[下载 v0.2.0 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.2.0/OpenMOBI-0.2.0.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.2.0.md)
+**[下载 v0.3.0 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.0/OpenMOBI-0.3.0.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.3.0.md)
+
+**v0.3.0** 新增本地多用户、四类器材的 70 套训练方案与分组指标报告，并改善平板、手机及悬浮窗排版。[升级与使用变化](docs/V030_GUIDE.md)
 
 支持 Android 10 及以上的 64 位手机和平板，可与官方 App 共存。
 
@@ -18,7 +20,8 @@ OpenMOBI 是一款独立开发的 Android 应用，让莫比健身器材在官�
 
 ## 可以做什么
 
-- **想记再记**：仅控制模式可以看数据、调阻；需要时开始记录，也可跟随 21 套内置方案或自定义训练。
+- **想记再记**：仅控制模式可以看数据、调阻；需要时开始记录，也可跟随四类器材的 70 套内置方案或自定义训练。
+- **一家人各自记录**：本地用户可设置照片头像，分别保存记录、方案与偏好；开始记录前确认身份。
 - **边看边练**：全屏运动页和两级悬浮窗，按需选择指标，记住悬浮位置与常用档位。
 - **按自己的节奏**：手动设置频率或心率范围，按需开启提示，不会自动调阻。
 - **看见积累**：今日统计、历史记录与单次详情，支持 CSV 报告、完整备份和设置迁移。
@@ -26,11 +29,9 @@ OpenMOBI 是一款独立开发的 Android 应用，让莫比健身器材在官�
 
 ## 界面
 
-<img src="docs/screenshots/overview.png" alt="v0.2.0：手机首页、仅控制与自由记录" width="1000">
+<img src="docs/screenshots/v030-metric-units-tablet.png" alt="v0.3.0：平板训练进度、六项运动指标与单行常用档位" width="1000">
 
-<img src="docs/screenshots/floating-panels.png" alt="两级悬浮窗：小窗查看数据，展开二级悬浮窗调阻、暂停或返回应用" width="1000">
-
-以上为 v0.2.0 实际运行截图，使用 Debug 演示数据；展示排版不改变应用界面。[查看平板与更多界面](docs/SCREENSHOTS.md)
+以上为 v0.3.0 实际运行截图，使用 Debug 演示数据。[查看手机、悬浮窗与更多界面](docs/SCREENSHOTS.md)
 
 ## 连接异常？请告诉我们
 

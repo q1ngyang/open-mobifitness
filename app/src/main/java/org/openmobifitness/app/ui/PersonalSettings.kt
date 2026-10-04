@@ -17,6 +17,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.openmobifitness.app.*
 import org.openmobifitness.app.R
@@ -38,15 +39,13 @@ import org.openmobifitness.core.*
             TextButton(onClick=edit,modifier=Modifier.testTag("edit-presets")) { Text(stringResource(R.string.edit)) }
         }
         if(values.isEmpty()) Text(stringResource(R.string.preset_empty),Modifier.padding(bottom=10.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        else BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val columns=if(maxWidth/LocalDensity.current.fontScale<260.dp) 2 else 4
-            val cellWidth=(maxWidth-8.dp*(columns-1))/columns
-            FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-            values.forEach { value ->
-                val selected=c.controlResistance()?.let { kotlin.math.abs(it-value)<range.increment/2 }==true
-                OutlinedButton(onClick={ c.adjustTo(value) },enabled=c.canStart() && !link.busy && !state.starting,modifier=Modifier.heightIn(min=48.dp).width(cellWidth).testTag("preset-$value"),contentPadding=PaddingValues(horizontal=6.dp,vertical=8.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,if(selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) { Text(WorkoutService.number(value),maxLines=1,softWrap=false) }
-            }
-            }
+        else Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                values.forEach { value ->
+                    val selected=c.controlResistance()?.let { kotlin.math.abs(it-value)<range.increment/2 }==true
+                    OutlinedButton(onClick={ c.adjustTo(value) },enabled=c.canStart() && !link.busy && !state.starting,modifier=Modifier.weight(1f).heightIn(min=48.dp).testTag("preset-$value"),contentPadding=PaddingValues(horizontal=4.dp,vertical=8.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,if(selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
+                        androidx.compose.foundation.text.BasicText(WorkoutService.number(value),Modifier.fillMaxWidth(),maxLines=1,style=MaterialTheme.typography.labelLarge.copy(textAlign=androidx.compose.ui.text.style.TextAlign.Center,color=MaterialTheme.colorScheme.onSurface),autoSize=androidx.compose.foundation.text.TextAutoSize.StepBased(9.sp,14.sp,1.sp))
+                    }
+                }
         }
     }
 }

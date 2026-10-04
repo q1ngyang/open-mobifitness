@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_samples_load">Load built-in demo data</string>
+    <string name="debug_samples_clear">Clear built-in demo data</string>
+    <string name="debug_samples_help">4 profiles · 6 equipment types · 36 months · 780 recordings. Loaded only when requested.</string>
+    <string name="debug_samples_count">Stored: %1$d profiles · %2$d built-in recordings</string>
+    <string name="debug_samples_working">Processing · %1$d%%</string>
+    <string name="debug_samples_view">View demo history</string>
+    <string name="debug_samples_preview">Remove %1$d built-in recordings and retire %2$d empty demo profiles. Keep %3$d profiles with other recordings, plans or references.</string>
+    <string name="debug_samples_conflict">A built-in ID conflicts with stored data or a profile was permanently deleted. No data was overwritten.</string>
+    <string name="debug_samples_failed">Could not complete the operation. Data changes were rolled back; try again when idle.</string>
+    <string name="debug_samples_locked">Finish or cancel the current recording or transfer first.</string>
+    <string name="debug_user_a">Demo A</string>
+    <string name="debug_user_b">Demo B</string>
+    <string name="debug_user_c">Demo C</string>
+    <string name="debug_user_d">Demo D</string>
+</resources>

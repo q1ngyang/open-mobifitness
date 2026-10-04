@@ -11,6 +11,9 @@ import kotlinx.coroutines.Dispatchers
 import org.junit.Test
 import org.junit.Assert.*
 import org.openmobifitness.app.service.WorkoutService
+import org.openmobifitness.app.data.saveUser
+import org.openmobifitness.core.UserProfile
+import org.openmobifitness.core.IdentityPolicy
 import java.io.File
 
 /** Native overlay gestures and mode transitions with Debug readings, not radio I/O. */
@@ -68,6 +71,11 @@ class V020OverlayTest {
         var recorded: String?=null
         try {
             await { c.state.value.ready }
+            runBlocking {
+                val user=UserProfile(java.util.UUID.nameUUIDFromBytes("v030-overlay-user".toByteArray()).toString(),"小林 Overlay")
+                c.repo.saveUser(user); c.switchUser(user.id).join()
+            }
+            main { c.setIdentityPolicy(IdentityPolicy.REMEMBER) }
             main { c.dismissResult(); c.exitControl(); c.setDemo(true); c.setImperial(false); c.display.floating(true); c.display.automaticFloating(true); c.local.resetPositions(); c.setTheme(args.getString("theme") ?: "light") }
             args.getString("language")?.let { language -> scenario.onActivity { if(it.currentLanguage()!=language) it.setLanguage(language) } }
             val before=runBlocking(Dispatchers.IO) { c.repo.db.records().sessionCount() }

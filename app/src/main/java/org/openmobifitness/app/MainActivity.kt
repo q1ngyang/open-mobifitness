@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
     private var exportKind="sessions"
     private var exportSessionId: String?=null
     private var reportQuery=HistoryQuery()
+    private var exportUnits=false
+    private var exportLocale=""
+    private var exportOwnerId: String?=null
     var includeBackupPreferences=true
     private var awaitingOverlay=false
     private var externalNavigation=false
@@ -53,25 +56,16 @@ class MainActivity : ComponentActivity() {
             val kind=exportKind
             val sessionId=exportSessionId
             val query=reportQuery
-            val units=controller.imperial.value
-            val reportContext=applicationContext.localized().let { it.createConfigurationContext(android.content.res.Configuration(it.resources.configuration)) }
+            val units=exportUnits
+            val reportContext=applicationContext.createConfigurationContext(android.content.res.Configuration(resources.configuration).apply { setLocales(android.os.LocaleList.forLanguageTags(exportLocale)) })
             try {
                 val diagnostic=if(kind=="diagnostics") org.openmobifitness.app.data.AppLog.report(controller) else null
-                val archive=if(kind=="diagnostics" || kind=="report") Archive() else controller.repo.archive(sessionId,includeSamples=kind in setOf("backup","samples"),includeWorkouts=kind in setOf("backup","workouts"),includeSessions=kind!="workouts")
                 withContext(Dispatchers.IO) {
                     contentResolver.openOutputStream(uri,"wt")!!.use { output ->
                         when(kind) {
                             "report" -> StatisticsReport.write(reportContext,controller.repo.history,query,sessionId,output,units)
-                            "backup" -> Files.backup(output,archive)
-                            else -> {
-                                val text=when(kind) {
-                                    "samples" -> Exchange.samples(archive.samples)
-                                    "workouts" -> Exchange.workouts(archive.workouts)
-                                    "diagnostics" -> diagnostic.orEmpty()
-                                    else -> Exchange.sessions(archive.sessions)
-                                }
-                                output.write(text.toByteArray(Charsets.UTF_8))
-                            }
+                            "diagnostics" -> output.write(diagnostic.orEmpty().toByteArray(Charsets.UTF_8))
+                            else -> org.openmobifitness.app.data.ExchangeExport.write(controller.repo,kind,query,sessionId,exportOwnerId,output)
                         }
                     }
                 }
@@ -84,6 +78,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState); enableEdgeToEdge()
         exportKind=savedInstanceState?.getString("exportKind") ?: "sessions"
         exportSessionId=savedInstanceState?.getString("exportSessionId")
+        exportUnits=savedInstanceState?.getBoolean("exportUnits") ?: false
+        exportLocale=savedInstanceState?.getString("exportLocale") ?: resources.configuration.locales.toLanguageTags()
+        exportOwnerId=savedInstanceState?.getString("exportOwnerId")
         reportQuery=HistoryQuery.decode(savedInstanceState?.getString("reportQuery"))
         awaitingOverlay=savedInstanceState?.getBoolean("overlay") ?: false
         page.value=savedInstanceState?.getInt("page") ?: 0
@@ -96,7 +93,7 @@ class MainActivity : ComponentActivity() {
         metricScope.value=runCatching { DisplayScope.valueOf(savedInstanceState?.getString("metrics_scope") ?: intent.getStringExtra("metrics_scope") ?: "") }.getOrNull()
         setContent { OpenMobi(this,controller) }
     }
-    override fun onSaveInstanceState(outState: Bundle) { outState.putString("settingsSection",settingsSection.value); outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
+    override fun onSaveInstanceState(outState: Bundle) { outState.putBoolean("exportUnits",exportUnits); outState.putString("exportLocale",exportLocale); outState.putString("exportOwnerId",exportOwnerId); outState.putString("settingsSection",settingsSection.value); outState.putString("reportQuery",reportQuery.encode()); outState.putString("exportKind",exportKind); outState.putString("exportSessionId",exportSessionId); outState.putBoolean("overlay",awaitingOverlay); outState.putInt("page",page.value); outState.putBoolean("focusTraining",focusTraining.value); outState.putString("metrics_scope",metricScope.value?.name); super.onSaveInstanceState(outState) }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } else if(intent.getBooleanExtra("devices",false)) { page.value=2; focusTraining.value=false }; intent.removeExtra("training"); intent.removeExtra("devices"); metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
@@ -172,9 +169,13 @@ class MainActivity : ComponentActivity() {
         if(Build.VERSION.SDK_INT>=33) getSystemService(android.app.LocaleManager::class.java).applicationLocales=android.os.LocaleList.forLanguageTags(tag)
         else recreate()
     }
-    fun export(kind: String,sessionId: String?=null) { if(kind=="backup" && controller.state.value.session!=null) { controller.error(R.string.backup_active); return }; externalNavigation=true; exportKind=kind; exportSessionId=sessionId; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
-    fun exportReport(query: HistoryQuery=HistoryQuery(),sessionId: String?=null) { reportQuery=query; export("report",sessionId) }
+    fun export(kind: String,sessionId: String?=null,query: HistoryQuery=HistoryQuery(owner=controller.historyOwner())) { if(kind=="backup" && controller.state.value.session!=null) { controller.error(R.string.backup_active); return }; externalNavigation=true; exportKind=kind; exportSessionId=sessionId; reportQuery=query.frozen(controller.repo.users.value); exportUnits=controller.imperial.value; exportLocale=resources.configuration.locales.toLanguageTags(); exportOwnerId=controller.currentUser.value?.id; exportLauncher.launch("OpenMOBI-$kind.${if(kind=="backup") "zip" else if(kind=="diagnostics") "txt" else "csv"}") }
+    fun exportReport(query: HistoryQuery=HistoryQuery(),sessionId: String?=null) { export("report",sessionId,query) }
     fun importFile() { if(controller.state.value.session!=null) { controller.error(R.string.backup_active); return }; externalNavigation=true; importLauncher.launch(arrayOf("text/*","application/zip","application/octet-stream")) }
+    internal fun openImagePicker(launch: ()->Unit) {
+        externalNavigation=true
+        runCatching(launch).onFailure { externalNavigation=false; controller.error(R.string.user_photo_failed) }
+    }
 
     fun openDiagnostics() { focusTraining.value=false; page.value=3; settingsSection.value="diagnostics" }
     fun feedback() { openUrl(org.openmobifitness.app.data.Updates.REPOSITORY+"/issues/new?template=device-problem.yml") }

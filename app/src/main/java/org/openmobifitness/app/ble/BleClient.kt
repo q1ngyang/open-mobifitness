@@ -76,6 +76,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         feedbackJob?.cancel()
         state.value=state.value.copy(requested=null,controlTimedOut=false)
     }
+    fun clearUserContext() { invalidateControls(); resetTrainingCalculations(); state.value=state.value.copy(metrics=Metrics(),motionAt=0,heartAt=0) }
     /** Start required live reporting once. App recording/pause does not own this lifecycle. */
     suspend fun beginLiveUse(): Boolean = when {
         state.value.machine==Machine.TREADMILL -> true

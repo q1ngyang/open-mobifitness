@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -27,10 +28,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -129,7 +126,7 @@ import org.openmobifitness.core.*
     val selections by c.display.selections.collectAsStateWithLifecycle()
     val machineSelections by c.display.byMachine.collectAsStateWithLifecycle()
     val imperial by c.imperial.collectAsStateWithLifecycle()
-    val hintPrefs by c.local.hints.collectAsStateWithLifecycle()
+    val hintPrefs by c.activeHints.collectAsStateWithLifecycle()
     val machine=c.displayMachine()
     val chosen=remember(selections,machineSelections,machine,state.controlOnly) { c.display.selected(DisplayScope.TRAINING,machine,state.controlOnly,freeRecording=!state.controlOnly) }
     OutlinedCard(Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),colors=CardDefaults.outlinedCardColors(containerColor=MaterialTheme.colorScheme.surface)) {
@@ -156,50 +153,46 @@ import org.openmobifitness.core.*
             }
             val grid: @Composable (List<MetricId>)->Unit = { items -> BoxWithConstraints {
                 val font=LocalDensity.current.fontScale
-                val columns=if(maxWidth/font<260.dp) 1 else 2
-                val measurer=rememberTextMeasurer()
-                val tileWidth=with(LocalDensity.current) { (maxWidth/columns-24.dp).toPx() }
-                val unitStyle=MaterialTheme.typography.bodySmall
+                val columns=if(maxWidth/font<260.dp) 1 else if(maxWidth/font>=420.dp) 3 else 2
+                val gridLine=MaterialTheme.colorScheme.outlineVariant
                 Column {
                     items.chunked(columns).forEachIndexed { row,group ->
                         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant)
-                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                            group.forEachIndexed { i,id ->
-                                if(i>0) VerticalDivider(Modifier.fillMaxHeight())
+                        Row(Modifier.fillMaxWidth().drawBehind {
+                            // Measure text naturally; intrinsic row height can round away label pixels.
+                            repeat(columns-1) { index -> val x=size.width*(index+1)/columns; drawLine(gridLine,Offset(x,0f),Offset(x,size.height),1.dp.toPx()) }
+                        }) {
+                            group.forEach { id -> key(id, state.session?.id) {
                                 val r=remember(id,state,imperial) { context.reading(id,c) }
-                                val numberSize=if(short) 30.sp else if(state.controlOnly && row==0) { if(spacious) 56.sp else 42.sp } else if(spacious) 40.sp else 32.sp
-                                val numberStyle=MaterialTheme.typography.displaySmall.copy(fontWeight=FontWeight.Bold,fontFeatureSettings="tnum",fontSize=numberSize,lineHeight=numberSize*1.15f)
-                                Column(Modifier.weight(1f).padding(horizontal=12.dp,vertical=if(short) 6.dp else 10.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                                    Text(r.label,style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                val numberSize=if(short) 34 else if(state.controlOnly && row==0) { if(spacious) 56 else 42 } else if(spacious) 40 else 36
+                                Column(Modifier.weight(1f).testTag("live-metric-${id.name}").padding(horizontal=12.dp,vertical=if(short) 6.dp else 10.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                                    Text(r.label,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                     if(r.value==stringResource(R.string.not_recording)) Text(r.value,style=MaterialTheme.typography.titleMedium)
-                                    else {
-                                        val value=(if(r.estimated) "≈" else "")+r.value
-                                        val unit=if(r.unit.isEmpty()) "" else "  ${r.unit}"
-                                        val unitWidth=measurer.measure(unit,unitStyle,maxLines=1,softWrap=false).size.width
-                                        val measured=measurer.measure(value,numberStyle,maxLines=1,softWrap=false).size.width
-                                        val size=(numberSize.value*minOf(1f,(tileWidth-unitWidth).coerceAtLeast(0f)/measured.coerceAtLeast(1))).coerceAtLeast(16f).sp
-                                        Text(buildAnnotatedString {
-                                            withStyle(SpanStyle(fontSize=size,fontWeight=FontWeight.Bold)) { append(value) }
-                                            withStyle(SpanStyle(fontSize=unitStyle.fontSize,fontWeight=FontWeight.Normal,color=MaterialTheme.colorScheme.onSurfaceVariant)) { append(unit) }
-                                        },Modifier.fillMaxWidth(),style=numberStyle.copy(lineHeight=size*1.15f),maxLines=1,softWrap=false)
-                                    }
+                                    else MetricValueLine((if(r.estimated) "≈" else "")+r.value,r.unit,numberSize)
                                 }
-                            }
+                            } }
                             repeat(columns-group.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
                 }
             } }
-            val pages=chosen.chunked(4)
+            BoxWithConstraints {
+            val capacity=if(maxWidth/LocalDensity.current.fontScale>=420.dp || spacious && !short && maxWidth/LocalDensity.current.fontScale>=260.dp) 6 else 4
+            val pages=chosen.chunked(capacity)
             val pager=rememberPagerState { pages.size }
             val scope=rememberCoroutineScope()
-            if(pages.size==1) grid(chosen) else {
-                HorizontalPager(pager,Modifier.fillMaxWidth().wrapContentHeight(),beyondViewportPageCount=1) { page -> grid(pages[page]) }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
-                    IconButton(onClick={ scope.launch { pager.animateScrollToPage(pager.currentPage-1) } },enabled=pager.currentPage>0) { Icon(Icons.Default.KeyboardArrowLeft,stringResource(R.string.previous_metrics)) }
-                    Text("${pager.currentPage+1} / ${pages.size}",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    IconButton(onClick={ scope.launch { pager.animateScrollToPage(pager.currentPage+1) } },enabled=pager.currentPage<pages.lastIndex) { Icon(Icons.Default.KeyboardArrowRight,stringResource(R.string.next_metrics)) }
+            Column {
+                if(pages.size==1) {
+                    grid(chosen)
+                } else {
+                    HorizontalPager(pager,Modifier.fillMaxWidth().wrapContentHeight(),beyondViewportPageCount=1) { page -> grid(pages[page]) }
                 }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                    IconButton(onClick={ scope.launch { pager.animateScrollToPage((pager.currentPage-1).coerceAtLeast(0)) } },enabled=pager.currentPage>0) { Icon(Icons.Default.KeyboardArrowLeft,stringResource(R.string.previous_metrics)) }
+                    Text("${pager.currentPage+1} / ${pages.size}",Modifier.testTag("metric-page-count"),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    IconButton(onClick={ scope.launch { pager.animateScrollToPage((pager.currentPage+1).coerceAtMost(pages.lastIndex)) } },enabled=pager.currentPage<pages.lastIndex) { Icon(Icons.Default.KeyboardArrowRight,stringResource(R.string.next_metrics)) }
+                }
+            }
             }
         }
     }

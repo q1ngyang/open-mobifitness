@@ -39,9 +39,9 @@ class DisplayPreferencesTest {
         assertEquals(MetricCatalog.trainingDefaults(Machine.ELLIPTICAL),d.selected(DisplayScope.TRAINING,Machine.ELLIPTICAL))
         assertThrows(IllegalArgumentException::class.java) { d.save(DisplayScope.TRAINING,listOf(MetricId.STROKES),Machine.ELLIPTICAL) }
     }
-    @Test fun freeRecordingDefaultsFollowTheFourMetricDesignWithoutReplacingSavedChoices() {
+    @Test fun freeRecordingDefaultsFollowTheSixMetricDesignWithoutReplacingSavedChoices() {
         val p=prefs(); val d=DisplayPreferences(p)
-        assertEquals(listOf(MetricId.CADENCE,MetricId.HEART,MetricId.DISTANCE,MetricId.CALORIES),d.selected(DisplayScope.TRAINING,Machine.ELLIPTICAL,freeRecording=true))
+        assertEquals(listOf(MetricId.CADENCE,MetricId.HEART,MetricId.DISTANCE,MetricId.CALORIES,MetricId.POWER,MetricId.SPEED),d.selected(DisplayScope.TRAINING,Machine.ELLIPTICAL,freeRecording=true))
         assertEquals(MetricCatalog.trainingDefaults(Machine.ELLIPTICAL),d.selected(DisplayScope.TRAINING,Machine.ELLIPTICAL))
         val custom=listOf(MetricId.POWER,MetricId.SPEED,MetricId.CADENCE,MetricId.RESISTANCE,MetricId.HEART)
         d.save(DisplayScope.TRAINING,custom,Machine.ELLIPTICAL)

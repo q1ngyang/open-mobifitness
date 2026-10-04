@@ -20,36 +20,69 @@ data class PeriodWindow(val from: Long, val until: Long) {
     }
 }
 enum class SeriesMetric {
-    HEART, CADENCE, POWER, SPEED, RESISTANCE;
+    HEART, CADENCE, POWER, SPEED, RESISTANCE, STEP_RATE, INCLINE, STRIDE, FORCE, LOAD, PACE;
     fun value(m: Metrics): Double? = when(this) {
         HEART -> m.heartBpm?.takeIf { it>0 }?.toDouble()
-        CADENCE -> m.cadence ?: m.stepRate
+        CADENCE -> m.cadence
         POWER -> m.powerW
         SPEED -> m.speedMps?.times(3.6)
         RESISTANCE -> m.resistance
+        STEP_RATE -> m.stepRate
+        INCLINE -> m.inclinePercent
+        STRIDE -> m.strideM
+        FORCE -> m.forceN
+        LOAD -> m.loadKg
+        PACE -> m.speedMps?.takeIf { it>0 }?.let { 500.0/it }
     }?.takeIf { it.isFinite() }
 }
 data class PlotPoint(val ms: Long, val value: Double, val segment: Int=0)
 data class MetricStats(val average: Double?, val maximum: Double?, val minimum: Double?, val coverageMs: Long, val points: List<PlotPoint>)
-data class SessionStats(val metrics: Map<SeriesMetric,MetricStats>, val steps: Int?, val strokes: Int?, val powerEstimated: Boolean, val samples: Int)
+data class SessionStats(val metrics: Map<SeriesMetric,MetricStats>, val steps: Int?, val strokes: Int?, val powerEstimated: Boolean, val samples: Int,val jumps: Int?=null,val continuousJumps: Int?=null,val jumpInterruptions: Int?=null,val repetitions: Int?=null,val powerMixed: Boolean=false,val speedEstimated: Boolean=false)
 object Statistics {
     /** Samples describe the preceding active-time interval. Limit held data to 5 seconds.
      * Missing/zero heart rate is absent, not a zero-valued measurement. */
-    fun summarize(samples: List<Sample>): SessionStats {
-        val ordered=samples.sortedBy { it.elapsedMs }
-        val metrics=SeriesMetric.entries.associateWith { metric ->
-            var prior=0L; var segment=0; var lastValid=0L; var weight=0L; var total=0.0
-            val points=mutableListOf<PlotPoint>()
-            ordered.forEach { sample ->
-                val dt=(sample.elapsedMs-prior).coerceIn(0,5000); prior=sample.elapsedMs
-                metric.value(sample.metrics)?.let { value ->
-                    if(sample.elapsedMs-lastValid>5000) segment++; lastValid=sample.elapsedMs
-                    points+=PlotPoint(sample.elapsedMs,value,segment); total+=value*dt; weight+=dt
-                }
-            }
-            MetricStats(if(weight>0) total/weight else points.map { it.value }.takeIf { it.isNotEmpty() }?.average(),points.maxOfOrNull { it.value },points.minOfOrNull { it.value },weight,decimate(points))
+    fun summarize(samples: List<Sample>): SessionStats = Accumulator().also { stats -> samples.sortedBy { it.elapsedMs }.forEach { stats.add(it) } }.finish()
+    /** Bounded plots and exact totals for paged histories; no full sample list is retained. */
+    class Accumulator {
+        private class Series {
+            var coverage=0L; var total=0.0; var distance=0.0; var sum=0.0; var count=0
+            var maximum: Double?=null; var minimum: Double?=null
+            var segment=0; var lastValid=0L; var gap=false
+            val points=ArrayList<PlotPoint>()
         }
-        return SessionStats(metrics,ordered.mapNotNull { it.metrics.stepCount }.maxOrNull(),ordered.mapNotNull { it.metrics.strokes }.maxOrNull(),ordered.any { it.metrics.powerEstimated },ordered.size)
+        private val series=SeriesMetric.entries.associateWith { Series() }
+        private var prior=0L; private var count=0
+        private var steps: Int?=null; private var strokes: Int?=null; private var jumps: Int?=null
+        private var continuous: Int?=null; private var interruptions: Int?=null; private var repetitions: Int?=null
+        private var estimated=false; private var measured=false; private var estimatedSpeed=false
+        private fun max(old: Int?,value: Int?)=if(value==null) old else old?.let { maxOf(it,value) } ?: value
+        fun add(sample: Sample,speedEstimated: Boolean=false) {
+            estimatedSpeed=estimatedSpeed || speedEstimated
+            require(sample.elapsedMs>=prior)
+            val dt=(sample.elapsedMs-prior).coerceIn(0,5000); prior=sample.elapsedMs; count++
+            val m=sample.metrics
+            steps=max(steps,m.stepCount); strokes=max(strokes,m.strokes); jumps=max(jumps,m.jumpCount)
+            continuous=max(continuous,m.continuousJumps); interruptions=max(interruptions,m.jumpInterruptions); repetitions=max(repetitions,m.repetitions)
+            if(m.powerW!=null) { if(m.powerEstimated) estimated=true else measured=true }
+            series.forEach { (metric,s) ->
+                val value=metric.value(m)
+                if(metric==SeriesMetric.PACE && m.speedMps?.let { it.isFinite() && it>=0 }==true) {
+                    s.coverage+=dt; s.distance+=m.speedMps*dt/1000.0
+                }
+                if(value==null) { s.gap=true; return@forEach }
+                if(s.gap || sample.elapsedMs-s.lastValid>5000) s.segment++
+                s.gap=false; s.lastValid=sample.elapsedMs
+                if(metric!=SeriesMetric.PACE) { s.coverage+=dt; s.total+=value*dt }
+                s.sum+=value; s.count++; s.maximum=s.maximum?.let { maxOf(it,value) } ?: value; s.minimum=s.minimum?.let { minOf(it,value) } ?: value
+                s.points+=PlotPoint(sample.elapsedMs,value,s.segment)
+                if(s.points.size>=960) { val reduced=decimate(s.points); s.points.clear(); s.points.addAll(reduced) }
+            }
+        }
+        fun finish()=SessionStats(series.mapValues { (metric,s) ->
+            val average=if(metric==SeriesMetric.PACE) if(s.distance>0) 500.0*(s.coverage/1000.0)/s.distance else null
+                else if(s.coverage>0) s.total/s.coverage else if(s.count>0) s.sum/s.count else null
+            MetricStats(average,s.maximum,s.minimum,s.coverage,decimate(s.points))
+        },steps,strokes,estimated,count,jumps,continuous,interruptions,repetitions,estimated && measured,estimatedSpeed)
     }
     /** Keep endpoints and both extrema of each bucket, rather than losing peaks to averaging. */
     fun decimate(points: List<PlotPoint>, limit: Int=240): List<PlotPoint> {
