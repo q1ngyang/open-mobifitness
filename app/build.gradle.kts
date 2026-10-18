@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+val bleReconnectTest = providers.gradleProperty("bleReconnectTest").orNull == "true"
 android {
     namespace = "org.openmobifitness.app"
     compileSdk = 37
@@ -11,6 +12,7 @@ android {
         targetSdk = 37
         versionCode = 14
         versionName = "0.3.4"
+        manifestPlaceholders["appLabel"] = "@string/app_name"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         javaCompileOptions { annotationProcessorOptions { arguments["room.schemaLocation"] = "$projectDir/schemas" } }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -27,7 +29,12 @@ android {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
         release {
             isMinifyEnabled = false
-            if (System.getenv("OPENMOBI_KEYSTORE") != null) signingConfig = signingConfigs.getByName("localRelease")
+            if (bleReconnectTest) {
+                applicationIdSuffix = ".reconnecttest"
+                versionNameSuffix = "-ble-test.1"
+                manifestPlaceholders["appLabel"] = "OpenMOBI 蓝牙测试"
+                signingConfig = signingConfigs.getByName("debug")
+            } else if (System.getenv("OPENMOBI_KEYSTORE") != null) signingConfig = signingConfigs.getByName("localRelease")
         }
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -53,6 +60,7 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:2.8.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.robolectric:robolectric:4.16.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

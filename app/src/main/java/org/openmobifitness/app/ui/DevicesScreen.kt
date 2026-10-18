@@ -24,20 +24,35 @@ import kotlinx.coroutines.delay
 import org.openmobifitness.app.*
 import org.openmobifitness.app.R
 import org.openmobifitness.app.ble.LinkState
+import org.openmobifitness.app.ble.connectionPending
+import org.openmobifitness.app.ble.nearbyDevices
 import org.openmobifitness.core.*
 
 internal fun connectionStatus(link: LinkState)=when(link.phase) {
     "ready"->R.string.connected
     "disconnected"->R.string.disconnected
+    "searching"->R.string.ble_searching_device
+    "discovering"->R.string.ble_discovering
+    "initializing"->R.string.ble_initializing
     "awaiting_data"->R.string.waiting_data_help
     "subscription_failed"->R.string.subscription_failed
     else->R.string.connecting
+}
+internal fun connectionFailure(reason: String)=when {
+    reason=="permission_revoked"->R.string.permission_help
+    reason=="bluetooth_unavailable" || reason=="scan_unavailable"->R.string.ble_unavailable
+    reason=="scan_rate_limit" || reason=="scan_error:6"->R.string.ble_scan_rate_limit
+    reason.startsWith("scan_error:")->R.string.ble_scan_failed
+    reason=="connection_cancelled"->R.string.ble_connection_cancelled
+    reason.endsWith("_timeout")->R.string.ble_connection_timeout
+    else->R.string.ble_connection_failed
 }
 @Composable internal fun DevicesScreen(activity: MainActivity,c: Controller,state: ExerciseState,link: LinkState) {
     val saved by c.local.devices.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<SavedDevice?>(null) }
     val found by c.ble.found.collectAsStateWithLifecycle()
     val scanning by c.ble.scanning.collectAsStateWithLifecycle()
+    val scanError by c.ble.scanError.collectAsStateWithLifecycle()
     val heart by c.heart.state.collectAsStateWithLifecycle()
     var help by rememberSaveable { mutableStateOf(false) }
     val now by produceState(SystemClock.elapsedRealtime()) { while(true) { delay(1000); value=SystemClock.elapsedRealtime() } }
@@ -61,15 +76,19 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                         }
                         if(link.phase!="disconnected") {
                             HorizontalDivider()
+                            if(link.connectionPending) Text(stringResource(R.string.ble_connection_pending_help),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            else {
                             CapabilityLine(stringResource(R.string.motion_data),stringResource(if(fresh) R.string.receiving_data else R.string.waiting_motion),fresh)
                             CapabilityLine(stringResource(R.string.resistance_control),stringResource(if(link.controlTimedOut) R.string.feedback_timeout else if(link.writable && link.range!=null) R.string.control_available else R.string.read_only),link.writable && link.range!=null && !link.controlTimedOut)
                             if(link.metrics.heartBpm!=null && link.heartAt>0 && now-link.heartAt<10000) CapabilityLine(stringResource(R.string.heart_rate),stringResource(R.string.heart_from_equipment,link.metrics.heartBpm!!),true)
                             EquipmentFold(c,state,link,now)
+                            }
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                                 Text(link.range?.let { stringResource(R.string.range_format,org.openmobifitness.app.service.WorkoutService.number(it.min),org.openmobifitness.app.service.WorkoutService.number(it.max)) }.orEmpty(),Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                OutlinedButton(onClick=activity::disconnect) { Text(stringResource(R.string.disconnect)) }
+                                OutlinedButton(onClick=activity::disconnect) { Text(stringResource(if(link.connectionPending) R.string.cancel else R.string.disconnect)) }
                             }
                         } else {
+                            link.failure?.let { Text(stringResource(connectionFailure(it)),Modifier.testTag("connection-failure"),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.error) }
                             Text(stringResource(R.string.scan_help),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                                 Button(onClick=activity::scan,enabled=!scanning) { Icon(Icons.Default.Search,null); Spacer(Modifier.width(6.dp)); Text(stringResource(if(scanning) R.string.scanning else R.string.scan)) }
@@ -84,6 +103,7 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
             }
             val accessories: @Composable ()->Unit = {
                 if(heart.phase=="disconnected") SettingsGroup(stringResource(R.string.heart_device)) {
+                    heart.failure?.let { Text(stringResource(connectionFailure(it)),Modifier.padding(16.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.error) }
                     if(saved.any { it.heart }) saved.filter { it.heart }.forEach { device -> SavedDeviceRow(activity,c,state,device) { editing=device } }
                     else SettingsRow(Icons.Default.Favorite,stringResource(R.string.add_heart),stringResource(R.string.optional_heart)) { activity.scan() }
                 }
@@ -109,14 +129,15 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
             val nearbyHeader: @Composable ()->Unit = {
                 FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                     Text(stringResource(R.string.nearby_devices),Modifier.align(Alignment.CenterVertically),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-                    TextButton(onClick={ if(scanning) c.ble.stopScan() else activity.scan() }) { Icon(if(scanning) Icons.Default.Close else Icons.Default.Refresh,null,Modifier.size(18.dp)); Spacer(Modifier.width(5.dp)); Text(stringResource(if(scanning) R.string.stop_scan else R.string.scan)) }
+                    TextButton(onClick={ if(scanning) c.ble.stopScan() else activity.scan() },enabled=scanning || !link.connectionPending) { Icon(if(scanning) Icons.Default.Close else Icons.Default.Refresh,null,Modifier.size(18.dp)); Spacer(Modifier.width(5.dp)); Text(stringResource(if(scanning) R.string.stop_scan else R.string.scan)) }
                 }
                 if(scanning) LinearProgressIndicator(Modifier.fillMaxWidth())
             }
-            val entries=found.filter { it.address!=link.address && it.address!=heart.address }
+            val entries=nearbyDevices(found,link,heart)
             val nearby: androidx.compose.foundation.lazy.LazyListScope.()->Unit = {
                 item { nearbyHeader() }
-                if(entries.isEmpty()) item { Text(stringResource(if(scanning) R.string.scanning else R.string.no_devices),Modifier.padding(vertical=16.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                scanError?.let { reason -> item { Text(stringResource(connectionFailure(reason)),Modifier.padding(vertical=8.dp).testTag("scan-failure"),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.error) } }
+                if(entries.isEmpty() && scanError==null) item { Text(stringResource(if(scanning) R.string.scanning else if(link.connectionPending) R.string.ble_connection_pending_help else R.string.no_devices),Modifier.padding(vertical=16.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 items(entries,key={ it.address }) { device ->
                     OutlinedCard(onClick={ activity.connect(device) },enabled=state.session==null || device.heart || device.address==link.address,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)) {
                         Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ble_searching_device">正在重新尋找裝置…</string>
+    <string name="ble_discovering">正在讀取裝置服務…</string>
+    <string name="ble_initializing">正在初始化連線…</string>
+    <string name="ble_connection_pending_help">建立連線最長約需 90 秒，也可以取消後重試。</string>
+    <string name="ble_unavailable">藍牙目前無法使用，請開啟藍牙後重試。</string>
+    <string name="ble_scan_rate_limit">掃描過於頻繁，請等待 30 秒後重試。</string>
+    <string name="ble_scan_failed">系統未能啟動掃描，請檢查藍牙和附近裝置權限後重試。</string>
+    <string name="ble_connection_cancelled">已取消連線，可隨時重新連線。</string>
+    <string name="ble_connection_timeout">連線逾時，請確認裝置已開機且在附近後重試。</string>
+    <string name="ble_connection_failed">連線中斷或失敗，請檢查裝置後重試。</string>
+</resources>

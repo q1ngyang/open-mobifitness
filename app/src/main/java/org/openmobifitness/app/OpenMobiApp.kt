@@ -52,7 +52,7 @@ class Controller(val app: Application,
 ) {
     val repo=Repository(app)
     val ble=BleClient(app,scope)
-    val heart=BleClient(app,scope)
+    val heart=BleClient(app,scope,role="heart")
     val state=MutableStateFlow(ExerciseState())
     val finishedSession=MutableStateFlow(app.getSharedPreferences("preferences",Context.MODE_PRIVATE).getString("finished_detail_id",null))
     val prefs=repo.profilePreferences

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ble_searching_device">기기를 다시 찾는 중…</string>
+    <string name="ble_discovering">기기 서비스를 읽는 중…</string>
+    <string name="ble_initializing">연결을 초기화하는 중…</string>
+    <string name="ble_connection_pending_help">연결에 최대 약 90초가 걸릴 수 있습니다. 취소한 후 다시 시도할 수도 있습니다.</string>
+    <string name="ble_unavailable">블루투스를 사용할 수 없습니다. 블루투스를 켜고 다시 시도하세요.</string>
+    <string name="ble_scan_rate_limit">검색이 너무 잦습니다. 30초 후에 다시 시도하세요.</string>
+    <string name="ble_scan_failed">시스템에서 검색을 시작하지 못했습니다. 블루투스와 근처 기기 권한을 확인하세요.</string>
+    <string name="ble_connection_cancelled">연결을 취소했습니다. 언제든지 다시 연결할 수 있습니다.</string>
+    <string name="ble_connection_timeout">연결 시간이 초과되었습니다. 기기가 켜져 있고 가까이 있는지 확인하세요.</string>
+    <string name="ble_connection_failed">연결이 끊어졌거나 실패했습니다. 기기를 확인하고 다시 시도하세요.</string>
+</resources>

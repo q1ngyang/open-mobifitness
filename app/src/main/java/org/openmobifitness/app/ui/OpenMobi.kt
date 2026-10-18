@@ -150,7 +150,7 @@ private val lightColors=lightColorScheme(
     }
 }
 @Composable internal fun workoutTitle(workout: Workout): String = LocalContext.current.workoutName(workout)
-@Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "awaiting_data" -> R.string.awaiting_data; "subscription_failed" -> R.string.subscription_failed; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; else -> R.string.disconnected })
+@Composable private fun phase(value: String) = stringResource(when(value) { "ready" -> R.string.connected; "awaiting_data" -> R.string.awaiting_data; "subscription_failed" -> R.string.subscription_failed; "searching" -> R.string.ble_searching_device; "connecting" -> R.string.connecting; "discovering" -> R.string.discovering; "initializing" -> R.string.ble_initializing; else -> R.string.disconnected })
 @Composable private fun status(value: String) = stringResource(when(value) { "completed" -> R.string.completed; "interrupted" -> R.string.interrupted; "active" -> R.string.active; else -> R.string.stopped })
 private fun num(value: Double?)=WorkoutService.number(value)
 private fun date(value: String)=runCatching { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()).format(Instant.parse(value)) }.getOrDefault(value)

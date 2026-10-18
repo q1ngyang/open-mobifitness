@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ble_searching_device">デバイスを再検索中…</string>
+    <string name="ble_discovering">デバイスのサービスを読み取り中…</string>
+    <string name="ble_initializing">接続を初期化中…</string>
+    <string name="ble_connection_pending_help">接続には最大約90秒かかります。キャンセルして再試行することもできます。</string>
+    <string name="ble_unavailable">Bluetoothを利用できません。有効にして再試行してください。</string>
+    <string name="ble_scan_rate_limit">スキャンの回数が多すぎます。30秒待ってから再試行してください。</string>
+    <string name="ble_scan_failed">スキャンを開始できませんでした。Bluetoothと付近のデバイスの権限を確認してください。</string>
+    <string name="ble_connection_cancelled">接続をキャンセルしました。いつでも再接続できます。</string>
+    <string name="ble_connection_timeout">接続がタイムアウトしました。デバイスの電源が入り、近くにあることを確認してください。</string>
+    <string name="ble_connection_failed">接続が切断されたか失敗しました。デバイスを確認して再試行してください。</string>
+</resources>

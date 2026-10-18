@@ -39,11 +39,13 @@ class DiagnosticExportTest {
             do {
                 val fd=instrumentation.uiAutomation.executeShellCommand("cat /sdcard/Download/$name")
                 text=android.os.ParcelFileDescriptor.AutoCloseInputStream(fd).bufferedReader().use { it.readText() }
-                if(!text.startsWith("OpenMOBI diagnostic report 4")) Thread.sleep(200)
-            } while(!text.startsWith("OpenMOBI diagnostic report 4") && android.os.SystemClock.elapsedRealtime()<deadline)
-            assertTrue("The exported file must contain the diagnostic report",text.startsWith("OpenMOBI diagnostic report 4"))
+                if(!text.startsWith("OpenMOBI diagnostic report 5")) Thread.sleep(200)
+            } while(!text.startsWith("OpenMOBI diagnostic report 5") && android.os.SystemClock.elapsedRealtime()<deadline)
+            assertTrue("The exported file must contain the diagnostic report",text.startsWith("OpenMOBI diagnostic report 5"))
             assertTrue("The exported diagnostic report is bounded",text.toByteArray(Charsets.UTF_8).size<128*1024)
             assertTrue(text.contains("Version: ${BuildConfig.VERSION_NAME}")); assertFalse(text.contains("session_id,start_utc"))
+            assertTrue(text.contains("package=${BuildConfig.APPLICATION_ID}"))
+            assertTrue(text.contains("role=equipment"));assertTrue(text.contains("role=heart"));assertTrue(text.contains("scan=ScanTrace"))
             instrumentation.uiAutomation.executeShellCommand("rm /sdcard/Download/$name").close()
         }
     }

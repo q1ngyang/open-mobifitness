@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ble_searching_device">Gerät wird gesucht…</string>
+    <string name="ble_discovering">Gerätedienste werden gelesen…</string>
+    <string name="ble_initializing">Verbindung wird eingerichtet…</string>
+    <string name="ble_connection_pending_help">Der Verbindungsaufbau kann bis zu 90 Sekunden dauern. Du kannst abbrechen und es erneut versuchen.</string>
+    <string name="ble_unavailable">Bluetooth ist nicht verfügbar. Schalte es ein und versuche es erneut.</string>
+    <string name="ble_scan_rate_limit">Zu viele Suchvorgänge. Warte 30 Sekunden und versuche es erneut.</string>
+    <string name="ble_scan_failed">Android konnte die Suche nicht starten. Prüfe Bluetooth und die Berechtigung für Geräte in der Nähe.</string>
+    <string name="ble_connection_cancelled">Verbindung abgebrochen. Du kannst sie jederzeit erneut herstellen.</string>
+    <string name="ble_connection_timeout">Zeitüberschreitung. Prüfe, ob das Gerät eingeschaltet und in der Nähe ist, und versuche es erneut.</string>
+    <string name="ble_connection_failed">Verbindung unterbrochen oder fehlgeschlagen. Prüfe das Gerät und versuche es erneut.</string>
+</resources>

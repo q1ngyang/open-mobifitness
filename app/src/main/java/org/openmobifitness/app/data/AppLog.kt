@@ -56,16 +56,23 @@ object AppLog {
         val result=CompletableDeferred<String>(); queue.send(Command.Snapshot(result))
         val recent=result.await()
         val header=buildString {
-                appendLine("OpenMOBI diagnostic report 4")
-                appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                appendLine("OpenMOBI diagnostic report 5")
+                appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}); package=${BuildConfig.APPLICATION_ID}")
+                appendLine("Exported: ${Instant.now()}; monoMs=${android.os.SystemClock.elapsedRealtime()}")
                 appendLine("Android: ${Build.VERSION.SDK_INT}; manufacturer=${Build.MANUFACTURER}; model=${Build.MODEL}")
                 appendLine("Protocol trace enabled: ${c.display.packets.value}; simulated: ${c.state.value.demo}")
                 appendLine("Packet sequence: ${packetSequence.get()}; queue drops: ${dropped.get()}; bounded ring may discard oldest records")
-                listOf("equipment" to c.ble.state.value,"heart" to c.heart.state.value).forEach { (role,state) ->
+                listOf("equipment" to c.ble,"heart" to c.heart).forEach { (role,client) ->
+                    val state=client.state.value
+                    appendLine("  ${client.connectionTrace()}")
+                    appendLine("  scan=${client.scanTrace}; scanError=${client.scanError.value}")
                     appendLine("$role: ${state.phase} ${state.protocol} ${state.machine} range=${state.range} writable=${state.writable}")
                     appendLine("  subscriptions=${state.subscriptions} received=${state.receivedPackets} parsed=${state.parsedPackets} dataReceived=${state.dataReceived}")
                     appendLine("  lastPacketAgeMs=${state.lastReceiveAt.takeIf { it>0 }?.let { android.os.SystemClock.elapsedRealtime()-it }} controlFeedbackTimedOut=${state.controlTimedOut}")
-                    state.diagnostic.takeLast(64).forEach { appendLine(clean(it).take(160)) }
+                }
+                // Always include both connection/scan summaries before the bounded detail tail.
+                listOf(c.ble,c.heart).forEach { client ->
+                    client.state.value.diagnostic.takeLast(8).forEach { appendLine(clean(it).take(160)) }
                 }
         }
         // State header is bounded as well. Ring files together never exceed 96 KiB.

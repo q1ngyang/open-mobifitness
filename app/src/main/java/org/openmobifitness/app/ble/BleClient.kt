@@ -23,10 +23,15 @@ data class LinkState(
     val subscriptions: Int = 0, val lastReceiveAt: Long = 0, val controlTimedOut: Boolean = false,
     val resistanceFeedback: Boolean = true, val commandedResistance: Double? = null,
     val model: String = "", val deviceDetails: MobiDeviceDetails = MobiDeviceDetails(),
-    val metricTimes: MetricTimes = MetricTimes(), val foldPhase: String = "idle", val foldTarget: Int? = null
+    val metricTimes: MetricTimes = MetricTimes(), val foldPhase: String = "idle", val foldTarget: Int? = null,
+    val failure: String? = null
 )
 @SuppressLint("MissingPermission") // Entry points are gated by runtime permission checks; revoked permissions are caught.
-class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS,private val foldFeedbackTimeoutMs: Long=15000) {
+class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS,private val foldFeedbackTimeoutMs: Long=15000,
+    private val role: String="equipment", private val timeouts: ConnectionTimeouts=ConnectionTimeouts(),
+    private val connectionDispatcher: CoroutineDispatcher=Dispatchers.IO,
+    private val clock: ()->Long = { SystemClock.elapsedRealtime() }
+) {
     val state = MutableStateFlow(LinkState())
     val found = MutableStateFlow<List<FoundDevice>>(emptyList())
     val scanning = MutableStateFlow(false)
@@ -42,6 +47,25 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     var connectionId: Long = 0; private set
     var controlGeneration: Long = 0; private set
     private var scanJob: Job? = null
+    private var scanCallback: ScanCallback? = null
+    private var activeScanner: BluetoothLeScanner? = null
+    private var recoveryScan=false
+    private var scanNumber=0L
+    private val scanStarts=ArrayDeque<Long>()
+    private var scanBlockedUntil=0L
+    private val scanSeen=mutableSetOf<String>()
+    private val discovered=linkedMapOf<String,Pair<Long,BluetoothDevice>>()
+    private var disconnectedAt=Long.MIN_VALUE
+    val scanError=MutableStateFlow<String?>(null)
+    var scanTrace=ScanTrace(); private set
+    private data class ConnectionRequest(val id: Long,val device: FoundDevice,var retried: Boolean=false)
+    private var request: ConnectionRequest?=null
+    private var requestNumber=0L
+    private var overallJob: Job?=null
+    private var retryJob: Job?=null
+    private var openingConnection: Long?=null
+    fun connectionTrace()="role=$role attempt=$requestNumber connection=$connectionId pending=${request!=null} opening=${openingConnection!=null} failure=${state.value.failure}"
+
     private val operations = Mutex()
     private val controls = Mutex()
     private var pending: CompletableDeferred<Boolean>? = null
@@ -67,7 +91,10 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     private val callbackKinds=mutableSetOf<String>()
     private val rejectedFrames=mutableSetOf<String>()
     private val cccd = uuid("2902")
-    private fun log(value: String) { org.openmobifitness.app.data.AppLog.event("ble",value); state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160)) }
+    private fun log(value: String) {
+        org.openmobifitness.app.data.AppLog.event("ble","role=$role attempt=$requestNumber connection=$connectionId monoMs=${clock()} phase=${state.value.phase} $value")
+        state.value=state.value.copy(diagnostic=(state.value.diagnostic+value).takeLast(160))
+    }
     // Vendor energy uses the per-second calculation level and unrounded model watts.
     fun legacyEnergyPower(): Double? = mobi?.energyPower ?: mobiFtms?.energyPower
     fun legacyEnergyRate(): Double? = mobi?.energyRate ?: mobiFtms?.energyRate
@@ -96,41 +123,206 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     }
     fun available() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
     fun scan() {
-        stopScan(); found.value=emptyList()
-        runCatching {
-            check(available())
-            requireNotNull(adapter!!.bluetoothLeScanner).startScan(null,ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),scanner)
-            scanning.value=true
-            scanJob=scope.launch { delay(12_000); stopScan() }
-        }.onFailure { log("scan_unavailable"); scanning.value=false }
+        if(scanning.value || state.value.connectionPending) { log("scan_ignored:busy"); return }
+        startScan(false)
     }
-    fun stopScan() { scanJob?.cancel(); runCatching { adapter?.bluetoothLeScanner?.stopScan(scanner) }; scanning.value=false }
-    private val scanner=object: ScanCallback() {
-        override fun onScanResult(callbackType: Int,result: ScanResult) { scope.launch {
-            val name=runCatching { result.scanRecord?.deviceName ?: result.device.name ?: "" }.getOrDefault("")
-            val services=result.scanRecord?.serviceUuids?.map { it.uuid.short() }?.toSet() ?: emptySet()
-            if(name.startsWith("MB-",true) || name.startsWith("MOBI",true) || services.any { it in MobiProfiles.scanServices }) {
-                val item=FoundDevice(result.device.address,name.take(120),result.rssi,"180d" in services && MobiProfiles.select(name,services)==Protocol.UNKNOWN && !name.startsWith("MB-") && !name.startsWith("MOBI"))
-                found.value=(found.value.filterNot { it.address==item.address }+item).sortedByDescending { it.rssi }.take(80)
+    private fun startScan(forConnection: Boolean): Boolean {
+        stopScanInternal("replaced")
+        found.value=emptyList(); scanError.value=null; scanSeen.clear()
+        val now=clock()
+        while(scanStarts.isNotEmpty() && now-scanStarts.first()>=30_000) scanStarts.removeFirst()
+        scanTrace=ScanTrace(id=++scanNumber,purpose=if(forConnection) "reconnect" else "browse",startedAt=now)
+        if(now<scanBlockedUntil || scanStarts.size>=4) {
+            scanError.value="scan_rate_limit";scanTrace=scanTrace.copy(endedAt=now,outcome="rate_limit")
+            log("scan_blocked:rate_limit id=$scanNumber");return false
+        }
+        val callback=object: ScanCallback() {
+            override fun onScanResult(callbackType: Int,result: ScanResult) { val owner=this;scope.launch {
+                if(owner !== scanCallback) return@launch
+                acceptScan(result)
+            } }
+            override fun onBatchScanResults(results: MutableList<ScanResult>) { val owner=this;scope.launch {
+                if(owner !== scanCallback) return@launch
+                results.forEach { if(owner === scanCallback) acceptScan(it) }
+            } }
+            override fun onScanFailed(errorCode: Int) { val owner=this;scope.launch {
+                if(owner !== scanCallback) return@launch
+                val recover=recoveryScan
+                scanError.value="scan_error:$errorCode"
+                if(errorCode==6) scanBlockedUntil=clock()+30_000
+                log("scan_error:$errorCode id=${scanTrace.id}")
+                stopScanInternal("error:$errorCode")
+                if(recover) openSavedTarget("scan_failed")
+            } }
+        }
+        // Each scan owns a callback; late results from a stopped scan cannot affect its successor.
+        scanCallback=callback;recoveryScan=forConnection
+        return try {
+            check(available())
+            val scanner=requireNotNull(adapter?.bluetoothLeScanner)
+            activeScanner=scanner;scanning.value=true
+            scanTrace=scanTrace.copy(active=true,outcome="running")
+            scanStarts.addLast(now)
+            log("scan_start:id=$scanNumber purpose=${scanTrace.purpose} target=${forConnection}")
+            scanner.startScan(null,ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),callback)
+            if(scanCallback===callback) scanJob=scope.launch {
+                delay(if(forConnection) timeouts.scanMs else 12_000)
+                if(scanCallback===callback) {
+                    stopScanInternal("timeout")
+                    if(forConnection) openSavedTarget("scan_no_match")
+                }
             }
-        } }
-        override fun onScanFailed(errorCode: Int) { scope.launch { scanning.value=false; log("scan_error:$errorCode") } }
+            true
+        } catch(e: Exception) {
+            scanError.value=if(e is SecurityException) "permission_revoked" else "scan_unavailable"
+            log("${scanError.value} type=${e.javaClass.simpleName}")
+            stopScanInternal("unavailable");false
+        }
+    }
+    private fun acceptScan(result: ScanResult) {
+        runCatching {
+            val address=result.device.address
+            val name=result.scanRecord?.deviceName?.takeIf { it.isNotBlank() } ?: result.device.name.orEmpty()
+            val services=result.scanRecord?.serviceUuids?.map { it.uuid.short() }?.toSet().orEmpty()
+            val target=recoveryScan && address==request?.device?.address
+            val known=address==state.value.address
+            val accepted=target || known || name.startsWith("MB-",true) || name.startsWith("MOBI",true) ||
+                name.startsWith("AT-R",true) || name.startsWith("Fibonacci",true) || services.any { it in MobiProfiles.scanServices }
+            val first=scanSeen.add(address)
+            scanTrace=scanTrace.copy(reports=scanTrace.reports+1,accepted=scanTrace.accepted+if(accepted) 1 else 0,
+                uniqueDevices=scanSeen.size,targetSeen=scanTrace.targetSeen || target)
+            if(first && (accepted || scanSeen.size<=8)) log("scan_result:id=${scanTrace.id} candidate=$accepted target=$target namePresent=${name.isNotBlank()} services=${services.sorted().joinToString(",")} rssi=${result.rssi}")
+            if(!accepted) return
+            discovered.remove(address);discovered[address]=clock() to result.device
+            while(discovered.size>80) discovered.remove(discovered.keys.first())
+            val knownName=name.ifBlank { request?.device?.takeIf { it.address==address }?.name ?: state.value.name.takeIf { known }.orEmpty() }
+            val heart=if(target) request!!.device.heart else "180d" in services && MobiProfiles.select(knownName,services)==Protocol.UNKNOWN && !knownName.startsWith("MB-",true) && !knownName.startsWith("MOBI",true)
+            val item=FoundDevice(address,knownName.take(120),result.rssi,heart)
+            found.value=(found.value.filterNot { it.address==address }+item).sortedByDescending { it.rssi }.take(80)
+            if(target) { stopScanInternal("target_found");openGatt(result.device,"advertisement") }
+        }.onFailure { log("scan_result_error:${it.javaClass.simpleName}") }
+    }
+    fun stopScan() {
+        val cancelConnection=recoveryScan
+        stopScanInternal("user")
+        if(cancelConnection) finishFailure("connection_cancelled")
+    }
+    private fun stopScanInternal(reason: String) {
+        scanJob?.cancel();scanJob=null
+        val callback=scanCallback;val scanner=activeScanner
+        scanCallback=null;activeScanner=null;recoveryScan=false;scanning.value=false
+        if(callback!=null) {
+            runCatching { scanner?.stopScan(callback) }.onFailure { log("scan_stop_error:${it.javaClass.simpleName}") }
+            scanTrace=scanTrace.copy(active=false,endedAt=clock(),outcome=reason)
+            log("scan_stop:id=${scanTrace.id} reason=$reason reports=${scanTrace.reports} accepted=${scanTrace.accepted} unique=${scanTrace.uniqueDevices} targetSeen=${scanTrace.targetSeen}")
+        }
     }
     fun connect(device: FoundDevice) {
-        disconnect(); stopScan()
-        state.value=LinkState(name=device.name,address=device.address,phase="connecting",machine=if(device.heart) Machine.HEART else Protocols.machine(device.name))
-        try {
-            val remote=adapter?.getRemoteDevice(device.address) ?: error("bluetooth_unavailable")
-            gatt=remote.connectGatt(context,false,callback,BluetoothDevice.TRANSPORT_LE)
-            connectionJob=scope.launch { delay(20_000); if(state.value.phase!="ready") fail("connection_timeout") }
-        } catch(e: Exception) { fail("connection_failed") }
+        if(request?.device?.address==device.address && state.value.connectionPending) { log("connect_ignored:already_pending");return }
+        val fresh=discovered[device.address]?.takeIf { clock()-it.first in 0..30_000 && it.first>=disconnectedAt }?.second
+        disconnect("replaced");stopScanInternal("connect")
+        request=ConnectionRequest(++requestNumber,device)
+        state.value=LinkState(name=device.name,address=device.address,phase="searching",machine=if(device.heart) Machine.HEART else Protocols.machine(device.name))
+        log("connect_request:freshAdvertisement=${fresh!=null} bluetoothEnabled=${available()}")
+        val expected=requestNumber
+        overallJob=scope.launch {
+            delay(timeouts.totalMs)
+            if(request?.id==expected) finishFailure("connection_total_timeout")
+        }
+        if(!available()) { finishFailure("bluetooth_unavailable");return }
+        if(fresh!=null) openGatt(fresh,"recent_advertisement") else discoverTarget()
     }
-    fun disconnect() {
+    private fun discoverTarget() {
+        if(request==null) return
+        state.value=state.value.copy(phase="searching",failure=null)
+        log("stage:searching")
+        if(!startScan(true)) {
+            if(scanError.value=="permission_revoked") finishFailure("permission_revoked")
+            else openSavedTarget("scan_unavailable")
+        }
+    }
+    private fun openSavedTarget(reason: String) {
+        val target=request?.device ?: return
+        log("connect_fallback:$reason")
+        try { openGatt(requireNotNull(adapter?.getRemoteDevice(target.address)),"saved_address") }
+        catch(e: Exception) { fail(if(e is SecurityException) "permission_revoked" else "bluetooth_unavailable") }
+    }
+    private fun armDeadline(phase: String,millis: Long) {
+        connectionJob?.cancel()
+        val generation=connectionId
+        log("deadline_armed:phase=$phase budgetMs=$millis")
+        connectionJob=scope.launch {
+            delay(millis)
+            if(generation==connectionId && state.value.phase==phase) fail("${phase}_timeout")
+        }
+    }
+    private fun openGatt(remote: BluetoothDevice,source: String) {
+        val active=request ?: return
+        state.value=state.value.copy(phase="connecting",failure=null)
+        val generation=connectionId
+        openingConnection=generation
+        log("connect_call:begin source=$source type=${runCatching { remote.type }.getOrDefault(-1)} bond=${runCatching { remote.bondState }.getOrDefault(-1)}")
+        armDeadline("connecting",timeouts.connectMs)
+        val started=clock()
+        // Binder registration can stall on a handset. Keep the UI and deadlines running;
+        // a late result belongs to its original generation and must be closed.
+        scope.launch(connectionDispatcher) {
+            val result=runCatching { remote.connectGatt(context,false,connectionCallback(generation,active.id),BluetoothDevice.TRANSPORT_LE) }
+            withContext(NonCancellable+scope.coroutineContext.minusKey(Job)) {
+                if(!scope.isActive || connectionId!=generation || request?.id!=active.id && gatt!==result.getOrNull()) {
+                    result.getOrNull()?.let(::closeGatt)
+                    log("connect_call:late_result generation=$generation durationMs=${clock()-started}")
+                } else {
+                    openingConnection=null
+                    result.fold({ created ->
+                        log("connect_call:return durationMs=${clock()-started} gatt=${created!=null}")
+                        if(created==null) fail("connection_failed")
+                        else if(gatt==null) gatt=created
+                        else if(gatt!==created) { closeGatt(created);fail("connection_identity_mismatch") }
+                    },{ error ->
+                        log("connect_call:exception type=${error.javaClass.simpleName} durationMs=${clock()-started}")
+                        fail(if(error is SecurityException) "permission_revoked" else "connection_failed")
+                    })
+                }
+            }
+        }
+    }
+    private fun connectionCallback(generation: Long,attempt: Long)=object: BluetoothGattCallback() {
+        override fun onConnectionStateChange(g: BluetoothGatt,status: Int,newState: Int) { scope.launch {
+            if(connectionId!=generation || request?.id!=attempt && g!==gatt) {
+                log("connection_callback:stale generation=$generation status=$status newState=$newState");return@launch
+            }
+            // Android may call back before connectGatt returns to the IO worker.
+            if(gatt==null && openingConnection==generation) gatt=g
+            callback.onConnectionStateChange(g,status,newState)
+        } }
+        override fun onServicesDiscovered(g: BluetoothGatt,status: Int)=callback.onServicesDiscovered(g,status)
+        override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int)=callback.onCharacteristicRead(g,c,value,status)
+        @Deprecated("Legacy callback") override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,status: Int)=callback.onCharacteristicRead(g,c,status)
+        override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray)=callback.onCharacteristicChanged(g,c,value)
+        @Deprecated("Legacy callback") override fun onCharacteristicChanged(g: BluetoothGatt,c: BluetoothGattCharacteristic)=callback.onCharacteristicChanged(g,c)
+        override fun onCharacteristicWrite(g: BluetoothGatt,c: BluetoothGattCharacteristic,status: Int)=callback.onCharacteristicWrite(g,c,status)
+        override fun onDescriptorWrite(g: BluetoothGatt,d: BluetoothGattDescriptor,status: Int)=callback.onDescriptorWrite(g,d,status)
+        override fun onMtuChanged(g: BluetoothGatt,mtu: Int,status: Int)=callback.onMtuChanged(g,mtu,status)
+    }
+    fun disconnect()=disconnect("user")
+    private fun disconnect(reason: String) {
+        request=null;overallJob?.cancel();overallJob=null;retryJob?.cancel();retryJob=null
+        if(recoveryScan) stopScanInternal("connection_cancelled")
+        closeTransport(reason)
+    }
+    private fun closeGatt(old: BluetoothGatt) {
+        // Always release the GATT client even if disconnect itself throws.
+        runCatching { old.disconnect() }.onFailure { log("gatt_disconnect_error:${it.javaClass.simpleName}") }
+        runCatching { old.close() }.onFailure { log("gatt_close_error:${it.javaClass.simpleName}") }
+    }
+    private fun closeTransport(reason: String) {
+        log("connection_close:reason=$reason gatt=${gatt!=null} opening=${openingConnection!=null}")
+        val old=gatt;gatt=null;openingConnection=null;disconnectedAt=clock()
         foldJob?.cancel(); recentMetrics.clear()
         invalidateControls()
-        if(gatt!=null) org.openmobifitness.app.data.AppLog.event("disconnect",state.value.protocol.name)
         connectionId++; connectionJob?.cancel(); dataWatchdog?.cancel(); feedbackJob?.cancel(); periodicJob?.cancel(); initializationJob?.cancel(); pending?.complete(false); indication?.complete(false)
-        val old=gatt; gatt=null; runCatching { old?.disconnect(); old?.close() }
+        old?.let(::closeGatt)
         mobi=null; mobiFtms=null; ftmsFeature=false; granted=false; unlocked=false; legacyProfile=null; lastWrite=0
         huantongInitialized=false; huantongLevel=1; controlNotify=false; officialFtms=false
         lastTrainingStatus=null
@@ -139,25 +331,61 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         callbackKinds.clear(); rejectedFrames.clear()
         state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,resistanceAt=0,heartAt=0,requested=null,busy=false,writable=false,dataReceived=false,controlTimedOut=false,commandedResistance=null,deviceDetails=MobiDeviceDetails(),foldPhase="idle",foldTarget=null)
     }
-    private fun fail(reason: String) { log(reason); disconnect() }
+    private fun finishFailure(reason: String) {
+        log("connection_failed:reason=$reason")
+        disconnect("failure:$reason")
+        state.value=state.value.copy(failure=reason)
+    }
+    private fun fail(reason: String) {
+        log(reason)
+        val active=request
+        if(active!=null && !active.retried && state.value.phase in setOf("connecting","discovering") &&
+            reason!="permission_revoked" && available()) {
+            active.retried=true
+            log("connection_recovery:reason=$reason retry=1")
+            closeTransport("recovery:$reason")
+            state.value=state.value.copy(phase="searching",failure=null)
+            retryJob=scope.launch {
+                delay(timeouts.retryDelayMs)
+                if(request===active) discoverTarget()
+            }
+        } else finishFailure(reason)
+    }
     private fun complete(key: String,status: Int) {
         if(status!=BluetoothGatt.GATT_SUCCESS) log("gatt_status:$key:$status")
         if(pendingKey==key) pending?.complete(status==BluetoothGatt.GATT_SUCCESS)
     }
     private val callback=object: BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt,status: Int,newState: Int) { scope.launch {
+            log("connection_state:status=$status newState=$newState current=${g===gatt}")
             if(g !== gatt) return@launch
             if(status!=BluetoothGatt.GATT_SUCCESS || newState==BluetoothProfile.STATE_DISCONNECTED) { fail("disconnected:$status"); return@launch }
-            if(newState==BluetoothProfile.STATE_CONNECTED) { state.value=state.value.copy(phase="discovering"); if(!runCatching { g.discoverServices() }.getOrDefault(false)) fail("discovery_failed") }
+            if(newState==BluetoothProfile.STATE_CONNECTED && state.value.phase=="connecting") {
+                state.value=state.value.copy(phase="discovering")
+                armDeadline("discovering",timeouts.discoveryMs)
+                val started=runCatching { g.discoverServices() }.getOrDefault(false)
+                log("service_discovery:started=$started")
+                if(!started) fail("discovery_failed")
+            }
         } }
         override fun onServicesDiscovered(g: BluetoothGatt,status: Int) { scope.launch {
+            log("services_discovered:status=$status current=${g===gatt}")
             if(g !== gatt) return@launch
             if(status!=0) { fail("discovery_failed:$status"); return@launch }
-            // Discovery has finished. Each queued operation now has its own timeout;
-            // a large V2 topology must not inherit the original connection deadline.
-            connectionJob?.cancel()
+            if(state.value.phase!="discovering") { log("services_discovered:duplicate_ignored");return@launch }
+            state.value=state.value.copy(phase="initializing")
+            armDeadline("initializing",timeouts.initializationMs)
             initializationJob?.cancel()
-            initializationJob=scope.launch { try { initialize(g) } catch(e: SecurityException) { fail("permission_revoked") } }
+            initializationJob=scope.launch {
+                try { initialize(g) }
+                catch(e: CancellationException) { throw e }
+                catch(e: Exception) {
+                    if(g===gatt) {
+                        log("initialization_exception:${e.javaClass.simpleName}")
+                        fail(if(e is SecurityException) "permission_revoked" else "initialization_failed")
+                    }
+                }
+            }
         } }
         override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,value: ByteArray,status: Int) = receivedRead(g,c,value.copyOf(),status,"read_value")
         @Deprecated("Legacy callback") override fun onCharacteristicRead(g: BluetoothGatt,c: BluetoothGattCharacteristic,status: Int) {
@@ -187,13 +415,15 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         operationEndedAt?.let { delay((it+operationGapMs-SystemClock.elapsedRealtime()).coerceAtLeast(0)) }
         if(current!==gatt) return@withLock false
         val result=CompletableDeferred<Boolean>(); pending=result; pendingKey=key
+        val started=clock();log("gatt_operation:begin key=$key")
         try {
             if(!start(current)) { log("gatt_rejected:$key"); return@withLock false }
             withTimeout(6000) { result.await() }.also { if(!it) log("gatt_failed:$key") }
-        } catch(e: TimeoutCancellationException) { if(optional) log("gatt_timeout:$key") else fail("gatt_timeout:$key"); false }
+        } catch(e: TimeoutCancellationException) { if(optional) log("gatt_timeout:$key") else if(gatt===current) fail("gatt_timeout:$key"); false }
         catch(e: CancellationException) { if(gatt===current) fail("gatt_cancelled:$key"); throw e }
-        catch(e: SecurityException) { fail("permission_revoked"); false }
+        catch(e: SecurityException) { if(gatt===current) fail("permission_revoked"); false }
         finally {
+            log("gatt_operation:end key=$key durationMs=${clock()-started} current=${current===gatt}")
             if(current===gatt) operationEndedAt=SystemClock.elapsedRealtime()
             if(pending===result) { pending=null; pendingKey=null }
         }
@@ -293,11 +523,14 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         updateCapabilities()
         initialized=true
         queryFoldState()
+        if(g!==gatt) return
         // Aggregate-upload devices may start reporting only after the explicit training-start command.
         val canStartReporting=protocol==Protocol.V2 && mobi?.machine!=Machine.UNKNOWN && mobi?.uploadMode in 2..3 && subscriptions>0 && characteristic("8800","880f")!=null && characteristic("8800","88ff")!=null
-        connectionJob?.cancel(); state.value=state.value.copy(
+        connectionJob?.cancel();overallJob?.cancel();overallJob=null;request=null;retryJob?.cancel();retryJob=null
+        state.value=state.value.copy(
             phase=if(state.value.dataReceived || canStartReporting) "ready" else if(subscriptions>0) "awaiting_data" else "subscription_failed",
-            subscriptions=subscriptions)
+            subscriptions=subscriptions,failure=if(subscriptions==0) "subscription_failed" else null)
+        log("connection_result:phase=${state.value.phase}")
         log("initialization:subscriptions=$subscriptions data=${state.value.dataReceived} phase=${state.value.phase}")
         dataWatchdog=scope.launch {
             delay(10_000)
