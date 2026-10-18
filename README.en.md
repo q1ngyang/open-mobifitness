@@ -8,15 +8,15 @@ OpenMOBI is an independent Android app for using Mobi fitness equipment after th
 
 ## Download
 
-**[Download v0.3.3 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.3/OpenMOBI-0.3.3.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.3.md#english)
+**[Download v0.3.4 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.4/OpenMOBI-0.3.4.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.4.md#english)
 
-**v0.3.3** fixes known issues. [Profile and upgrade guide](docs/V030_GUIDE.md#english)
+**v0.3.4** adds plan-completion choices, manual continuation and equipment folding, with protocol and cumulative-data fixes. [Profile and upgrade guide](docs/V030_GUIDE.md#english)
 
 Requires Android 10 or later on a 64-bit phone or tablet. It can be installed alongside the original app.
 
 **For everyday use, choose the APK without `debug` in its filename.** The Debug app includes simulated equipment for testing and keeps its data separate from the regular app.
 
-So far, user hardware feedback covers **Mobi MB-EP ellipticals using the V1 protocol**; other models have no hardware feedback yet. This version does not start treadmill motors or control their speed or incline. [Check device support](docs/COMPATIBILITY.md#english)
+Existing hardware evidence covers **V1 MB-EP ellipticals** and the AT-R66146 protocol report in Issue #1; other models have not been individually tested. This version does not start treadmill motors or control their speed or incline. [Check device support](docs/COMPATIBILITY.md#english)
 
 ## What you can do
 

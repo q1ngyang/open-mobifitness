@@ -39,7 +39,10 @@ object Protocols {
         ResistanceRange(p.s16() / 10.0, p.s16() / 10.0, p.u16() / 10.0)
     }.getOrNull()
     fun mobiFtmsRange(data: ByteArray): ResistanceRange? = runCatching {
-        require(data.size>=4); val p=Packet(data)
+        // A complete FTMS characteristic declares its increment. Some legacy
+        // MOBI devices expose only four bytes, which use the vendor integer rule.
+        if(data.size==6) return ftmsRange(data)
+        require(data.size==4); val p=Packet(data)
         ResistanceRange((p.s16()*0.1).roundToInt().toDouble(),(p.s16()*0.1).roundToInt().toDouble())
     }.getOrNull()
     fun v2Range(data: ByteArray): ResistanceRange? = runCatching {
@@ -156,7 +159,8 @@ object Protocols {
             stepRate=if(characteristic!="2acd") steps else vendorTreadmillFrequency.takeIf { handlerValues },
             strideM=if(handlerValues && characteristic=="2acd" && (speed ?: 0.0)>0 && (vendorTreadmillFrequency ?: 0.0)>0)
                 speed!!*6/vendorTreadmillFrequency!! else null,
-            stepCount=steps?.toInt()?.takeIf { characteristic=="2acd" },deviceDurationSec=duration)
+            stepCount=steps?.toInt()?.takeIf { characteristic=="2acd" },deviceDurationSec=duration,
+            counterModuli=mapOf(MetricId.DISTANCE to 16777216.0,MetricId.CALORIES to 65536.0,MetricId.STROKES to 65536.0,MetricId.STEP_RATE to 16777216.0)).validated()
     }.getOrNull()
 
     /** MOBI's cross-trainer handler accepts both two- and three-byte flag headers.
@@ -174,6 +178,6 @@ object Protocols {
         val headers=if(preferThree) listOf(3,2) else listOf(2,3)
         val header=headers.firstOrNull { body+it==data.size } ?: return null
         val standard=if(header==3) data else data.copyOfRange(0,2)+byteArrayOf(0)+data.copyOfRange(2,data.size)
-        return ftmsData(characteristic,standard,officialRounding=true,handlerValues=handlerValues)?.let { it.copy(cadence=it.stepRate) }
+        return ftmsData(characteristic,standard,officialRounding=true,handlerValues=handlerValues)?.let { it.copy(cadence=it.stepRate).validated() }
     }
 }

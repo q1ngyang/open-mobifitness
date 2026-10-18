@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_finished">Training plan completed</string>
+    <string name="plan_finished_subtitle">%1$s · %2$d / %2$d stages</string>
+    <string name="plan_choice_help">Recording is paused. Choose what to do next.</string>
+    <string name="plan_view_details">Finish and view details</string>
+    <string name="plan_continue_manual">Continue · Manual control</string>
+    <string name="plan_continue">Continue exercising</string>
+    <string name="plan_same_record">Continued exercise stays in this recording.</string>
+    <string name="plan_pause_equipment">Pausing recording does not stop the equipment.</string>
+    <string name="plan_saving">Saving…</string>
+    <string name="plan_save_error">Could not save. Your recording is paused. Retry or continue.</string>
+    <string name="manual_continuation">Continuing manually</string>
+    <string name="plan_time">Plan time</string>
+    <string name="manual_time">Additional time</string>
+    <string name="fold_title">Fold / unfold</string>
+    <string name="fold_action">Fold / unfold equipment</string>
+    <string name="fold_confirm">Change equipment position?</string>
+    <string name="fold_help">Step off the equipment and clear the surrounding area. Stay connected while it folds or unfolds.</string>
+    <string name="fold_ready">Equipment state received</string>
+    <string name="fold_unknown">Waiting for equipment state</string>
+    <string name="fold_pending">Command sent · Waiting for feedback</string>
+    <string name="fold_timeout">No completion feedback. Read the state before trying again.</string>
+    <string name="fold_blocked">Available after ending exercise and stopping the equipment.</string>
+    <string name="fold_refresh">Read state again</string>
+    <string name="fold_failed">Command was not confirmed. Read the equipment state again.</string>
+</resources>

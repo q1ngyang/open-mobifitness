@@ -1,0 +1,9 @@
+// Opt-in characterization probes; excluded from the normal regression suite.
+gradle.beforeProject { project ->
+    if (project.path == ':app') {
+        project.plugins.withId('com.android.application') {
+            project.android.sourceSets.getByName('test').kotlin.srcDir(
+                project.rootProject.file('tools/protocol-audit/src'))
+        }
+    }
+}

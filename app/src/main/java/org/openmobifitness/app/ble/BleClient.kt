@@ -22,10 +22,11 @@ data class LinkState(
     val dataReceived: Boolean = false, val receivedPackets: Int = 0, val parsedPackets: Int = 0,
     val subscriptions: Int = 0, val lastReceiveAt: Long = 0, val controlTimedOut: Boolean = false,
     val resistanceFeedback: Boolean = true, val commandedResistance: Double? = null,
-    val model: String = "", val deviceDetails: MobiDeviceDetails = MobiDeviceDetails()
+    val model: String = "", val deviceDetails: MobiDeviceDetails = MobiDeviceDetails(),
+    val metricTimes: MetricTimes = MetricTimes(), val foldPhase: String = "idle", val foldTarget: Int? = null
 )
 @SuppressLint("MissingPermission") // Entry points are gated by runtime permission checks; revoked permissions are caught.
-class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS) {
+class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS,private val foldFeedbackTimeoutMs: Long=15000) {
     val state = MutableStateFlow(LinkState())
     val found = MutableStateFlow<List<FoundDevice>>(emptyList())
     val scanning = MutableStateFlow(false)
@@ -34,6 +35,8 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     private var connectionJob: Job? = null
     private var dataWatchdog: Job? = null
     private var feedbackJob: Job? = null
+    private var foldJob: Job? = null
+    private val recentMetrics=ArrayDeque<Pair<Long,LinkState>>()
     private var periodicJob: Job? = null
     private var initializationJob: Job? = null
     var connectionId: Long = 0; private set
@@ -69,14 +72,21 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     fun legacyEnergyPower(): Double? = mobi?.energyPower ?: mobiFtms?.energyPower
     fun legacyEnergyRate(): Double? = mobi?.energyRate ?: mobiFtms?.energyRate
     fun resetTrainingCalculations() { mobi?.resetTrainingCalculations(); mobiFtms?.resetTrainingCalculations() }
+    fun hardwareRunning() = mobi?.machineStatus==1 || mobiFtms?.machineStatus==1
     fun activeSecond() { mobi?.activeSecond(); mobiFtms?.activeSecond() }
+    fun freshMetrics(now: Long): Metrics = state.value.let { it.metricTimes.fresh(it.metrics,now,it.motionAt,it.heartAt) }
+    /** A delayed timed-plan boundary must not consume packets received after its deadline. */
+    fun metricsAt(at: Long): Metrics {
+        val snapshot=recentMetrics.lastOrNull { it.first<=at }?.second ?: return Metrics()
+        return snapshot.metricTimes.fresh(snapshot.metrics,at,snapshot.motionAt,snapshot.heartAt)
+    }
     /** Cancel intent, not the current GATT operation: aborting an in-flight write tears down GATT. */
     fun invalidateControls() {
         controlGeneration++
         feedbackJob?.cancel()
         state.value=state.value.copy(requested=null,controlTimedOut=false)
     }
-    fun clearUserContext() { invalidateControls(); resetTrainingCalculations(); state.value=state.value.copy(metrics=Metrics(),motionAt=0,heartAt=0) }
+    fun clearUserContext() { invalidateControls(); resetTrainingCalculations(); recentMetrics.clear(); state.value=state.value.copy(metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,heartAt=0) }
     /** Start required live reporting once. App recording/pause does not own this lifecycle. */
     suspend fun beginLiveUse(): Boolean = when {
         state.value.machine==Machine.TREADMILL -> true
@@ -116,6 +126,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         } catch(e: Exception) { fail("connection_failed") }
     }
     fun disconnect() {
+        foldJob?.cancel(); recentMetrics.clear()
         invalidateControls()
         if(gatt!=null) org.openmobifitness.app.data.AppLog.event("disconnect",state.value.protocol.name)
         connectionId++; connectionJob?.cancel(); dataWatchdog?.cancel(); feedbackJob?.cancel(); periodicJob?.cancel(); initializationJob?.cancel(); pending?.complete(false); indication?.complete(false)
@@ -126,7 +137,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         initialized=false; foldStateQueried=false
         operationEndedAt=null
         callbackKinds.clear(); rejectedFrames.clear()
-        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),motionAt=0,resistanceAt=0,heartAt=0,requested=null,busy=false,writable=false,dataReceived=false,controlTimedOut=false,commandedResistance=null,deviceDetails=MobiDeviceDetails())
+        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,resistanceAt=0,heartAt=0,requested=null,busy=false,writable=false,dataReceived=false,controlTimedOut=false,commandedResistance=null,deviceDetails=MobiDeviceDetails(),foldPhase="idle",foldTarget=null)
     }
     private fun fail(reason: String) { log(reason); disconnect() }
     private fun complete(key: String,status: Int) {
@@ -301,23 +312,67 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             Protocol.V2 -> m?.canWriteResistance==true && characteristic("8800","880f")!=null && characteristic("8800","88ff")!=null
             Protocol.V1 -> m?.canWriteResistance==true && characteristic("ffe0","ffe3")!=null
             Protocol.HUANTONG -> huantongInitialized && characteristic("fff0","fff2")!=null
-            Protocol.FTMS -> state.value.range!=null && ftmsFeature && (controlNotify || officialFtms) && characteristic("1826","2ad9")!=null
+            Protocol.FTMS -> state.value.range!=null && (!officialFtms || state.value.range!!.max<=25.5) && ftmsFeature && (controlNotify || officialFtms) && characteristic("1826","2ad9")!=null
             else -> false
         }
         state.value=state.value.copy(writable=writable && state.value.machine in setOf(Machine.BIKE,Machine.ELLIPTICAL,Machine.ROWER))
     }
     private fun queryFoldState() {
         val m=mobi ?: return
-        if(!initialized || foldStateQueried || m.protocol!=Protocol.V1 || !m.details.supportFold) return
+        if(!initialized || foldStateQueried || !m.details.supportFold) return
         foldStateQueried=true
         val connection=connectionId
         scope.launch { controls.withLock {
-            if(connection==connectionId) write("ffe0","ffed",MobiCommands.v1Treadmill(0,0))
+            if(connection==connectionId) {
+                if(m.protocol==Protocol.V1) write("ffe0","ffed",MobiCommands.v1Treadmill(0,0)) { connection==connectionId }
+                else characteristic("8900","8902")?.takeIf { it.properties and BluetoothGattCharacteristic.PROPERTY_READ!=0 }?.let { read(it) }
+            }
         } }
+    }
+    fun refreshFoldState() {
+        if(state.value.phase!="ready" || !state.value.deviceDetails.supportFold || state.value.foldPhase in setOf("sending","waiting","reading")) return
+        val connection=connectionId
+        foldJob?.cancel()
+        state.value=state.value.copy(foldPhase="reading",foldTarget=null)
+        foldJob=scope.launch {
+            val ok=controls.withLock {
+                if(connection!=connectionId) false
+                else if(state.value.protocol==Protocol.V1) write("ffe0","ffed",MobiCommands.v1Treadmill(0,0)) { connection==connectionId }
+                else characteristic("8900","8902")?.takeIf { it.properties and BluetoothGattCharacteristic.PROPERTY_READ!=0 }?.let { read(it) } ?: false
+            }
+            if(connection!=connectionId) return@launch
+            if(ok && state.value.foldPhase=="reading") delay(8000)
+            if(connection==connectionId && state.value.foldPhase=="reading") state.value=state.value.copy(foldPhase="timeout")
+        }
+    }
+    /** Validate the reviewed state again at the actual GATT write, after queueing. */
+    suspend fun fold(expected: Int,connection: Long,allowed: ()->Boolean): Boolean = controls.withLock {
+        val s=state.value
+        if(s.phase!="ready" || !s.deviceDetails.supportFold || expected !in 0..1 || connection!=connectionId || !allowed() || s.foldPhase!="idle" || s.deviceDetails.foldedState!=expected) return@withLock false
+        val target=1-expected
+        val valid={ connection==connectionId && allowed() && state.value.deviceDetails.foldedState==expected }
+        foldJob?.cancel()
+        state.value=s.copy(foldPhase="sending",foldTarget=target)
+        val ok=when(s.protocol) {
+            Protocol.V1 -> write("ffe0","ffed",MobiCommands.v1Treadmill(7,target),valid)
+            Protocol.V2 -> write("8900","8903",MobiCommands.v2Fold(expected),valid)
+            else -> false
+        }
+        if(connection!=connectionId) return@withLock false
+        if(!ok) { state.value=state.value.copy(foldPhase="error",foldTarget=null); return@withLock false }
+        // A transport acknowledgement is not mechanical completion. A matching sensor response is required.
+        if(state.value.foldTarget!=null) {
+            state.value=state.value.copy(foldPhase="waiting")
+            foldJob=scope.launch {
+                delay(foldFeedbackTimeoutMs)
+                if(connection==connectionId && state.value.foldTarget==target) state.value=state.value.copy(foldPhase="timeout",foldTarget=null)
+            }
+        }
+        true
     }
     private fun receive(id: UUID,data: ByteArray) {
         val short=id.short(); val now=SystemClock.elapsedRealtime()
-        if(short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8802","8805","8806","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
+        if(short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8801","8802","8803","8804","8805","8806","8901","8902","2a19","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
             org.openmobifitness.app.data.AppLog.packet("rx",short,data)
         val sensor=short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8814","2ad1","2ad2","2ace","2acd","2a37","fff1")
         if(sensor) {
@@ -335,6 +390,11 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 if(short=="880e" && data.isNotEmpty()) lastTrainingStatus=null
                 motion=mobi?.lastMotion==true
                 updateCapabilities()
+                val foldResponse=(short=="8902" && data.size>=3 && data[0].toInt()==3 && data[1].toInt()==1) ||
+                    (short in setOf("ffe1","ffe4","ffea","ffeb","fff4") && data.size>=4 && data[0].toInt() and 255==0xae && data[1].toInt()==1)
+                if(foldResponse && (state.value.foldPhase in setOf("reading","timeout","error") || state.value.foldTarget==state.value.deviceDetails.foldedState)) {
+                    state.value=state.value.copy(foldPhase="idle",foldTarget=null)
+                }
                 queryFoldState()
                 if(previousDetails!=mobi?.details) log("device_status:${mobi?.details}")
                 val model=mobi?.profile
@@ -352,6 +412,10 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 mobiFtms?.metadata(short,data)
             }
             "2ad4","2ad5" -> mobiFtms?.metadata(short,data)
+            "2a19" -> if(data.size==1 && (data[0].toInt() and 255) in 0..100) {
+                mobi?.battery(data); mobiFtms?.metadata(short,data)
+                state.value=state.value.copy(deviceDetails=state.value.deviceDetails.copy(battery=data[0].toInt() and 255))
+            }
             "2ad6" -> {
                 state.value=state.value.copy(range=if(officialFtms) Protocols.mobiFtmsRange(data) else Protocols.ftmsRange(data))
                 mobiFtms?.range=state.value.range
@@ -375,17 +439,19 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         }
         mobiFtms?.let { state.value=state.value.copy(deviceDetails=it.details) }
         if(short in setOf("2acc","2ad6")) updateCapabilities()
-        metrics?.let { next ->
-            val valid=next.copy(powerEstimated=false)!=Metrics()
+        metrics?.validated()?.let { next ->
+            val valid=next.copy(powerEstimated=false,distanceEstimated=false,invalidated=emptySet(),counterModuli=emptyMap())!=Metrics()
             val confirmed=next.resistance?.let { measured -> state.value.requested?.let { kotlin.math.abs(it-measured)<0.05 } }==true
             if(confirmed) { feedbackJob?.cancel(); log("control_feedback:${next.resistance}") }
-            state.value=state.value.copy(metrics=state.value.metrics.merge(next),motionAt=if(motion && valid) now else state.value.motionAt,
+            state.value=state.value.copy(metrics=state.value.metrics.merge(next),metricTimes=state.value.metricTimes.update(next,now),motionAt=if(motion && valid) now else state.value.motionAt,
             resistanceAt=if(next.resistance!=null) now else state.value.resistanceAt,
             heartAt=if(next.heartBpm!=null) now else state.value.heartAt,
             dataReceived=state.value.dataReceived || valid,
             parsedPackets=state.value.parsedPackets+if(sensor && valid) 1 else 0,
             phase=if(valid && state.value.phase in setOf("awaiting_data","subscription_failed")) "ready" else state.value.phase,
             requested=if(confirmed) null else state.value.requested,controlTimedOut=if(confirmed) false else state.value.controlTimedOut)
+            recentMetrics.addLast(now to state.value.copy(diagnostic=emptyList()))
+            while(recentMetrics.size>512 || (recentMetrics.size>1 && recentMetrics.first().first<now-30000)) recentMetrics.removeFirst()
         }
     }
     private suspend fun ftms(bytes: ByteArray,valid: () -> Boolean = { true }): Boolean {
@@ -434,7 +500,10 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             }
             if(!valid()) return false
             if(!ok) { log("control_failed"); state.value=state.value.copy(requested=null) }
-            else if(!state.value.resistanceFeedback) state.value=state.value.copy(requested=null,commandedResistance=value)
+            else if(!state.value.resistanceFeedback) {
+                mobi?.commandedResistance(value.toInt())
+                state.value=state.value.copy(requested=null,commandedResistance=value)
+            }
             else if(state.value.requested!=null) feedbackJob=scope.launch {
                 delay(5000)
                 if(valid() && state.value.requested==value) {

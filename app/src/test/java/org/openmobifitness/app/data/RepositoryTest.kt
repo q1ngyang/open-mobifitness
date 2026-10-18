@@ -85,7 +85,7 @@ class RepositoryTest {
         assertEquals(62.0,restored.samples.single().metrics.cadence!!,0.0)
         assertNull(restored.sessions.single().caloriesKcal)
         assertFalse(restored.sessions.single().caloriesEstimated)
-        assertEquals(8,repo.db.openHelper.readableDatabase.version)
+        assertEquals(9,repo.db.openHelper.readableDatabase.version)
         assertNull(restored.sessions.single().ownerUserId)
         assertEquals(LEGACY_USER_ID,repo.db.records().users().single().id)
         if(version==6) assertEquals(Metrics(cadence=62.0,repetitions=42,loadKg=12.5,jumpCount=800,continuousJumps=77,jumpInterruptions=3,deviceDurationSec=9,dumbbellFewActions=4,dumbbellActionNumber=5),restored.samples.single().metrics)

@@ -236,7 +236,7 @@ internal val brandColors = org.openmobifitness.app.BrandPalette.accents.map { Co
     Text(label,Modifier.weight(1f,false).padding(vertical=6.dp),style=if(large) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelLarge,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
 }
 
-@Composable private fun InstrumentPanel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+@Composable internal fun InstrumentPanel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), color = MaterialTheme.colorScheme.surface, content = content)
 }
 @Composable internal fun NumberText(value: String, maxSp: Int, modifier: Modifier = Modifier, weight: FontWeight = FontWeight.SemiBold, color: Color = MaterialTheme.colorScheme.onSurface) {
@@ -249,6 +249,7 @@ private fun workoutClock(ms: Long): String {
 }
 
 @Composable private fun TrainingProgress(c: Controller, state: ExerciseState, modifier: Modifier, spacious: Boolean, dense: Boolean, stages: () -> Unit) {
+    if(state.continuingManually) { ManualContinuation(state,modifier); return }
     val context = LocalContext.current
     val stageDescription = stringResource(R.string.stage_overview)
     val workout = state.selected
@@ -436,6 +437,7 @@ private fun workoutClock(ms: Long): String {
     val range = c.range()
     val machine=c.displayMachine()
     if(range==null && machine in setOf(Machine.ROWER,Machine.TREADMILL)) {
+        if(state.continuingManually) return
         InstrumentPanel(modifier) {
             Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.current_target),style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Medium)
@@ -445,7 +447,7 @@ private fun workoutClock(ms: Long): String {
         }
         return
     }
-    val can = !state.starting && (state.demo && range!=null || (link.writable && range != null && c.controlResistance() != null && !link.busy && link.phase == "ready"))
+    val can = !state.starting && !state.completionPending && !state.finishing && (state.demo && range!=null || (link.writable && range != null && !link.busy && link.phase == "ready"))
     var sliding by remember { mutableStateOf<Float?>(null) }
     var help by remember { mutableStateOf(false) }
     val pending = state.pendingResistance ?: link.requested
@@ -515,9 +517,9 @@ private fun workoutClock(ms: Long): String {
 }
 @Composable private fun ResistanceSlider(range: ResistanceRange, value: Float, enabled: Boolean, spacious: Boolean, modifier: Modifier = Modifier, change: (Float) -> Unit, finish: () -> Unit) {
     val label = stringResource(R.string.resistance_slider)
-    val fraction = ((value - range.min) / (range.max - range.min)).toFloat()
+    val fraction = if(range.max>range.min) ((value - range.min) / (range.max - range.min)).toFloat() else 0f
     val segments = (((range.max - range.min) / range.increment).toInt() + 1).coerceIn(2, 100)
-    Slider(value = value, onValueChange = change, onValueChangeFinished = finish, valueRange = range.min.toFloat()..range.max.toFloat(), steps = (segments - 2).coerceAtLeast(0), enabled = enabled,
+    Slider(value = value, onValueChange = change, onValueChangeFinished = finish, valueRange = range.min.toFloat()..range.max.toFloat(), steps = (segments - 2).coerceAtLeast(0), enabled = enabled && range.max>range.min,
         modifier = modifier.fillMaxWidth().heightIn(min=48.dp).semantics { contentDescription = label },
         thumb = {
             Box(Modifier.size(if (spacious) 30.dp else 24.dp).background(MaterialTheme.colorScheme.surface, CircleShape).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape).padding(4.dp).background(if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape))

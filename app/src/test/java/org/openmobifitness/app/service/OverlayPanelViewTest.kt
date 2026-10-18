@@ -73,6 +73,19 @@ class OverlayPanelViewTest {
         view.bind(sample().copy(paused=true)); assertNotNull(children(view).firstOrNull { it.contentDescription==c.getString(R.string.resume) })
     }
 
+    @Test fun completedPlanActionsOpenTheChoiceInsteadOfSilentlyResuming() {
+        val c=RuntimeEnvironment.getApplication()
+        val actions=mutableListOf<OverlayAction>()
+        val view=OverlayPanelView(c,true,false,actions::add)
+        view.bind(sample().copy(paused=true,completionPending=true,canAdjust=false))
+        val open=children(view).filter { it.contentDescription==c.getString(R.string.open_app) }
+        assertTrue(open.size>=2)
+        open.forEach { it.performClick() }
+        assertTrue(actions.all { it==OverlayAction.OPEN })
+        assertTrue(children(view).none { it.contentDescription==c.getString(R.string.resume) })
+        for(id in listOf(R.string.increase,R.string.decrease)) assertFalse(children(view).first { it.contentDescription==c.getString(id) }.isEnabled)
+    }
+
     @Test fun usefulDefaultsDoNotReplaceSavedMetricSelections() {
         val prefs=RuntimeEnvironment.getApplication().getSharedPreferences("overlay-defaults-test",Context.MODE_PRIVATE)
         prefs.edit().clear().commit()

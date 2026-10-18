@@ -14,6 +14,12 @@ class Repository(val context: Context) {
     val profilePreferences=ProfilePreferences(context,preferences)
     val avatars=AvatarStore(context)
     companion object {
+        val MIGRATION_8_9=object: androidx.room.migration.Migration(8,9) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN planCompletedMs INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE sessions ADD COLUMN completionPending INTEGER NOT NULL DEFAULT 0")
+            }
+        }
         val MIGRATION_7_8=object: androidx.room.migration.Migration(7,8) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS users (id TEXT NOT NULL, name TEXT NOT NULL, weightKg REAL, met REAL NOT NULL DEFAULT 5.0, metSource TEXT NOT NULL DEFAULT 'default', avatar TEXT NOT NULL DEFAULT '', createdAt INTEGER NOT NULL DEFAULT 0, removedAt INTEGER, deleted INTEGER NOT NULL DEFAULT 0, pendingPreferences TEXT NOT NULL DEFAULT '', legacyHints TEXT NOT NULL DEFAULT '', PRIMARY KEY(id))")
@@ -69,7 +75,7 @@ class Repository(val context: Context) {
             }
         }
     }
-    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8).build()
+    val db = Room.databaseBuilder(context,MobiDatabase::class.java,"openmobi.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9).build()
     private val dao get() = db.records()
     val maintenance=MutableStateFlow(false)
     val revision = MutableStateFlow(0L)
@@ -83,9 +89,14 @@ class Repository(val context: Context) {
         recoverUserPreferences()
         recoverAvatarCleanup()
         db.runInTransaction {
-            dao.activeSessions().forEach { it.status="interrupted"; it.end=Instant.now().toString(); dao.session(it) }
+            dao.activeSessions().filterNot { it.completionPending && it.planCompletedMs!=null }.forEach { it.status="interrupted"; it.end=Instant.now().toString(); dao.session(it) }
         }
         refresh()
+    }
+    suspend fun pendingCompletion(): Pair<Session,Metrics>? = withContext(Dispatchers.IO) {
+        dao.activeSessions().firstOrNull { it.completionPending && it.planCompletedMs!=null }?.let {
+            it.model() to (dao.sampleAt(it.id,it.elapsedMs)?.model()?.metrics ?: Metrics())
+        }
     }
     internal fun refresh() {
         revision.update { it+1 }
@@ -146,7 +157,7 @@ class Repository(val context: Context) {
                 val original=existing[s.id]
                 require(original==null || BackupTransfer.compatible(original,s)) { "session_conflict" }
                 require(original?.status!="active") { "active_session" }
-                if(original==null) { dao.session(s.copy(status=if(s.status=="active") "interrupted" else s.status).row()); count++ }
+                if(original==null) { dao.session(s.copy(status=if(s.status=="active") "interrupted" else s.status,completionPending=false).row()); count++ }
             }
             val samples=dao.samples().map { it.model() }.associateBy { it.sessionId to it.elapsedMs }
             incoming.samples.forEach { s ->
@@ -172,8 +183,9 @@ internal fun Session.row() = SessionRow().also {
     it.elapsedMs=elapsedMs; it.distanceM=distanceM; it.demo=demo; it.status=status
     it.caloriesKcal=caloriesKcal; it.caloriesEstimated=caloriesEstimated; it.distanceEstimated=distanceEstimated; it.weightKg=weightKg; it.met=met; it.energyModel=energyModel
     it.ownerUserId=ownerUserId; it.startedUserId=startedUserId; it.startedUserName=startedUserName; it.weightSource=weightSource; it.metSource=metSource; it.workoutSnapshot=workoutSnapshot; it.capabilitySnapshot=capabilitySnapshot; it.identityVersion=identityVersion; it.ownerHistory=ownerHistory; it.enteredStageIds=enteredStageIds
+    it.planCompletedMs=planCompletedMs; it.completionPending=completionPending
 }
-internal fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met,workoutId,workoutTitle,archived,energyModel,ownerUserId,startedUserId,startedUserName,weightSource,metSource,workoutSnapshot,capabilitySnapshot,identityVersion,ownerHistory,enteredStageIds)
+internal fun SessionRow.model() = Session(id,start,end,zone,device,Machine.valueOf(machine),Protocol.valueOf(protocol),elapsedMs,distanceM,demo,status,caloriesKcal,caloriesEstimated,distanceEstimated,weightKg,met,workoutId,workoutTitle,archived,energyModel,ownerUserId,startedUserId,startedUserName,weightSource,metSource,workoutSnapshot,capabilitySnapshot,identityVersion,ownerHistory,enteredStageIds,planCompletedMs,completionPending)
 internal fun Sample.row() = SampleRow().also { s ->
     s.sessionId=sessionId; s.elapsedMs=elapsedMs
     metrics.let { s.cadence=it.cadence; s.resistance=it.resistance; s.speedMps=it.speedMps; s.distanceM=it.distanceM; s.heartBpm=it.heartBpm; s.powerW=it.powerW; s.strokes=it.strokes

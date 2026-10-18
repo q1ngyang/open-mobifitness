@@ -26,6 +26,10 @@ class MobiSession(val protocol: Protocol, val name: String) {
     private var lastRpm: Double? = null
     private var treadmillSpeed = 0.0
     private var treadmillRate: Double? = null
+    private var lastRevolutions: Int? = null
+    private var revolutionDistance = 0.0
+    private var revolutionTimeMs = 0L
+    private val atRBike get() = protocol==Protocol.V1 && profile.kind==10 && profile.subtype==1 && name.startsWith("AT-R",true)
     val canWriteResistance get() = resistanceMode in setOf(1,3) && range != null
     val canReadResistance get() = resistanceMode in setOf(2,3)
 
@@ -42,6 +46,9 @@ class MobiSession(val protocol: Protocol, val name: String) {
         machine=profile.machine
         if(protocol==Protocol.V1) details=details.copy(supportFold=machine==Machine.TREADMILL && subtype==18)
         if(!explicitResistance) { range=profile.range; resistanceMode=profile.resistanceMode }
+        // Issue #1: verified AT-R V1 board family, write-only 1–24. Do not change
+        // every subtype-1 bike or invent resistance feedback / zero-based levels.
+        if(atRBike) resistanceMode=1
         rowing.changeType(subtype)
         if(uploadMode in 2..3) rowing.reverseMode=false
     }
@@ -53,6 +60,15 @@ class MobiSession(val protocol: Protocol, val name: String) {
                 Protocol.V2 -> v2(characteristic,data)
                 Protocol.HUANTONG -> if(characteristic=="fff1") huantong(data) else null
                 else -> null
+            }?.let { value ->
+                val moduli=when {
+                    protocol==Protocol.V2 && characteristic=="8813" -> mapOf(MetricId.DISTANCE to 65536.0*(if(machine==Machine.TREADMILL && hardwareCode==0x18) 10 else 1),
+                        MetricId.CALORIES to 6553.6*(if(machine==Machine.TREADMILL && hardwareCode==0x18) 10 else 1),
+                        MetricId.STROKES to 65536.0,MetricId.JUMPS to 65536.0,MetricId.REPETITIONS to 65536.0,MetricId.JUMP_INTERRUPTS to 65536.0)
+                    protocol==Protocol.V1 && machine==Machine.TREADMILL -> mapOf(MetricId.DISTANCE to 655360.0,MetricId.CALORIES to 65536.0)
+                    else -> emptyMap()
+                }
+                value.copy(counterModuli=moduli).validated()
             }
         }.getOrNull()
     }
@@ -60,7 +76,8 @@ class MobiSession(val protocol: Protocol, val name: String) {
         if(max140) return if(raw.toInt() in 1..140) raw else (raw/2).coerceAtMost(140.0)/if(machine==Machine.ELLIPTICAL) 2 else 1
         return if(raw.toInt() in 1..200) raw else if(machine==Machine.BIKE) 60.0 else 30.0
     }
-    private fun resistance(level: Int): Double? = level.toDouble().takeIf { canReadResistance && it>0 && range?.contains(it)==true }?.also { actualResistance=it }
+    private fun resistance(level: Int): Double? = level.toDouble().takeIf { canReadResistance && range?.contains(it)==true }?.also { actualResistance=it }
+    fun battery(data: ByteArray) { if(data.size==1 && data[0].unsigned() in 0..100) details=details.copy(battery=data[0].unsigned()) }
     private fun bike(rpm: Double?, feedback: Double?=null, heart: Int?=null): Metrics {
         lastRpm=rpm ?: lastRpm
         val correction=profile.kind==11 && profile.subtype==17
@@ -103,14 +120,24 @@ class MobiSession(val protocol: Protocol, val name: String) {
         if(old && (subtype==1 || data[6].unsigned()<7)) require(data.size>=13)
         identify(kind,subtype)
         template=data.copyOf()
-        details=details.copy(battery=if(data[2].unsigned() in 0..3) data[5].unsigned() else null)
+        if(machine!=Machine.TREADMILL) details=details.copy(battery=data[5].unsigned().takeIf { data[2].unsigned() in 0..3 && it in 0..100 })
         val interval=(7..10).fold(0) { acc,i -> (acc shl 8) or data[i].unsigned() }
         lastMotion=true
         return when(machine) {
             Machine.BIKE,Machine.ELLIPTICAL -> {
-                val feedback=if(data.size>13) resistance(data[13].toInt()) else null
+                val feedback=if(data.size>13) resistance(data[13].unsigned()) else null
                 val cadence=if(interval==0) 0.0 else rpm(60000.0/interval/if(kind==11 && subtype==17) 2 else 1)
-                bike(cadence,feedback,if(subtype==17 && data.size>14) heart(data[14].unsigned()) else null)
+                val metric=bike(cadence,feedback,if(subtype==17 && data.size>14) heart(data[14].unsigned()) else null)
+                if(atRBike && data.size>=13) {
+                    val raw=data[11].unsigned()*256+data[12].unsigned()
+                    lastRevolutions?.let { previous ->
+                        val revolutions=counterDelta(previous.toLong(),raw.toLong(),if(interval>0) 65536 else null,32)
+                        revolutionDistance+=revolutions*1000/(2.68*60)
+                        revolutionTimeMs+=revolutions*interval.coerceIn(0,60000)
+                    }
+                    lastRevolutions=raw
+                    metric.copy(distanceM=revolutionDistance,distanceEstimated=true,cumulativeMotionMs=revolutionTimeMs)
+                } else metric
             }
             Machine.ROWER -> {
                 val legacyMagnet=old && subtype==1
@@ -136,10 +163,17 @@ class MobiSession(val protocol: Protocol, val name: String) {
     }
     private fun v2(characteristic: String,data: ByteArray): Metrics? {
         when(characteristic) {
-            "8801" -> { require(data.isNotEmpty()); uploadMode=data[0].unsigned(); if(uploadMode in 2..3) rowing.reverseMode=false }
+            "8801" -> { require(data.isNotEmpty()); uploadMode=data[0].unsigned(); details=details.copy(uploadMode=uploadMode); if(uploadMode in 2..3) rowing.reverseMode=false }
             "8802" -> { require(data.size>=2); identify(data[0].unsigned(),data[1].unsigned()) }
-            "8803" -> { require(data.isNotEmpty()); hardwareCode=data.singleOrNull()?.unsigned() }
-            "8805" -> { require(data.isNotEmpty()); magnets=data[0].unsigned() }
+            "8803" -> { require(data.size==1); hardwareCode=data[0].unsigned(); details=details.copy(hardwareCode=hardwareCode) }
+            "8804" -> { require(data.size==1); details=details.copy(signalAcquisitionScale=data[0].unsigned()) }
+            "8805" -> {
+                require(data.size==1); magnets=data[0].unsigned()
+                if(magnets==0 && machine in setOf(Machine.BIKE,Machine.ELLIPTICAL)) {
+                    lastRpm=null; energyPower=null
+                    return Metrics(powerEstimated=true,invalidated=setOf(MetricId.CADENCE,MetricId.POWER))
+                }
+            }
             "8806" -> {
                 require(data.size>=3)
                 explicitResistance=true
@@ -178,7 +212,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
                 details=when(data[0].unsigned()) {
                     1 -> if(data[1].unsigned()==3 && data.size>=5) details.copy(voiceCommand=data[4].toInt()) else details
                     2 -> details.copy(gamePad=data[2].toInt())
-                    3 -> details.copy(foldedState=data[2].unsigned())
+                    3 -> if(data[1].unsigned()==1) details.copy(foldedState=data[2].unsigned()) else details
                     4 -> if(data[1].unsigned()==3 && data.size>=5 && data[2].unsigned() in 0..2) {
                         val code=data[2].unsigned()
                         // Both APKs use copyOfRange(3,4), whose upper bound is
@@ -198,7 +232,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
                     require(data.size==2)
                     return Metrics(loadKg=(data[0].unsigned()*256+data[1].unsigned())/10.0)
                 }
-                require(data.isNotEmpty()); val feedback=resistance(data[0].toInt()) ?: return null
+                require(data.isNotEmpty()); val feedback=resistance(data[0].unsigned()) ?: return null
                 return if(machine in setOf(Machine.BIKE,Machine.ELLIPTICAL) && uploadMode==1) bike(null,feedback) else Metrics(resistance=feedback)
             }
             "8811" -> {
@@ -209,7 +243,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
                 lastMotion=true
                 return when(machine) {
                     Machine.ROWER -> rower(interval,second,animationOnly=uploadMode==3)
-                    Machine.BIKE,Machine.ELLIPTICAL -> if(uploadMode==1) bike(if(interval==0) 0.0 else rpm(60000.0/interval/magnets,profile.subtype==0)) else null
+                    Machine.BIKE,Machine.ELLIPTICAL -> if(uploadMode==1 && magnets in 1..255) bike(if(interval==0) 0.0 else rpm(60000.0/interval/magnets,profile.subtype==0)) else null
                     else -> null
                 }
             }
@@ -239,7 +273,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
                         strideM=if(rawSpeed>0 && frequency>0) treadmillSpeed*60/frequency else null)
                 }
                 val measuredPower=if(data.size>=11) be(9).toDouble().takeIf { it!=0.0 } else null
-                if(machine==Machine.ROWER && data.size>=13 && be(11)>0) aggregateStrokesReported=true
+                if(machine==Machine.ROWER && data.size>=13) aggregateStrokesReported=true
                 val fallback=if(machine==Machine.ROWER) AlternateCalculations.rowingPower(rawSpeed).toInt().toDouble()
                     else calculationResistance.power(frequency,range,profile.kind==11 && profile.subtype==17)?.toInt()?.toDouble()
                 // MotionData.upGeneralSportData accepts m/s directly; only treadmills convert km/h.
@@ -258,7 +292,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
     }
     private fun treadmillCadence(interval: Int): Metrics? {
         if(machine!=Machine.TREADMILL) return null
-        if(interval>0) treadmillRate=30000.0/interval
+        treadmillRate=if(interval>0) 30000.0/interval else 0.0
         lastMotion=true
         return Metrics(stepRate=treadmillRate,strideM=treadmillRate?.takeIf { it>0 && treadmillSpeed>0 }?.let { treadmillSpeed*60/it })
     }
@@ -271,7 +305,7 @@ class MobiSession(val protocol: Protocol, val name: String) {
         return bike(rpm(value))
     }
     fun commandedResistance(level: Int) {
-        if(protocol==Protocol.HUANTONG && range?.contains(level.toDouble())==true) {
+        if((protocol==Protocol.HUANTONG || atRBike) && range?.contains(level.toDouble())==true) {
             actualResistance=level.toDouble()
             bike(null)
         }

@@ -1,0 +1,235 @@
+{
+  "date": "2026-10-18",
+  "source_commit": "59cf4fd",
+  "environment": "Debian 13 LXC; Android API 34 emulator, read-only AVD, software acceleration",
+  "synthetic": true,
+  "production_code_changed": false,
+  "physical_ble_tested": false,
+  "official_application_ui_started": false,
+  "unique_scenarios_per_apk": 2772,
+  "unique_steps_per_apk": 21382,
+  "focus_profiles": 39,
+  "subtype_byte_combinations": 1024,
+  "order_check_cases_per_apk": 80,
+  "batches": [
+    {
+      "batch": "main",
+      "scenarios": 2736,
+      "steps_per_apk": 20770,
+      "comparisons": 62398,
+      "differences": 21814,
+      "errors": [
+        {
+          "variant": "chinese",
+          "boundary": "2a19",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 4
+        },
+        {
+          "variant": "chinese",
+          "boundary": "2a37",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 10
+        },
+        {
+          "variant": "chinese",
+          "boundary": "2ace",
+          "type": "java.lang.IndexOutOfBoundsException",
+          "count": 6
+        },
+        {
+          "variant": "chinese",
+          "boundary": "2ad4",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "chinese",
+          "boundary": "2ad5",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "chinese",
+          "boundary": "2ad6",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "chinese",
+          "boundary": "8801",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 6
+        },
+        {
+          "variant": "chinese",
+          "boundary": "8803",
+          "type": "java.lang.NullPointerException",
+          "count": 6
+        },
+        {
+          "variant": "chinese",
+          "boundary": "880e",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 1
+        },
+        {
+          "variant": "chinese",
+          "boundary": "8812",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 3
+        },
+        {
+          "variant": "chinese",
+          "boundary": "8902",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 12
+        },
+        {
+          "variant": "international",
+          "boundary": "2a19",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 4
+        },
+        {
+          "variant": "international",
+          "boundary": "2a37",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 10
+        },
+        {
+          "variant": "international",
+          "boundary": "2ace",
+          "type": "java.lang.IndexOutOfBoundsException",
+          "count": 6
+        },
+        {
+          "variant": "international",
+          "boundary": "2ad4",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "international",
+          "boundary": "2ad5",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "international",
+          "boundary": "2ad6",
+          "type": "java.lang.IllegalStateException",
+          "count": 16
+        },
+        {
+          "variant": "international",
+          "boundary": "8801",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 6
+        },
+        {
+          "variant": "international",
+          "boundary": "8803",
+          "type": "java.lang.NullPointerException",
+          "count": 6
+        },
+        {
+          "variant": "international",
+          "boundary": "880e",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 1
+        },
+        {
+          "variant": "international",
+          "boundary": "8812",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 3
+        },
+        {
+          "variant": "international",
+          "boundary": "8902",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "batch": "supplement",
+      "scenarios": 20,
+      "steps_per_apk": 352,
+      "comparisons": 1027,
+      "differences": 531,
+      "errors": [
+        {
+          "variant": "chinese",
+          "boundary": "2a37",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 10
+        },
+        {
+          "variant": "international",
+          "boundary": "2a37",
+          "type": "java.lang.ArrayIndexOutOfBoundsException",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "batch": "extra-rowers",
+      "scenarios": 16,
+      "steps_per_apk": 260,
+      "comparisons": 1404,
+      "differences": 348,
+      "errors": []
+    }
+  ],
+  "app_audit": {
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "standard_app_tests": {
+    "tests": 97,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "raw_artifacts": "$DEV_TEMP_BASE/work/openmobi-differential-20261018",
+  "execution_validation_sha256": "fad7caa044a25e5fb199fb8f7c7ee29059904910d7a31c411a7348bc301857ee",
+  "apk_sha256": {
+    "莫比健身 2.1.14.apk": "1bd01d47b07ca73235354c6a9b7d0cbf26d60d88fd0b8ca8b7ef0e47128775d8",
+    "莫比健身 4.5.16.1.apk": "99af8aeb883d56bd724ebdadd1114caf79ab7bef34c4b96488d0c2ced7be19e4",
+    "app-debug.apk": "34d207e2d205b1497ed4ac4bc86477e662c66a10387bacbf260887b923179ef5"
+  },
+  "corpus_and_trace_sha256": {
+    "cases.jsonl": "470e491951cf526047167b21e0b3fa40ef10b5658ee65a3501a937a8ddc57bbb",
+    "international.jsonl": "498b9d1bd9dc891f155eaf390e9aadf7c63d667f480b41b967702dbad6e41470",
+    "chinese.jsonl": "9454d10fbf6499290a41fe9f6e9132d02697ed7f7a67958474ec0b59cface387",
+    "openmobi.jsonl": "62c32f8ae8d5eca471031516a16a52b4995bc2e84b6c01e09737dea67ab6d438",
+    "supplement/cases.jsonl": "2bc6a26ff61f24587798573d391c5e3b5e54263fa7963d0b93b56acfa036114b",
+    "supplement/international.jsonl": "16d52fa153b1007f41bcc1f247735167f526dc4ff6ed22e4238a00c657f39c60",
+    "supplement/chinese.jsonl": "532fcc24611cb2dbc36e92a51137a552973b4c18aa113588eb0907b17a606489",
+    "supplement/openmobi.jsonl": "f1fc88f026ecd73c4d3452cdaea1397fb655773dd4bd59a6aee18afc285828da",
+    "extra-rowers/cases.jsonl": "f0153d9012d42a84d1dd96c4a9f2032c191036bd99ecfdb0ab3dfa4374ba9439",
+    "extra-rowers/international.jsonl": "7beb967cf34165fadc459069557a6c8ae2bdef9927c1b7a27435751147157c20",
+    "extra-rowers/chinese.jsonl": "294f079ef20fbb5a43e390f562e40fabd24b1cae4c4a0f4a7f557517d5d74310",
+    "extra-rowers/openmobi.jsonl": "977c7f5b1785ec4a50ad74f848f35cf3c0e2b02a37878732567c82c2c9cf44d6"
+  },
+  "harness_initial_sha256": "0fd5a42de72cbe35e14511f21222b959216ca10761ad98b2bc3fe900a9f7931d",
+  "harness_final_sha256": "339ecfc011f51416be8545006490d830a98e9f82751599f22c9c96eace0a6ff2",
+  "rerun": {
+    "group": "motion-repeat",
+    "scenarios": 18,
+    "reason": "Use original setBleType to isolate previous workout settlement",
+    "initial_results_preserved": true
+  },
+  "interpretations": [
+    "Difference counts are candidates, not defect counts.",
+    "Main output replaces all 18 calculation sequences with their isolated rerun; initial and rerun traces are retained.",
+    "The repeatability check records and excludes two constructor-cached LastUpload identity labels and timestamps.",
+    "48 malformed range callbacks per official APK reach an uninitialized Firebase dependency; these are not claimed as full-app crashes.",
+    "App audit PASS reproduces gaps, not fixes.",
+    "All APKs execute core receiving/calculation paths; only selected sequences execute the official MotionData listener or the OpenMOBI recording chain."
+  ]
+}

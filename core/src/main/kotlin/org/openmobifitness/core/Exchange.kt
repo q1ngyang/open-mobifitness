@@ -67,6 +67,7 @@ object Exchange {
     private val sessionsV4 = sessionsV2 + listOf("workout_id","workout_title","archived")
     private val sessionsV5 = sessionsV4 + "energy_model"
     private val sessionsV6 = sessionsV5 + listOf("owner_user_id","started_user_id","started_user_name","weight_source","met_source","workout_snapshot","capability_snapshot","identity_version","owner_history","entered_stage_ids")
+    private val sessionsV7 = sessionsV6 + listOf("plan_completed_ms","completion_pending")
     private val usersHeader = "schema,user_id,name,weight_kg,met,met_source,avatar,created_at,removed_at,deleted,preferences,legacy_hints".split(',')
     private val samplesV2 = samplesHeader + listOf("calories_kcal","incline_percent","stride_m","force_n","step_rate","step_count","target_cadence")
     private val samplesV3 = samplesV2 + "power_estimated"
@@ -76,8 +77,8 @@ object Exchange {
     private fun text(v: String) = "'$v" // Always escape text, including an original leading apostrophe; reversible.
     private fun untext(v: String) = v.removePrefix("'")
     private fun Any?.cell() = this?.toString() ?: ""
-    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV6) + items.map {
-        listOf("6",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString(),it.energyModel,it.ownerUserId.cell(),it.startedUserId.cell(),text(it.startedUserName),it.weightSource,it.metSource,text(it.workoutSnapshot),text(it.capabilitySnapshot),it.identityVersion.toString(),text(it.ownerHistory),text(it.enteredStageIds))
+    fun sessions(items: List<Session>) = Csv.write(listOf(sessionsV7) + items.map {
+        listOf("7",it.id,it.start,it.end,it.zone,text(it.device),it.machine.name,it.protocol.name,it.elapsedMs.toString(),it.distanceM.cell(),it.demo.toString(),it.status,it.caloriesKcal.cell(),it.caloriesEstimated.toString(),it.distanceEstimated.toString(),it.weightKg.cell(),it.met.cell(),text(it.workoutId),text(it.workoutTitle),it.archived.toString(),it.energyModel,it.ownerUserId.cell(),it.startedUserId.cell(),text(it.startedUserName),it.weightSource,it.metSource,text(it.workoutSnapshot),text(it.capabilitySnapshot),it.identityVersion.toString(),text(it.ownerHistory),text(it.enteredStageIds),it.planCompletedMs.cell(),it.completionPending.toString())
     })
     fun samples(items: List<Sample>) = Csv.write(listOf(samplesV6) + items.map { s -> s.metrics.let {
         listOf("6",s.sessionId,s.elapsedMs.toString(),it.cadence.cell(),it.resistance.cell(),it.speedMps.cell(),it.distanceM.cell(),it.heartBpm.cell(),it.powerW.cell(),it.strokes.cell(),it.caloriesKcal.cell(),it.inclinePercent.cell(),it.strideM.cell(),it.forceN.cell(),it.stepRate.cell(),it.stepCount.cell(),it.targetCadence.cell(),it.powerEstimated.toString(),it.jumpCount.cell(),it.continuousJumps.cell(),it.jumpInterruptions.cell(),it.repetitions.cell(),it.loadKg.cell(),it.deviceDurationSec.cell(),it.dumbbellFewActions.cell(),it.dumbbellActionNumber.cell())
@@ -89,29 +90,32 @@ object Exchange {
     fun parse(content: String): Archive {
         val rows=Csv.read(content); if(rows.isEmpty()) throw ImportProblem(1,"header")
         val header=rows.first()
-        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6,samplesV2,samplesV3,samplesV6,workoutsHeader,workoutsV2,usersHeader)) throw ImportProblem(1,"header")
+        if(header !in listOf(sessionsHeader,samplesHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7,samplesV2,samplesV3,samplesV6,workoutsHeader,workoutsV2,usersHeader)) throw ImportProblem(1,"header")
         val sessions=mutableListOf<Session>(); val samples=mutableListOf<Sample>()
         val sessionIds=HashSet<String>(); val users=mutableListOf<UserProfile>(); val metadata=mutableMapOf<String,Workout>()
         val steps=linkedMapOf<String,Pair<String,MutableList<Step>>>()
         rows.drop(1).forEachIndexed { index,r ->
             try {
-                require(r.size==header.size && r[0]==when(header) { samplesV6,sessionsV6 -> "6"; workoutsV2 -> "2"; sessionsV5 -> "5"; sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
+                require(r.size==header.size && r[0]==when(header) { sessionsV7 -> "7"; samplesV6,sessionsV6 -> "6"; workoutsV2 -> "2"; sessionsV5 -> "5"; sessionsV4 -> "4"; samplesV3 -> "3"; sessionsV2,samplesV2 -> "2"; else -> "1" })
                 fun number(i: Int,max: Double,min: Double=0.0): Double? = r[i].takeIf { it.isNotEmpty() }?.toDouble()?.also { require(it.isFinite() && it in min..max) }
                 fun integer(i: Int,max: Int): Int? = r[i].takeIf { it.isNotEmpty() }?.toInt()?.also { require(it in 0..max) }
                 fun bool(i: Int): Boolean { require(r[i] in listOf("true","false")); return r[i].toBoolean() }
                 fun ms(i: Int) = r[i].toLong().also { require(it in 0..604800000L) }
                 when(header) {
-                    sessionsHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6 -> {
+                    sessionsHeader,sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7 -> {
                         UUID.fromString(r[1]); Instant.parse(r[2]); if(r[3].isNotEmpty()) Instant.parse(r[3]); ZoneId.of(r[4])
                         require(r[10] in listOf("true","false") && r[11] in listOf("active","completed","interrupted","stopped"))
                         val s=Session(r[1],r[2],r[3],r[4],untext(r[5]),Machine.valueOf(r[6]),Protocol.valueOf(r[7]),ms(8),number(9,10_000_000.0),r[10].toBoolean(),r[11],
-                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6) && bool(13),header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6) && bool(14),
-                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6)) number(16,20.0,1.0) else null,
-                            if(header in listOf(sessionsV4,sessionsV5,sessionsV6)) untext(r[17]) else "",if(header in listOf(sessionsV4,sessionsV5,sessionsV6)) untext(r[18]) else "",header in listOf(sessionsV4,sessionsV5,sessionsV6) && bool(19),if(header in listOf(sessionsV5,sessionsV6)) r[20].also { require(it in setOf("","device","legacy-v1","legacy-mobi","legacy-rowing","met","mixed")) } else "",
-                            if(header==sessionsV6) r[21].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
-                            if(header==sessionsV6) r[22].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
-                            if(header==sessionsV6) untext(r[23]) else "",if(header==sessionsV6) r[24] else "",if(header==sessionsV6) r[25] else "",
-                            if(header==sessionsV6) untext(r[26]) else "",if(header==sessionsV6) untext(r[27]) else "",if(header==sessionsV6) r[28].toInt() else 0,if(header==sessionsV6) untext(r[29]) else "",if(header==sessionsV6) untext(r[30]) else "")
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7)) number(12,100000.0) else null,header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7) && bool(13),header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7) && bool(14),
+                            if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7)) number(15,300.0,20.0) else null,if(header in listOf(sessionsV2,sessionsV4,sessionsV5,sessionsV6,sessionsV7)) number(16,20.0,1.0) else null,
+                            if(header in listOf(sessionsV4,sessionsV5,sessionsV6,sessionsV7)) untext(r[17]) else "",if(header in listOf(sessionsV4,sessionsV5,sessionsV6,sessionsV7)) untext(r[18]) else "",header in listOf(sessionsV4,sessionsV5,sessionsV6,sessionsV7) && bool(19),if(header in listOf(sessionsV5,sessionsV6,sessionsV7)) r[20].also { require(it in setOf("","device","legacy-v1","legacy-mobi","legacy-rowing","met","mixed")) } else "",
+                            if(header in listOf(sessionsV6,sessionsV7)) r[21].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
+                            if(header in listOf(sessionsV6,sessionsV7)) r[22].takeIf(String::isNotEmpty)?.also { UUID.fromString(it) } else null,
+                            if(header in listOf(sessionsV6,sessionsV7)) untext(r[23]) else "",if(header in listOf(sessionsV6,sessionsV7)) r[24] else "",if(header in listOf(sessionsV6,sessionsV7)) r[25] else "",
+                            if(header in listOf(sessionsV6,sessionsV7)) untext(r[26]) else "",if(header in listOf(sessionsV6,sessionsV7)) untext(r[27]) else "",if(header in listOf(sessionsV6,sessionsV7)) r[28].toInt() else 0,if(header in listOf(sessionsV6,sessionsV7)) untext(r[29]) else "",if(header in listOf(sessionsV6,sessionsV7)) untext(r[30]) else "",
+                            if(header==sessionsV7 && r[31].isNotEmpty()) ms(31) else null,header==sessionsV7 && bool(32))
+                        require(s.planCompletedMs==null || s.planCompletedMs in 0..s.elapsedMs)
+                        require(!s.completionPending || s.planCompletedMs!=null && s.status=="active" && s.end.isEmpty() && s.workoutSnapshot.isNotEmpty())
                         require(s.identityVersion in 0..1 && (s.identityVersion==0 || s.startedUserId!=null && s.ownerUserId!=null))
                         require(s.startedUserName.length<=96 && s.weightSource in setOf("","user","default","legacy") && s.metSource in setOf("","user","default","legacy"))
                         require(s.workoutSnapshot.length<=524288 && s.capabilitySnapshot.length<=4096)

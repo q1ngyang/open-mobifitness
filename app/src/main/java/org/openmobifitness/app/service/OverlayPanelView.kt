@@ -156,7 +156,7 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         footer.addView(recordingState,LayoutParams(WRAP,MATCH))
         addView(footer,LayoutParams(MATCH,footerHeight).apply { topMargin=dp(4) })
         val dock=LinearLayout(context).apply { gravity=Gravity.CENTER_VERTICAL }
-        pause=ActionButton(OverlayGlyph.PAUSE,context.getString(R.string.pause_short),true).apply { setOnClickListener { action(if(lastPresentation?.canResume==false) OverlayAction.RECONNECT else OverlayAction.PAUSE) } }
+        pause=ActionButton(OverlayGlyph.PAUSE,context.getString(R.string.pause_short),true).apply { setOnClickListener { action(if(lastPresentation?.completionPending==true) OverlayAction.OPEN else if(lastPresentation?.canResume==false) OverlayAction.RECONNECT else OverlayAction.PAUSE) } }
         dock.addView(pause,LayoutParams(0,MATCH,1f))
         dock.addView(ActionButton(OverlayGlyph.OPEN,context.getString(R.string.overlay_open),false).apply {
             contentDescription=context.getString(R.string.open_app); setOnClickListener { action(OverlayAction.OPEN) }
@@ -224,7 +224,7 @@ internal class OverlayPanelView(context: Context,val expanded: Boolean,dark: Boo
         pendingLabel.text=model.pending
         pendingLabel.visibility=if(model.pending.isEmpty()) GONE else VISIBLE
         listOfNotNull(minus,plus).forEach { it.isEnabled=model.canAdjust; it.alpha=if(model.canAdjust) 1f else .35f }
-        pause?.setState(if(model.paused || model.controlOnly || !model.canResume) OverlayGlyph.PLAY else OverlayGlyph.PAUSE,context.getString(if(!model.canResume) R.string.reconnect else if(model.controlOnly) R.string.start_recording else if(model.paused) R.string.resume else R.string.pause_short))
+        pause?.setState(if(model.paused || model.controlOnly || !model.canResume) OverlayGlyph.PLAY else OverlayGlyph.PAUSE,context.getString(if(model.completionPending) R.string.open_app else if(!model.canResume) R.string.reconnect else if(model.controlOnly) R.string.start_recording else if(model.paused) R.string.resume else R.string.pause_short))
         // A non-focusable overlay can keep stale accessibility descendants even when the
         // pixels update. Invalidate that subtree without making ticking readings a live region.
         if(isAttachedToWindow && context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)?.isEnabled==true) {

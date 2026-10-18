@@ -91,6 +91,11 @@ import kotlin.math.abs
             }
             HorizontalDivider()
             ReportGrid(descriptors.filter { it.key in mainKeys },imperial,true)
+            s.planCompletedMs?.let { completed ->
+                HorizontalDivider()
+                Text(stringResource(R.string.plan_time)+"  "+org.openmobifitness.app.service.WorkoutService.elapsed(completed),style=MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.manual_time)+"  "+org.openmobifitness.app.service.WorkoutService.elapsed((s.elapsedMs-completed).coerceAtLeast(0)),style=MaterialTheme.typography.bodyMedium)
+            }
         } }
         val resistanceRange=remember(s.capabilitySnapshot) { s.reportResistanceRange() }
         val measurements: @Composable ()->Unit = { ReportPerformanceCard(performance,imperial,stringResource(sessionStatus(s.status)),s.machine==Machine.DUMBBELL,resistanceRange) }

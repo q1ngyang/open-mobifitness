@@ -1,0 +1,3249 @@
+{
+  "baseline": "59cf4fd",
+  "scenarios": 136,
+  "steps_per_apk": 4430,
+  "failures": [],
+  "vendor_differences": [
+    {
+      "path": "/trace/*/state/battery",
+      "count": 4410,
+      "example": {
+        "id": "zero-v2-9-7-0-3-0",
+        "international": 0,
+        "chinese": -1
+      }
+    },
+    {
+      "path": "/trace/*/state/deviceType/DeviceSubtypeName",
+      "count": 1589,
+      "example": {
+        "id": "zero-v2-9-7-0-3-0",
+        "international": "未知设备",
+        "chinese": "EMS磁阻 MRH3208"
+      }
+    },
+    {
+      "path": "/trace/*/state/deviceType/ImageId",
+      "count": 161,
+      "example": {
+        "id": "zero-v2-9-7-0-3-0",
+        "international": "http://app-resource.mobisport.cn/device_icon_box.png",
+        "chinese": "http://app-resource.mobisport.cn/device_icon_rowing_07.png"
+      }
+    },
+    {
+      "path": "/trace/*/events/*/args/*/DeviceSubtypeName",
+      "count": 53,
+      "example": {
+        "id": "zero-v2-9-7-0-3-0",
+        "international": "未知设备",
+        "chinese": "EMS磁阻 MRH3208"
+      }
+    },
+    {
+      "path": "/trace/*/events/*/args/*/ImageId",
+      "count": 21,
+      "example": {
+        "id": "zero-v2-9-7-0-3-0",
+        "international": "http://app-resource.mobisport.cn/device_icon_box.png",
+        "chinese": "http://app-resource.mobisport.cn/device_icon_rowing_07.png"
+      }
+    }
+  ],
+  "audit_tests": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "standard_tests": {
+    "tests": 97,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "hashes": {
+    "cases.jsonl": "c84dbe80b013a02c25323beefb3d002dd8a3ebe1783957c38fd06a575bfa7c62",
+    "international.jsonl": "0fef777ff0a6dd0b8d4489f878eb545d3e47bed688be2dae7d2a5ee15fb4e0e1",
+    "chinese.jsonl": "9a825b88093b59b418da2e09070411ba5ce3ed2279747183d624db543e43573f",
+    "openmobi.jsonl": "afbf7dc99593e2cbc3aed555776a9040620fa5f18ba16da7c079c9ccbcf4a666",
+    "app-audit-results.xml": "d88d38af03507a6258ce1ffa64ebf676a6e55410a71cef8e3015b93ecec779df"
+  },
+  "observations": [
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 0,
+      "input": {
+        "chr": "8801",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 1,
+      "input": {
+        "chr": "8802",
+        "data": [
+          10,
+          18
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 1
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 2,
+      "input": {
+        "chr": "8806",
+        "data": [
+          5,
+          0,
+          24
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 3,
+      "input": {
+        "chr": "8805",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 4,
+      "input": {
+        "chr": "8811",
+        "data": [
+          3,
+          232
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 39.623848339076,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 5,
+      "input": {
+        "chr": "8812",
+        "data": [
+          12
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 12,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 39.623848339076,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 12,
+      "input": {
+        "chr": "8812",
+        "data": [
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 157.17227538673782,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 19,
+      "input": {
+        "chr": "8812",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 157.17227538673782,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 26,
+      "input": {
+        "chr": "8812",
+        "data": [
+          24
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            24
+          ],
+          "resistance": 24,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            24
+          ],
+          "resistance": 24,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 24,
+          "merged_resistance": 24,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 44.02945686837671,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-10-18-0-5-0",
+      "index": 33,
+      "input": {
+        "chr": "8812",
+        "data": [
+          25
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 24,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 24,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 24,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": 177.18448536990587,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 0,
+      "input": {
+        "chr": "8801",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 1,
+      "input": {
+        "chr": "8802",
+        "data": [
+          9,
+          7
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 2,
+      "input": {
+        "chr": "8806",
+        "data": [
+          5,
+          0,
+          24
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 3,
+      "input": {
+        "chr": "8805",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 4,
+      "input": {
+        "chr": "8812",
+        "data": [
+          12
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            12
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            12
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 12,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 5,
+      "input": {
+        "chr": "8812",
+        "data": [
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 6,
+      "input": {
+        "chr": "8812",
+        "data": [
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            1
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            1
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 7,
+      "input": {
+        "chr": "8812",
+        "data": [
+          24
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            24
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            24
+          ],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 24,
+          "merged_resistance": 24,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-v2-9-7-0-5-0",
+      "index": 8,
+      "input": {
+        "chr": "8812",
+        "data": [
+          25
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 24,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-10-0-5",
+      "index": 0,
+      "input": {
+        "chr": "2acc",
+        "data": [
+          255,
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": null,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-10-0-5",
+      "index": 1,
+      "input": {
+        "chr": "2ad6",
+        "data": [
+          0,
+          0,
+          240,
+          0,
+          5,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-10-0-5",
+      "index": 2,
+      "input": {
+        "chr": "2ad2",
+        "data": [
+          36,
+          0,
+          16,
+          14,
+          120,
+          0,
+          12,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 39,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 12,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 39.623848339076,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-10-0-5",
+      "index": 15,
+      "input": {
+        "chr": "2ad2",
+        "data": [
+          36,
+          0,
+          16,
+          14,
+          120,
+          0,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 157,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 157,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 0,
+          "merged_resistance": 0,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 157.17227538673782,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-10-0-5",
+      "index": 28,
+      "input": {
+        "chr": "2ad2",
+        "data": [
+          36,
+          0,
+          16,
+          14,
+          120,
+          0,
+          1,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 157,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 157,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 157.17227538673782,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-11-0-5",
+      "index": 0,
+      "input": {
+        "chr": "2acc",
+        "data": [
+          255,
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": null,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-11-0-5",
+      "index": 1,
+      "input": {
+        "chr": "2ad6",
+        "data": [
+          0,
+          0,
+          240,
+          0,
+          5,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 1,
+          "power": 0,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-11-0-5",
+      "index": 2,
+      "input": {
+        "chr": "2ace",
+        "data": [
+          136,
+          0,
+          0,
+          16,
+          14,
+          120,
+          0,
+          0,
+          0,
+          120,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 208,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            12
+          ],
+          "resistance": 12,
+          "power": 208,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 12,
+          "merged_resistance": 12,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 208.84411937858755,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-11-0-5",
+      "index": 15,
+      "input": {
+        "chr": "2ace",
+        "data": [
+          136,
+          0,
+          0,
+          16,
+          14,
+          120,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 556,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": 12,
+          "power": 556,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 0,
+          "merged_resistance": 0,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 556.1313877259496,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "zero-ftms-11-0-5",
+      "index": 28,
+      "input": {
+        "chr": "2ace",
+        "data": [
+          136,
+          0,
+          0,
+          16,
+          14,
+          120,
+          0,
+          0,
+          0,
+          10,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 556,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [
+            1
+          ],
+          "resistance": 1,
+          "power": 556,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 0
+          },
+          "mode": null,
+          "energy_power": 556.1313877259496,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 0,
+      "input": {
+        "chr": "8802",
+        "data": [
+          9,
+          7
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 1,
+      "input": {
+        "chr": "8901",
+        "data": [
+          4
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 2,
+      "input": {
+        "chr": "8902",
+        "data": [
+          3,
+          1,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 0,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 3,
+      "input": {
+        "chr": "8902",
+        "data": [
+          3,
+          1,
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 1,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 4,
+      "input": {
+        "chr": "8902",
+        "data": [
+          3,
+          1,
+          2
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 2,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 5,
+      "input": {
+        "chr": "8902",
+        "data": [
+          3,
+          1,
+          255
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 255,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 6,
+      "input": {
+        "chr": "8901",
+        "data": [
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 255,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 7,
+      "input": {
+        "chr": "8902",
+        "data": [
+          3,
+          1,
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 1,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v2-9-7-0",
+      "index": 8,
+      "input": {
+        "chr": "8901",
+        "data": [
+          4
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 1,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-12-18",
+      "index": 0,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          171,
+          4,
+          0,
+          12,
+          18,
+          1,
+          0,
+          72,
+          0,
+          0,
+          120
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 2,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-12-18",
+      "index": 1,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 2,
+          "energy_power": null,
+          "fold": 0,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-12-18",
+      "index": 2,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 2,
+          "energy_power": null,
+          "fold": 1,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-12-18",
+      "index": 3,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          2
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 2,
+          "energy_power": null,
+          "fold": 2,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-12-18",
+      "index": 4,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          255
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 2,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": true
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 2,
+          "energy_power": null,
+          "fold": 255,
+          "support_fold": true
+        }
+      }
+    },
+    {
+      "id": "fold-v1-9-7",
+      "index": 0,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          171,
+          4,
+          1,
+          9,
+          7,
+          87,
+          1,
+          0,
+          0,
+          3,
+          232,
+          0,
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v1-9-7",
+      "index": 1,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          0
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 0,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 0,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v1-9-7",
+      "index": 2,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          1
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 1,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v1-9-7",
+      "index": 3,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          2
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 2,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 2,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "fold-v1-9-7",
+      "index": 4,
+      "input": {
+        "chr": "ffe4",
+        "data": [
+          174,
+          1,
+          0,
+          255
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 255,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": null,
+          "mode": 0,
+          "energy_power": null,
+          "fold": 255,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 0,
+      "input": {
+        "chr": "8802",
+        "data": [
+          10,
+          18
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": 24,
+            "ResistanceMin": 1,
+            "ResistanceMode": 0,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 24,
+            "Min": 1
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 1,
+      "input": {
+        "chr": "8806",
+        "data": [
+          5,
+          0,
+          255
+        ]
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 2,
+      "input": {
+        "chr": "8812",
+        "data": [
+          0
+        ],
+        "mode": "read"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": null,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 3,
+      "input": {
+        "chr": "8812",
+        "data": [
+          1
+        ],
+        "mode": "read"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 4,
+      "input": {
+        "chr": "8812",
+        "data": [
+          127
+        ],
+        "mode": "read"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 127,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 5,
+      "input": {
+        "chr": "8812",
+        "data": [
+          128
+        ],
+        "mode": "read"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 6,
+      "input": {
+        "chr": "8812",
+        "data": [
+          255
+        ],
+        "mode": "read"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 7,
+      "input": {
+        "chr": "8812",
+        "data": [
+          0
+        ],
+        "mode": "notify"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 8,
+      "input": {
+        "chr": "8812",
+        "data": [
+          1
+        ],
+        "mode": "notify"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 1,
+          "merged_resistance": 1,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 9,
+      "input": {
+        "chr": "8812",
+        "data": [
+          127
+        ],
+        "mode": "notify"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": 127,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 10,
+      "input": {
+        "chr": "8812",
+        "data": [
+          128
+        ],
+        "mode": "notify"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    },
+    {
+      "id": "boundary-v2-10-18",
+      "index": 11,
+      "input": {
+        "chr": "8812",
+        "data": [
+          255
+        ],
+        "mode": "notify"
+      },
+      "values": {
+        "international": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "chinese": {
+          "feedback": [],
+          "resistance": null,
+          "power": null,
+          "capability": {
+            "ResistanceMax": -1,
+            "ResistanceMin": 0,
+            "ResistanceMode": 3,
+            "SignalAcquisitionScale": 0
+          },
+          "fold": 1,
+          "support_fold": false
+        },
+        "openmobi": {
+          "resistance": null,
+          "merged_resistance": 127,
+          "range": {
+            "Increment": 1,
+            "Max": 255,
+            "Min": 0
+          },
+          "mode": 3,
+          "energy_power": null,
+          "fold": null,
+          "support_fold": false
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Synthetic receive/calculation injection; no physical BLE or motor action.",
+    "Zero minimum is a test declaration, not evidence that AT-R starts at zero.",
+    "A13/A14 pass when the existing gap is reproduced; production code is unchanged.",
+    "No complete UI, official persistence, firmware matrix or mechanical validation."
+  ],
+  "evidence_directory": "$DEV_TEMP_BASE/work/openmobi-special-rules-20261018/",
+  "tool_hashes": {
+    "SequenceOracle.java": "339ecfc011f51416be8545006490d830a98e9f82751599f22c9c96eace0a6ff2",
+    "run.sh": "f45caa2622bac23c7011d14ec4f048e3482ff085107926903e5c67d72ef5e0ac",
+    "special_rules.py": "37616b0305f4967c15f2192ac7931c88bb4f1f504513d8681e7217c779a8c2fd",
+    "summarize_special.py": "63281994c5c235998163dd216cd911631a723c36e89bd89b42e128162ed94e03",
+    "compare.py": "a5a1cf8f36a62eaa83d9c71bdf2a12476ad0cc1f103c2d1c26ae534dcda1959c"
+  },
+  "apk_hashes": {
+    "international": "1bd01d47b07ca73235354c6a9b7d0cbf26d60d88fd0b8ca8b7ef0e47128775d8",
+    "chinese": "99af8aeb883d56bd724ebdadd1114caf79ab7bef34c4b96488d0c2ced7be19e4",
+    "openmobi": "34d207e2d205b1497ed4ac4bc86477e662c66a10387bacbf260887b923179ef5"
+  }
+}

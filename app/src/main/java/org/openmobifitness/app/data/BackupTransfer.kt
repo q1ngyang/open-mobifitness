@@ -255,7 +255,7 @@ object BackupTransfer {
             pages(staged.db,job,{ row ->
                 val old=dao.session(row.id)
                 require(old==null || compatible(old.model(),row.model())) { "session_conflict" }
-                if(old==null) { if(row.status=="active") row.status="interrupted"; dao.session(row); added++ }
+                if(old==null) { if(row.status=="active") row.status="interrupted"; row.completionPending=false; dao.session(row); added++ }
                 progress(++processed)
             },{ row ->
                 val old=existing.matching(row); require(old==null || old.model()==row.model()) { "sample_conflict" }

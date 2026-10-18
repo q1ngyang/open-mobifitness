@@ -8,15 +8,15 @@ OpenMOBI 是一款独立开发的 Android 应用，让莫比健身器材在官�
 
 ## 下载
 
-**[下载 v0.3.3 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.3/OpenMOBI-0.3.3.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.3.3.md)
+**[下载 v0.3.4 普通版](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.4/OpenMOBI-0.3.4.apk)** · [所有版本](https://github.com/q1ngyang/open-mobifitness/releases) · [更新说明](docs/releases/v0.3.4.md)
 
-**v0.3.3** 修复已知问题。[多用户与升级说明](docs/V030_GUIDE.md)
+**v0.3.4** 新增计划完成选择、继续手动运动及器材展开／收起，修复设备协议与累计数据缺口。[多用户与升级说明](docs/V030_GUIDE.md)
 
 支持 Android 10 及以上的 64 位手机和平板，可与官方 App 共存。
 
 **日常使用请选择文件名不带 `debug` 的 APK。** Debug 版用于测试，包含演示设备，和普通版的数据互相独立。
 
-目前只有 **V1 协议的莫比 MB-EP 椭圆机**有用户实机反馈，其他型号尚无实机反馈；当前不控制跑步机的启动、速度或坡度。[查看设备支持情况](docs/COMPATIBILITY.md)
+已有实机证据包括 **V1 MB-EP 椭圆机**及 Issue #1 的 AT-R66146 协议反馈，其余型号未逐一实测；当前不控制跑步机的启动、速度或坡度。[查看设备支持情况](docs/COMPATIBILITY.md)
 
 ## 可以做什么
 

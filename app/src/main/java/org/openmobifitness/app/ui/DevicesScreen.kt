@@ -64,6 +64,7 @@ internal fun connectionStatus(link: LinkState)=when(link.phase) {
                             CapabilityLine(stringResource(R.string.motion_data),stringResource(if(fresh) R.string.receiving_data else R.string.waiting_motion),fresh)
                             CapabilityLine(stringResource(R.string.resistance_control),stringResource(if(link.controlTimedOut) R.string.feedback_timeout else if(link.writable && link.range!=null) R.string.control_available else R.string.read_only),link.writable && link.range!=null && !link.controlTimedOut)
                             if(link.metrics.heartBpm!=null && link.heartAt>0 && now-link.heartAt<10000) CapabilityLine(stringResource(R.string.heart_rate),stringResource(R.string.heart_from_equipment,link.metrics.heartBpm!!),true)
+                            EquipmentFold(c,state,link,now)
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                                 Text(link.range?.let { stringResource(R.string.range_format,org.openmobifitness.app.service.WorkoutService.number(it.min),org.openmobifitness.app.service.WorkoutService.number(it.max)) }.orEmpty(),Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                 OutlinedButton(onClick=activity::disconnect) { Text(stringResource(R.string.disconnect)) }

@@ -6,8 +6,8 @@ import org.junit.Test
 class MetricCatalogTest {
     @Test fun pickerNeverOffersMetricsFromAnotherMachine() {
         val ellip=MetricCatalog.forMachine(Machine.ELLIPTICAL)
-        assertTrue(ellip.containsAll(listOf(MetricId.CADENCE,MetricId.RESISTANCE,MetricId.POWER)))
-        assertTrue(ellip.intersect(setOf(MetricId.STROKES,MetricId.STROKE_RATE,MetricId.PACE,MetricId.STEP_RATE,MetricId.STRIDE,MetricId.INCLINE)).isEmpty())
+        assertTrue(ellip.containsAll(listOf(MetricId.CADENCE,MetricId.RESISTANCE,MetricId.POWER,MetricId.INCLINE)))
+        assertTrue(ellip.intersect(setOf(MetricId.STROKES,MetricId.STROKE_RATE,MetricId.PACE,MetricId.STEP_RATE,MetricId.STRIDE)).isEmpty())
         val rowing=MetricCatalog.forMachine(Machine.ROWER)
         assertTrue(rowing.containsAll(listOf(MetricId.STROKES,MetricId.STROKE_RATE,MetricId.PACE)))
         assertTrue(rowing.intersect(setOf(MetricId.CADENCE,MetricId.INCLINE,MetricId.STEP_RATE,MetricId.STRIDE)).isEmpty())

@@ -1,0 +1,3237 @@
+{
+  "version": "0.3.4",
+  "base_commit": "59cf4fdb576f11296ed8c1871013fbf371f45771",
+  "scope": "Original DEX callbacks and selected MotionData methods; independent product invariants; native UI, no hardware control",
+  "references": {
+    "莫比健身 2.1.14.apk": "1bd01d47b07ca73235354c6a9b7d0cbf26d60d88fd0b8ca8b7ef0e47128775d8",
+    "莫比健身 4.5.16.1.apk": "99af8aeb883d56bd724ebdadd1114caf79ab7bef34c4b96488d0c2ced7be19e4"
+  },
+  "sequences_per_apk": 3092,
+  "steps_per_apk": 30164,
+  "batches": {
+    "main": {
+      "sequences": 2736,
+      "steps_per_apk": 20770,
+      "setup_errors": 0,
+      "downstream_errors": 0,
+      "step_exceptions": {
+        "international: java.lang.ArrayIndexOutOfBoundsException": 36,
+        "international: java.lang.NullPointerException": 6,
+        "international: java.lang.IllegalStateException": 48,
+        "international: java.lang.IndexOutOfBoundsException": 6,
+        "chinese: java.lang.ArrayIndexOutOfBoundsException": 36,
+        "chinese: java.lang.NullPointerException": 6,
+        "chinese: java.lang.IllegalStateException": 48,
+        "chinese: java.lang.IndexOutOfBoundsException": 6
+      },
+      "comparisons": {
+        "international": {
+          "comparisons": 62068,
+          "differences": 20135,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 502
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 432
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 391
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 348
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 252
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 164
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 160
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 128
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 122
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 90
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 90
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 82
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 82
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 76
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 76
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 76
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 74
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.SmallEquipmentControl",
+              "field": "Instruction",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.SmallEquipmentControl",
+              "field": "InstructionType",
+              "count": 12
+            }
+          ]
+        },
+        "chinese": {
+          "comparisons": 62068,
+          "differences": 20135,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 2021
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 502
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 432
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 432
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 391
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 348
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 252
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 164
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 160
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 140
+            },
+            {
+              "protocol": "V1",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 128
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 122
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 90
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 90
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 82
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 82
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 76
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 76
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 76
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 74
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 74
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.SmallEquipmentControl",
+              "field": "Instruction",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.SmallEquipmentControl",
+              "field": "InstructionType",
+              "count": 12
+            }
+          ]
+        }
+      },
+      "vendor_difference_paths": {
+        "/trace/*/state/battery": 20045,
+        "/trace/*/state/deviceType/ImageId": 3760,
+        "/trace/*/state/deviceType/DeviceSubtypeName": 3578,
+        "/trace/*/events/*/args/*/ImageId": 605,
+        "/trace/*/events/*/args/*/DeviceSubtypeName": 389,
+        "/trace/*/error/message": 48
+      }
+    },
+    "supplement": {
+      "sequences": 20,
+      "steps_per_apk": 352,
+      "setup_errors": 0,
+      "downstream_errors": 0,
+      "step_exceptions": {
+        "international: java.lang.ArrayIndexOutOfBoundsException": 10,
+        "chinese: java.lang.ArrayIndexOutOfBoundsException": 10
+      },
+      "comparisons": {
+        "international": {
+          "comparisons": 1027,
+          "differences": 440,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 9
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 8
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 6
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 5
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 5
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 2
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 1
+            }
+          ]
+        },
+        "chinese": {
+          "comparisons": 1027,
+          "differences": 440,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 11
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 9
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 8
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 6
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 5
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 5
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 3
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 3
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 2
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 1
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "vendor_difference_paths": {
+        "/trace/*/state/battery": 212,
+        "/trace/*/state/deviceType/ImageId": 78,
+        "/trace/*/state/deviceType/DeviceSubtypeName": 74,
+        "/trace/*/events/*/args/*/ImageId": 4,
+        "/trace/*/events/*/args/*/DeviceSubtypeName": 3
+      }
+    },
+    "extra-rowers": {
+      "sequences": 16,
+      "steps_per_apk": 260,
+      "setup_errors": 0,
+      "downstream_errors": 0,
+      "step_exceptions": {},
+      "comparisons": {
+        "international": {
+          "comparisons": 1404,
+          "differences": 336,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 40
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 32
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 24
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 12
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 4
+            }
+          ]
+        },
+        "chinese": {
+          "comparisons": 1404,
+          "differences": 336,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 80
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 40
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 32
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 32
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 24
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 12
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 12
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 4
+            }
+          ]
+        }
+      },
+      "vendor_difference_paths": {
+        "/trace/*/state/deviceType/ImageId": 260,
+        "/trace/*/state/deviceType/DeviceSubtypeName": 260,
+        "/trace/*/state/battery": 228,
+        "/trace/*/events/*/args/*/ImageId": 16,
+        "/trace/*/events/*/args/*/DeviceSubtypeName": 16
+      }
+    },
+    "special-rules": {
+      "sequences": 136,
+      "steps_per_apk": 4430,
+      "setup_errors": 0,
+      "downstream_errors": 0,
+      "step_exceptions": {},
+      "comparisons": {
+        "international": {
+          "comparisons": 11108,
+          "differences": 3284,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 96
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 36
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 24
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 24
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 2
+            }
+          ]
+        },
+        "chinese": {
+          "comparisons": 11108,
+          "differences": 3284,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 120
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 96
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 36
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 24
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 24
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 4
+            },
+            {
+              "protocol": "V1",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 2
+            },
+            {
+              "protocol": "V1",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 2
+            }
+          ]
+        }
+      },
+      "vendor_difference_paths": {
+        "/trace/*/state/battery": 4410,
+        "/trace/*/state/deviceType/DeviceSubtypeName": 1589,
+        "/trace/*/state/deviceType/ImageId": 161,
+        "/trace/*/events/*/args/*/DeviceSubtypeName": 53,
+        "/trace/*/events/*/args/*/ImageId": 21
+      }
+    },
+    "regression": {
+      "sequences": 184,
+      "steps_per_apk": 4352,
+      "setup_errors": 0,
+      "downstream_errors": 0,
+      "step_exceptions": {},
+      "comparisons": {
+        "international": {
+          "comparisons": 29470,
+          "differences": 13233,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 240
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 231
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 165
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 114
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 75
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 55
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 44
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 22
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 10
+            }
+          ]
+        },
+        "chinese": {
+          "comparisons": 29470,
+          "differences": 13233,
+          "unmapped_fields": [
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "BackTime",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "CaloriePerSecond",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Duration",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "GraphValue",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "MaxF",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Num",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullLength",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "PullTime",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "State",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeDistance",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "StrokeEnergy",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Strokes",
+              "count": 2134
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Power",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Speed",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "updateInstantData",
+              "field": "Spm",
+              "count": 1067
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 240
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 231
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "DeviceType",
+              "count": 165
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 114
+            },
+            {
+              "protocol": "V2",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 114
+            },
+            {
+              "protocol": "FTMS",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 75
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "AvgF",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "BackTime",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "CaloriePerSecond",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Duration",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "GraphValue",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "MaxF",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Num",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Power",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullLength",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "PullTime",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Speed",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Spm",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "State",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeDistance",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "StrokeEnergy",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.RowingInstantData",
+              "field": "Strokes",
+              "count": 69
+            },
+            {
+              "protocol": "FTMS",
+              "event": "bus.GameRpmEvent",
+              "field": "Rpm",
+              "count": 55
+            },
+            {
+              "protocol": "V2",
+              "event": "upGeneralSportData",
+              "field": "Strokes",
+              "count": 44
+            },
+            {
+              "protocol": "FTMS",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 40
+            },
+            {
+              "protocol": "V2",
+              "event": "updateTreadmillData",
+              "field": "State",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "HistoricalDataNumber",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upSkippingRopeData",
+              "field": "TimeStamp",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "HistoricalDataNumber",
+              "count": 22
+            },
+            {
+              "protocol": "V2",
+              "event": "upDumbbellData",
+              "field": "TimeStamp",
+              "count": 22
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "Address",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceType",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeIndex",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "DeviceTypeName",
+              "count": 10
+            },
+            {
+              "protocol": "V1",
+              "event": "bus.UpBleConnectInfoEvent",
+              "field": "State",
+              "count": 10
+            }
+          ]
+        }
+      },
+      "vendor_difference_paths": {
+        "/trace/*/state/battery": 4248,
+        "/trace/*/state/deviceType/ImageId": 1503,
+        "/trace/*/state/deviceType/DeviceSubtypeName": 1196,
+        "/trace/*/events/*/args/*/ImageId": 61,
+        "/trace/*/events/*/args/*/DeviceSubtypeName": 44
+      }
+    }
+  },
+  "order_check": {
+    "international": {
+      "scenarios": 80,
+      "raw_differences": {
+        "/trace/*/motion/LastUpload/Box_name": 648,
+        "/trace/*/motion/LastUpload/Device_subtype": 648
+      },
+      "calculation_or_active_state_differences": []
+    },
+    "chinese": {
+      "scenarios": 80,
+      "raw_differences": {
+        "/trace/*/motion/LastUpload/Box_name": 648,
+        "/trace/*/motion/LastUpload/Device_subtype": 648
+      },
+      "calculation_or_active_state_differences": []
+    },
+    "openmobi": {
+      "scenarios": 80,
+      "raw_differences": {},
+      "calculation_or_active_state_differences": []
+    }
+  },
+  "trace_hashes": {
+    "cases.jsonl": "470e491951cf526047167b21e0b3fa40ef10b5658ee65a3501a937a8ddc57bbb",
+    "international.jsonl": "b6e286ac6fe572340f1caec0b19a3dc59b1abd1c4b1a8e178f228666a1dda209",
+    "chinese.jsonl": "0f763c692ec8888eb8f53824554bf4b0de75a58c392e00de8778d236c5292b70",
+    "openmobi.jsonl": "9bbc51fb53f5e597f0d635e64c5c964e9d288f435fac411a025f3cdb8e7a0ec0",
+    "supplement/cases.jsonl": "2bc6a26ff61f24587798573d391c5e3b5e54263fa7963d0b93b56acfa036114b",
+    "supplement/international.jsonl": "0ec0a5caaae875413478951f978bbb998c676961d7f87466669320b90d5de759",
+    "supplement/chinese.jsonl": "e0103fbb8ee26742ddd1ff1e239843db1858c387cc70fabe7be6f72cd630355f",
+    "supplement/openmobi.jsonl": "d1db3af56328028faada11d86cb863967683b5599df29461e5d12a5918deff6b",
+    "extra-rowers/cases.jsonl": "f0153d9012d42a84d1dd96c4a9f2032c191036bd99ecfdb0ab3dfa4374ba9439",
+    "extra-rowers/international.jsonl": "7beb967cf34165fadc459069557a6c8ae2bdef9927c1b7a27435751147157c20",
+    "extra-rowers/chinese.jsonl": "294f079ef20fbb5a43e390f562e40fabd24b1cae4c4a0f4a7f557517d5d74310",
+    "extra-rowers/openmobi.jsonl": "29bddb13d205196484e2412b6984e1f2407a14904c68933ec78c5b272bf9ca87",
+    "special-rules/cases.jsonl": "c84dbe80b013a02c25323beefb3d002dd8a3ebe1783957c38fd06a575bfa7c62",
+    "special-rules/international.jsonl": "e8211d3331bcc8795764e8db6d2140bd6847b23c727131bdc51afe4e2ac92b71",
+    "special-rules/chinese.jsonl": "7bd6e3f7bb68ee74d17df0816bb7fcaa4f54c9e159fee25948fb3f5bee5425cd",
+    "special-rules/openmobi.jsonl": "4ebc62bd72db39049c0b8ca4c653e0168dccc8f9f0f3526863da1686315a3de7",
+    "regression/cases.jsonl": "d5b3be76a7304fd521a61fc0779ff1773c05a47eb8c8f12293fcc842c20dd5df",
+    "regression/international.jsonl": "72f7f29282f8d0529d7904bc599523e005fae701f045cb3fad8757cce044dbcd",
+    "regression/chinese.jsonl": "ff06154cf3ebd3ffecb653c1874684182d685b2adc176002a4c0dbb6c9109370",
+    "regression/openmobi.jsonl": "4e002f9b6fdab64c88dab1bb9ca4a69e27261bd03e7ed17373ff5cfe4281f2ba"
+  },
+  "unit_tests": {
+    "core": {
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "debug": {
+      "tests": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "release": {
+      "tests": 117,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "native_ui": {
+    "narrow": {
+      "environment": "320x616dp font=1.0 locale=zh-Hans,en-US theme=light\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "582374a17cc39afe32549fb2cbee06c66f3d133041bf08a70c21757ca68694ca",
+        "02-save-error.png": "663d542db3bfab85b6c0a9e1f4b1fef541bd5fac41dd43983800f6ab359e4535",
+        "03-manual-continuation.png": "8ab97df1197fff9bca1b707c6523e508442946841a237456610516719f3ce7bd",
+        "04-details.png": "18affafc124fe7001c1b9e66ca7725ee1157630a4c36ae3153ed894153936921",
+        "05-fold-ready.png": "0eca04312f05a6d46a5ed91a6ffddc5cc4fcc7decbf4e61b4ab01a61c7e3bf63",
+        "06-fold-confirm.png": "ce86936169cb7f812c3a48067f75e061da4f1b1b3364a6479b4a62dde320e8f1",
+        "07-fold-waiting.png": "9b4755832c50f2fddda6c668e2ae88e4600580ddaf50d0dc52732bd645a2b9fd",
+        "08-fold-timeout.png": "843a3d7b584ff0704c92acadfeb73f0f3993c0a499db403d7c3c6979c1cf81d0",
+        "09-fold-unknown.png": "eaf754ad72cc70f74fdeafda543c38f37d2fab0c122777e0b47a26941c6ec405",
+        "10-unsupported.png": "135193dbcf1283686940cc5ec3e423805e83ee5751e6af7c7465d942e3529c2d"
+      },
+      "visual_review": true
+    },
+    "landscape": {
+      "environment": "844x366dp font=1.0 locale=zh-Hans,en-US theme=light\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "00b7c310409083f32124fed9ec6d7d58c87ced3e8ebdd68dae855e17012d5b57",
+        "02-save-error.png": "dd9b8927c4fc59cb92f972e1d2c780c0121e66e5afef1cc747147b91d7eac0eb",
+        "03-manual-continuation.png": "25765d8fb737f1cb03de738913c40080702d1e4d87c7474b1bec02e042e4b4b3",
+        "04-details.png": "d8da80d754f35b90267c559239c4650dcb66d32a43cdb7d7b3cdc9df1410bfff",
+        "05-fold-ready.png": "4a73c370e1b3e83a7ef07bf85008d87f405497599161cedb9a4adc2f8e2a681e",
+        "06-fold-confirm.png": "5a25d3effde34c30330f8960cb1b27b4ae64a4c18f424a6720381167ffaca2ae",
+        "07-fold-waiting.png": "c89410e40a43356083f9745bc41c4f283765b1f9724263ece7b8a0f18f9b84c8",
+        "08-fold-timeout.png": "f892f5f4c282364f23df511cf87db5b3c8763ba19cb6fa0c7ba1bd7371c6ba89",
+        "09-fold-unknown.png": "4bb3f515d18b25cde3d54b3e0d81961b80f7fdb85ede4f30e43e3314a4da8aec",
+        "10-unsupported.png": "edd96f0e75e3457abc17a4fd58282a39444707b2143e219aa21e45e2394eb181"
+      },
+      "visual_review": true
+    },
+    "large": {
+      "environment": "390x820dp font=2.0 locale=zh-Hans,en-US theme=light\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "d3ba1a210bad7f8a63a4b46c0b64fe4c1fba512413440388413114d185f5e77b",
+        "02-save-error.png": "8f2c7e3829da238c95a20e7410c12ab2cf9a6bd5160d2a1d67653befe7fe932f",
+        "03-manual-continuation.png": "1318633a2432ab182808ed2e69e1dc283ce99a45ccbb0a658eb19498732a01da",
+        "04-details.png": "b4eccb67eb195c56ed93b6e90e838631b3fae6a717eba8db962bb91a01c6a90b",
+        "05-fold-ready.png": "e0191fdb98e0e5905c991ec18b24189c17baa53bdd1e4bb47703333cca4f4b1a",
+        "06-fold-confirm.png": "6c3c1f0bcbfd4026d658eea8c9ce850e26239d6ad4b997faa3d967019caa420d",
+        "07-fold-waiting.png": "888caec2244079691604f476d76b35982ef82b567b122f01565e08ff9f8af50d",
+        "08-fold-timeout.png": "4be70e2d7aab0e6bd26883e6f8d535d75d16b49ef0c0893bc2ffd6b592a8d47c",
+        "09-fold-unknown.png": "284e4ac1bec642c2d0ed1c97511cf3c84efac15f267498233ac19841dcadabca",
+        "10-unsupported.png": "d7db81c873a3c9db160a47dbb3e99548f6be3b2ba38f3b875a1a0a7bd75b1494"
+      },
+      "visual_review": true
+    },
+    "phone": {
+      "environment": "390x820dp font=1.0 locale=zh-Hans,en-US theme=light\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "b52a545c836ed433131eff64d240444bda6bf96961b4ea187090509e607a982e",
+        "02-save-error.png": "efbe505a1f521da30cf54daac1105a097aebb074a55a2405329508176d89d1aa",
+        "03-manual-continuation.png": "292caf96d40abf7d869e99f4feadb82b4e77a25b7f5f8d2574ba046dde511cdd",
+        "04-details.png": "1a638346641d7bfdf674c66bc9d496ee33605a984b66609e05198bf590d598d6",
+        "05-fold-ready.png": "bd987c2dfa77564f6e1c0a67a628f59ea0f7403848b4c501843ff8a572de964b",
+        "06-fold-confirm.png": "1d7312ac038d254f22fa6403d2c78e04ebfce286dd5cb02a3e22db662fd152b8",
+        "07-fold-waiting.png": "0c1a6a622f8b048179a54b159d431a945f4f19f87c3be71612a33db8e1b348be",
+        "08-fold-timeout.png": "d80c29ac7823720b8acd559910c31163e5961e69d8a01c1ce3b0d4b5d69d5298",
+        "09-fold-unknown.png": "d2e23e60467073fd72f20cb06aa573f9ad4fe03a40d4bc3be54959be3d8dc73a",
+        "10-unsupported.png": "f6589418003f818aaf7a913f0c9e1a4965d20702acaa1edde89b3da60134fca1"
+      },
+      "visual_review": true
+    },
+    "dark": {
+      "environment": "390x820dp font=1.0 locale=zh-Hans,en-US theme=dark\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "3848a78173b223ef9e5eeb9b949824c3978d439365c81d6a0219f41a10d79900",
+        "02-save-error.png": "34698d79f13a02d045b9bb9bc9a41bb5c70e66d280b09dfe2ad4b61f1a37ed9b",
+        "03-manual-continuation.png": "e77f80339c891845873622ba3054f0fd27b4970da5d3c84233216567a1be64b6",
+        "04-details.png": "877a0870271c66bf6754a33ae159c4775731e11488065cc1da3aad25e1294a03",
+        "05-fold-ready.png": "7dd0df0153a197b854acb23637e1fc73f9760af9f749c8149e393c866ca070e8",
+        "06-fold-confirm.png": "b6f75889bb8dd5cd55c8b9a185874eda4c0c22f3bf3ae17c9902234e02bb3695",
+        "07-fold-waiting.png": "75baa51616f6144c4ed872dd71f8d9c5dadcf0d7db7b47a1868a81b088f2213b",
+        "08-fold-timeout.png": "42a360f9a6dbf9385a1eb0ad94bd8970a9135c5a4484abe82b077b9e4fe3e554",
+        "09-fold-unknown.png": "1316d4cffa53579c87b1d9628bdbcc27af6ce92f4421d038aeca886afc72da16",
+        "10-unsupported.png": "93a36f6cdc8367a8509120dbb2c007ef24f884a82080f12b29399e12db6ed09b"
+      },
+      "visual_review": true
+    },
+    "tablet": {
+      "environment": "1280x829dp font=1.0 locale=zh-Hans,en-US theme=light\nSynthetic UI fixtures; no physical equipment.",
+      "screens": {
+        "01-completed.png": "705260ef7a1f00807640d3ba31736f55500f0fe4e8c2665ae43fe0a741a95649",
+        "02-save-error.png": "16bf60ac2215134414fa6176fc8dda0aca425791cd972b8cdf45fb0f19686480",
+        "03-manual-continuation.png": "5604e35a28c111115c9be03e42f7c75fbb6f7a50b47ab48c47022b8f63fdc284",
+        "04-details.png": "05f2f737c09b8879fd1a88732f1f08f996c3e76c9aa37d3f95e4cd4e818ac674",
+        "05-fold-ready.png": "c1fbbd0e6663dcd93458c1db37009c42816b452e1489f0bcab170a1a7bc3df62",
+        "06-fold-confirm.png": "8987520fba6d597a42117f8785dc8243cb257f97c08d1b194d0b040b6bcaa193",
+        "07-fold-waiting.png": "731bebfb208df1446220afb9574c5688e4456a5ad97c91c06f5166e9a62b6095",
+        "08-fold-timeout.png": "5a23f261e8e96ba94344042ac31e90ea110e89080ce3d65bbf97bd292dd68456",
+        "09-fold-unknown.png": "eb7109360041bfb8fe879b341cefe9142afabc4aecd8a30b9a2177ce33936ec8",
+        "10-unsupported.png": "1a237f583e83f579b6afc83ea506bd4865d579adf9f1c3aa871bc1ed5fc4fd58"
+      },
+      "visual_review": true
+    }
+  },
+  "artifacts": {
+    "regular": {
+      "sha256": "57f907206fa7d465f7e9e180b8e0a9d2ff3b7a03e3e2c7da70296af7132af54a",
+      "certificate_sha256": "2ae11d45867fbce785635c525b382bcbae0dc29f7710c1741029123fbc0d8c4e",
+      "same_certificate_as_v033": true,
+      "zip_alignment_16k": true,
+      "libraries": [
+        {
+          "file": "lib/arm64-v8a/libandroidx.graphics.path.so",
+          "load_alignment": [
+            16384,
+            16384,
+            16384
+          ]
+        },
+        {
+          "file": "lib/x86_64/libandroidx.graphics.path.so",
+          "load_alignment": [
+            16384,
+            16384,
+            16384
+          ]
+        }
+      ]
+    },
+    "debug": {
+      "sha256": "c1c8be09eeb6f75400b1e57af4a2a8d5ee067e1e2537547b566f518a264f5618",
+      "certificate_sha256": "24b3b02f4da6e8c520123bc81ae99d632546d9b2578232431d09f2ae90c1afb3",
+      "same_certificate_as_v033": true,
+      "zip_alignment_16k": true,
+      "libraries": [
+        {
+          "file": "lib/arm64-v8a/libandroidx.graphics.path.so",
+          "load_alignment": [
+            16384,
+            16384,
+            16384
+          ]
+        },
+        {
+          "file": "lib/x86_64/libandroidx.graphics.path.so",
+          "load_alignment": [
+            16384,
+            16384,
+            16384
+          ]
+        }
+      ]
+    }
+  },
+  "upgrade": {
+    "from_version": "0.3.3 (13)",
+    "to_version": "0.3.4 (14)",
+    "before_schema": 8,
+    "after_schema": 9,
+    "regular_demo_entry_absent": true,
+    "tables": {
+      "sessions": {
+        "before": 2,
+        "after": 2,
+        "all_existing_columns_unchanged": true
+      },
+      "samples": {
+        "before": 2,
+        "after": 2,
+        "all_existing_columns_unchanged": true
+      },
+      "users": {
+        "before": 1,
+        "after": 1,
+        "all_existing_columns_unchanged": true
+      },
+      "workouts": {
+        "before": 2,
+        "after": 2,
+        "all_existing_columns_unchanged": true
+      }
+    },
+    "final_installed_apk_sha256": "57f907206fa7d465f7e9e180b8e0a9d2ff3b7a03e3e2c7da70296af7132af54a",
+    "final_visual_screens": {
+      "regular-final.png": "8ea3423b701fe369b31637e83f0f4d8d0a88e9728901c53d4321e364054803d9",
+      "regular-final-devices.png": "4c1aec2e6e366989c788b6b92e6356c73b96ead9c4465612a95fe8488915dbf4"
+    },
+    "final_visual_review": true
+  },
+  "source_tree_sha256": "90a6d7cbbb19819375bf0775e9355404f10ecce23d256c9ff5c9d4b58d5a6a00",
+  "tool_sources": {
+    "SequenceOracle.java": "3379092d24230022830ce6a862f3e3eb592130feefeca07f4d2061e80f0d2c46",
+    "compare.py": "63fe9e9666c1dd57dda08d8c0b5103d0201df32bf82da199e082c9732eab8758",
+    "generate.py": "3932f4a9309dd9adb13223bc2c1839d6c950948f1839d9d18cecc8e674e38c94",
+    "report_v034.py": "b847e1500713c14e5cb53e4e3c2974893302c390ed2ff3520bdb16e8b73f36d9",
+    "run.sh": "f45caa2622bac23c7011d14ec4f048e3482ff085107926903e5c67d72ef5e0ac",
+    "special_rules.py": "37616b0305f4967c15f2192ac7931c88bb4f1f504513d8681e7217c779a8c2fd",
+    "summarize_special.py": "63281994c5c235998163dd216cd911631a723c36e89bd89b42e128162ed94e03",
+    "targeted.py": "4a851558867ff7bb3b26fea0a6301c62ec057ed5dda45da89942e2a718601304",
+    "v034_cases.py": "6b92eeb33213b556aff297e1cc51569765654b975b11876f0a7aef2ae780f449",
+    "validate.py": "6aeb695eee68ecc1fe82b2b893e126ffe5e804a5338cf5ec2981ca5d451dd65e"
+  },
+  "review_notes": [
+    "Main replay changes versus v0.3.3 are metadata, explicit invalidation, zero/unsigned feedback, supported increments and documented guards.",
+    "Rower stress callbacks: speed and cadence match; 687 force differences clear old force at zero speed, 13 reject out-of-bound force. Power differences are truncation, zero-speed handling or validity guards.",
+    "Raw defaults, missing fields, derived metrics, state layers and unmapped fields are not counted as matched product features.",
+    "Each official APK has 106 recorded malformed-input step exceptions, including 48 Firebase-context limitations. These are not passing matches or proof of full-app crashes.",
+    "Fifteen initial treadmill settlement failures were preserved and rerun with explicit STOP initialization. Existing active-state fixtures retain START.",
+    "Only cached LastUpload labels and timestamps are excluded from order-repeat calculation equivalence; exclusions remain in raw evidence."
+  ],
+  "limits": [
+    "No exhaustive model/firmware or radio/mechanical validation.",
+    "No original full-app recording, settlement or cloud parity.",
+    "No calibrated power/energy claim.",
+    "Additional stroke-detail product metrics, unconfirmed 3209 selection and offline histories remain outside support."
+  ]
+}

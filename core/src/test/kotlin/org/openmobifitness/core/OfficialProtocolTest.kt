@@ -128,6 +128,12 @@ class OfficialProtocolTest {
                 packetIndex=r.getValue("packetIndex")
                 metrics=session.receive(r.getValue("characteristic"),r.getValue("packet").bytes())
             }
+            // Vendor divides by zero and substitutes 60/30 rpm for an invalid magnet count.
+            // Keep the original oracle row intact and assert our deliberate rejection separately.
+            if(session.protocol==Protocol.V2 && r.getValue("magnets")=="0" && r.getValue("characteristic")=="8811" && session.profile.kind in 10..11) {
+                assertNull(r.toString(),metrics?.cadence)
+                return@forEach
+            }
             assertNotNull(r.toString(),metrics)
             val value=Metrics::class.java.getMethod("get${r.getValue("field")}").invoke(metrics)
             assertNotNull(r.toString(),value)
@@ -139,8 +145,22 @@ class OfficialProtocolTest {
             val m=Protocols.ftmsCompatibleData(r.getValue("characteristic"),r.getValue("packet").bytes(),r.getValue("name"))
             assertNotNull(r.toString(),m)
             val value=Metrics::class.java.getMethod("get${r.getValue("field")}").invoke(m)
-            assertNotNull(r.toString(),value)
-            assertEquals(r.toString(),r.getValue("expected").toDouble(),(value as Number).toDouble(),1e-9)
+            val bounded=when(r.getValue("field")) {
+                "SpeedMps" -> MetricId.SPEED to (0.0..100.0)
+                "Resistance" -> MetricId.RESISTANCE to (0.0..3276.7)
+                "InclinePercent" -> MetricId.INCLINE to (-100.0..100.0)
+                "Cadence" -> MetricId.CADENCE to (0.0..300.0)
+                "StepRate" -> MetricId.STEP_RATE to (0.0..600.0)
+                "HeartBpm" -> MetricId.HEART to (1.0..255.0)
+                else -> null
+            }
+            if(bounded!=null && r.getValue("expected").toDouble() !in bounded.second) {
+                assertNull(r.toString(),value)
+                assertTrue(bounded.first in m!!.invalidated)
+            } else {
+                assertNotNull(r.toString(),value)
+                assertEquals(r.toString(),r.getValue("expected").toDouble(),(value as Number).toDouble(),1e-9)
+            }
         }
     }
     @Test fun ftmsHandlerConversionsMatchOriginalCallbacksAfterFieldDecoding() {

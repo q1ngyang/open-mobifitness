@@ -6,11 +6,17 @@
 
 首页「仅控制」用于实时看数和调阻，不计记录时长、不创建历史。手机竖屏默认用两列显示即时指标，数值和单位同排；椭圆机／单车的自由记录默认显示频率、心率、距离和热量。自选指标仍按器材保存，多于四项时可翻页。
 
-「开始记录」保留当前连接和档位，从零累计本次记录；「结束保存」后返回仅控制。暂停或断连时停止累计，重连后须主动继续。首页「今日已记录」只统计已保存的非演示运动。个人频率／心率提示需要手动设置并启用，仅提示范围，不改变阻力或推荐训练。
+「开始记录」保留当前连接和档位，从零累计本次记录；「结束保存」后打开本次运动详情。暂停或断连时停止累计，重连后须主动继续。首页「今日已记录」统计当前用户已保存的记录，并标明演示次数。个人频率／心率提示需要手动设置并启用，仅提示范围，不改变阻力或推荐训练。
+
+## 计划完成后
+
+最后一个阶段达到目标时，记录和自动调阻暂停，显示“结束并查看详情”和“继续运动”两个选择。等待选择的时间不计入记录。继续运动保留同一次记录和原方案，改为手动控制；详情分别显示计划时长和追加时长。弹窗的勾勾位于标题及方案说明右侧，按两行文字整体居中。
+
+保存失败会保留暂停记录并允许重试；退出应用后，待选择的完成状态也会恢复。暂停记录不会停止器材电机。
 
 ## 选择训练方案
 
-内置 21 套离线方案，包含热身、恢复、稳态、耐力、渐进和多种间歇训练。可以搜索、按时长等条件筛选、收藏，或复制后修改。它们是 OpenMOBI 制作的方案，不是已停服的官方在线课程。
+内置四类器材共 70 套离线方案，包含热身、恢复、稳态、耐力、渐进和多种间歇训练。可以搜索、按时长等条件筛选、收藏，或复制后修改。它们是 OpenMOBI 制作的方案，不是已停服的官方在线课程。
 
 | 方案示例 | 时长 | 安排 |
 | --- | --- | --- |
@@ -26,7 +32,7 @@
 
 ## 哪些指标可以显示？
 
-在「显示设置」选择和排序：主运动页最多 12 项，小窗 2 项，大窗 4 项，按器材类型分别保存。椭圆机只提供通用项、频率、阻力、功率和速度；划船机提供桨频、桨数、拉力、配速等；跑步机提供速度、坡度、步频、步幅等。跳绳和哑铃有各自的次数／重量项目。切换器材会切换对应配置；旧设置会先过滤不适用指标。
+在「显示设置」选择和排序：主运动页最多 12 项，小窗 2 项，大窗 4 项，按器材类型分别保存。椭圆机提供通用项、频率、阻力、功率、速度及可用的坡度；划船机提供桨频、桨数、拉力、配速等；跑步机提供速度、坡度、步频、步幅等。跳绳和哑铃有各自的次数／重量项目。切换器材会切换对应配置；旧设置会先过滤不适用指标。
 
 能否显示取决于器材有没有对应数据。缺失显示 `—`；`≈` 表示估算，不是传感器实测。
 
@@ -41,7 +47,7 @@
 | 热量 | 优先设备累计值；其次为官方划船模型或 V1／V2 脉冲／HuanTong 的功率＋体重模型，其他设备使用体重＋MET 备用估算 |
 | 桨数、步频、步幅、坡度、拉力 | 仅显示已支持且数据可用的字段；未知机型不套用其他型号的换算 |
 
-旧 V1 椭圆机的速度为 `rpm ÷ 2.68 ÷ 4` km/h，单车不除以 4。它是虚拟运动距离，并非实际向前移动的距离。依靠距离／桨数结束的阶段需要器材累计读数，不能用虚拟估算替代。
+旧 V1 椭圆机的速度为 `rpm ÷ 2.68 ÷ 4` km/h，单车不除以 4。它是虚拟运动距离，并非实际向前移动的距离。依靠距离／桨数结束的阶段需要有效的累计计数，不能只靠旧速度持续积分。AT-R 子型 1 使用设备转数换算虚拟距离，仍标明估算；停止上报后不追加虚拟距离。
 
 ## 为什么功率、热量可能与体感不同？
 
@@ -57,11 +63,17 @@ V1 功率采用官方旧版的数学模型，不是功率计读数，部分高�
 
 Control only shows live readings and resistance controls without recording time or creating history. Phone portrait uses two metric columns with inline units. Elliptical/bike free recordings default to cadence, heart rate, distance and energy. Custom selections remain separate by machine; more than four metrics can be paged.
 
-Start recording retains the connection and level and begins new totals. Finish and save returns to control only. Pauses and disconnections stop accumulation; reconnecting requires an explicit resume. Today's recorded summary includes saved non-demo sessions only. Personal frequency/heart-rate hints require manually entered bounds and explicit activation. They neither change resistance nor recommend workouts.
+Start recording retains the connection and level and begins new totals. Finish and save opens the session details. Pauses and disconnections stop accumulation; reconnecting requires an explicit resume. Today's summary includes the current user's saved sessions and labels demo counts. Personal frequency/heart-rate hints require manually entered bounds and explicit activation. They neither change resistance nor recommend workouts.
+
+### After a plan completes
+
+At the final target, recording and automatic resistance pause. Choose to finish and view details, or continue manually in the same record. Decision time is excluded. The original plan stays attached, and details separate planned and additional duration. The checkmark is centered beside the combined heading and subtitle.
+
+A failed save preserves the paused record for retry; a pending completion choice survives app restart. Pausing recording does not stop the equipment motor.
 
 ### Choose a plan
 
-There are 21 offline plans covering warm-up, recovery, steady work, endurance, progressive work and several interval formats. Search, filter by duration and other options, save favorites, or copy and edit a plan. These are OpenMOBI plans, not recovered official online courses.
+There are 70 offline plans across four equipment types covering warm-up, recovery, steady work, endurance, progressive work and several interval formats. Search, filter by duration and other options, save favorites, or copy and edit a plan. These are OpenMOBI plans, not recovered official online courses.
 
 | Example | Duration | Structure |
 | --- | --- | --- |
@@ -77,7 +89,7 @@ Plan energy figures are only references. The 40-minute aerobic plan assumes 70 k
 
 ### Available metrics
 
-Display settings offers up to 12 workout-screen metrics, 2 compact-panel metrics and 4 expanded-panel metrics, saved separately for each machine type. Ellipticals offer common metrics, cadence, resistance, power and speed; rowers add rowing rate/count, force and pace; treadmills offer speed, incline, step rate and stride. Jump ropes and dumbbells have their own count/weight fields. Switching equipment restores its preferences; incompatible old choices are filtered.
+Display settings offers up to 12 workout-screen metrics, 2 compact-panel metrics and 4 expanded-panel metrics, saved separately for each machine type. Ellipticals offer common metrics, cadence, resistance, power, speed and available incline; rowers add rowing rate/count, force and pace; treadmills offer speed, incline, step rate and stride. Jump ropes and dumbbells have their own count/weight fields. Switching equipment restores its preferences; incompatible old choices are filtered.
 
 Availability depends on equipment data. `—` means unavailable; `≈` means estimated rather than directly measured.
 
@@ -92,7 +104,7 @@ Availability depends on equipment data. `—` means unavailable; `≈` means est
 | Energy | Equipment total first, then official rowing or V1/V2 pulse/HuanTong power-and-weight calculation, otherwise weight-and-MET estimation |
 | Stroke/step data, stride, incline and force | Only implemented fields with available data; unknown models do not inherit another model's calibration |
 
-Older V1 ellipticals use `rpm ÷ 2.68 ÷ 4` km/h; bikes omit the division by four. This represents virtual distance, not ground travel. Distance/stroke-ended stages require measured cumulative readings, not virtual estimates.
+Older V1 ellipticals use `rpm ÷ 2.68 ÷ 4` km/h; bikes omit the division by four. This represents virtual distance, not ground travel. Distance/stroke-ended stages require valid cumulative counters, not continued integration of stale speed. AT-R subtype 1 converts device revolutions into labeled virtual distance and stops adding it when reports cease.
 
 ### Why might power or energy feel too high?
 

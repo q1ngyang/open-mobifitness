@@ -3,6 +3,8 @@ package org.openmobifitness.app.ble
 import android.app.Application
 import android.bluetooth.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import org.openmobifitness.app.data.saveUser
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -32,8 +34,8 @@ class BleClientTest {
     private lateinit var gatt: BluetoothGatt
     private lateinit var callback: BluetoothGattCallback
     private lateinit var notify: BluetoothGattCharacteristic
-    private fun setupGatt(descriptor: Boolean=true,allow: Boolean=true,discoveryDeadline: Job?=null,treadmill: Boolean=false) {
-        client=BleClient(RuntimeEnvironment.getApplication(),scope,operationGapMs=0)
+    private fun setupGatt(descriptor: Boolean=true,allow: Boolean=true,discoveryDeadline: Job?=null,treadmill: Boolean=false,foldTimeout: Long=15000) {
+        client=BleClient(RuntimeEnvironment.getApplication(),scope,operationGapMs=0,foldFeedbackTimeoutMs=foldTimeout)
         callback=ReflectionHelpers.getField(client,"callback")
         gatt=ShadowBluetoothGatt.newInstance(BluetoothAdapter.getDefaultAdapter().getRemoteDevice("00:11:22:33:44:55"))
         ReflectionHelpers.setField(client,"gatt",gatt)
@@ -79,6 +81,63 @@ class BleClientTest {
         assertEquals(1,client.state.value.deviceDetails.foldedState)
         assertTrue(client.trainingStatus(1))
         assertArrayEquals(MobiCommands.v1Treadmill(0,0),shadowOf(gatt).latestWrittenBytes)
+    }
+
+    @Test fun foldRequiresMatchingFeedbackAndNeverRepeatsOnTimeout()=runBlocking {
+        setupGatt(treadmill=true,foldTimeout=30)
+        callback.onCharacteristicChanged(gatt,notify,frame().apply { this[3]=12; this[4]=18 })
+        callback.onCharacteristicChanged(gatt,notify,byteArrayOf(0xae.toByte(),1,0,1))
+        assertTrue(client.fold(1,client.connectionId) { true })
+        assertEquals("waiting",client.state.value.foldPhase)
+        assertArrayEquals(MobiCommands.v1Treadmill(7,0),shadowOf(gatt).latestWrittenBytes)
+        assertFalse(client.fold(1,client.connectionId) { true })
+        delay(60)
+        assertEquals("timeout",client.state.value.foldPhase)
+        assertArrayEquals(MobiCommands.v1Treadmill(7,0),shadowOf(gatt).latestWrittenBytes)
+        assertFalse(client.fold(1,client.connectionId) { true })
+        client.refreshFoldState()
+        assertArrayEquals(MobiCommands.v1Treadmill(0,0),shadowOf(gatt).latestWrittenBytes)
+        callback.onCharacteristicChanged(gatt,notify,byteArrayOf(0xae.toByte(),1,0,0))
+        assertEquals("idle",client.state.value.foldPhase)
+        assertFalse(client.fold(1,client.connectionId) { true })
+        assertFalse(client.fold(0,client.connectionId) { false })
+    }
+    @Test fun v2FoldingUsesInteractionServiceAndRejectsObsoleteConfirmation()=runBlocking {
+        setupModern(Protocol.V2,fold=true)
+        assertTrue(client.state.value.deviceDetails.supportFold)
+        assertFalse(client.fold(2,client.connectionId) { true })
+        val mutex=ReflectionHelpers.getField<kotlinx.coroutines.sync.Mutex>(client,"controls")
+        mutex.lock()
+        var allowed=true
+        val queued=async(start=CoroutineStart.UNDISPATCHED) { client.fold(1,client.connectionId) { allowed } }
+        allowed=false;mutex.unlock();assertFalse(queued.await())
+        assertTrue(client.fold(1,client.connectionId) { true })
+        assertArrayEquals(byteArrayOf(3,1,0),shadowOf(gatt).latestWrittenBytes)
+        assertEquals(1,client.state.value.deviceDetails.foldedState)
+        val report=gatt.getService(BleClient.uuid("8900")).getCharacteristic(BleClient.uuid("8902"))
+        callback.onCharacteristicChanged(gatt,report,byteArrayOf(3,1,0))
+        assertEquals("idle",client.state.value.foldPhase);assertNull(client.state.value.foldTarget)
+        client.disconnect();callback.onCharacteristicChanged(gatt,report,byteArrayOf(3,1,1))
+        assertNull(client.state.value.deviceDetails.foldedState)
+    }
+    @Test fun distancePlanStartsReportingBeforeWaitingForItsFirstCounter()=runBlocking {
+        val app=RuntimeEnvironment.getApplication()
+        app.deleteDatabase("openmobi.db");app.getSharedPreferences("preferences",0).edit().clear().commit()
+        setupModern(Protocol.V2)
+        val c=org.openmobifitness.app.Controller(app,CoroutineScope(SupervisorJob()+Dispatchers.Unconfined),tickAutomatically=false)
+        try {
+            withTimeout(5000) { c.state.first { it.ready } }
+            ReflectionHelpers.setField(c,"ble",client)
+            val user=UserProfile(name="Reporting QA");c.repo.saveUser(user);c.switchUser(user.id).join();c.setIdentityPolicy(IdentityPolicy.REMEMBER)
+            c.select(Workout(title="Distance",machine=Machine.ELLIPTICAL,ownerUserId=user.id,steps=listOf(Step(Condition.DISTANCE,100.0))))
+            val starting=c.start()
+            withTimeout(5000) { c.state.first { it.starting } }
+            assertArrayEquals(byteArrayOf(4),shadowOf(gatt).latestWrittenBytes)
+            assertNull(c.state.value.session)
+            callback.onCharacteristicChanged(gatt,notify,byteArrayOf(30,0,60,0,30,0,100,0,40,0,100))
+            withTimeout(5000) { starting.join() }
+            assertNotNull(c.state.value.session);assertNull(c.state.value.error)
+        } finally { c.scope.cancel();c.repo.db.close() }
     }
 
     @Test fun subscribedButSilentEquipmentIsNotReadyForTraining() {
@@ -192,7 +251,7 @@ class BleClientTest {
         assertFalse(client.resistance(4.0))
     }
     @Suppress("DEPRECATION")
-    private fun setupModern(protocol: Protocol) {
+    private fun setupModern(protocol: Protocol,fold: Boolean=false) {
         client=BleClient(RuntimeEnvironment.getApplication(),scope,operationGapMs=0)
         callback=ReflectionHelpers.getField(client,"callback")
         gatt=ShadowBluetoothGatt.newInstance(BluetoothAdapter.getDefaultAdapter().getRemoteDevice("00:11:22:33:44:55"))
@@ -214,6 +273,18 @@ class BleClientTest {
             service.addCharacteristic(c)
         }
         shadowOf(gatt).addDiscoverableService(service)
+        if(fold) {
+            val extra=BluetoothGattService(BleClient.uuid("8900"),0)
+            listOf(Triple("8901",2,byteArrayOf(4)),Triple("8902",18,byteArrayOf(3,1,1)),Triple("8903",8,byteArrayOf())).forEach { (id,props,bytes) ->
+                val characteristic=BluetoothGattCharacteristic(BleClient.uuid(id),props,17).apply { value=bytes }
+                if(props and 16!=0) {
+                    characteristic.addDescriptor(BluetoothGattDescriptor(BleClient.uuid("2902"),16))
+                    shadowOf(gatt).allowCharacteristicNotification(characteristic)
+                }
+                extra.addCharacteristic(characteristic)
+            }
+            shadowOf(gatt).addDiscoverableService(extra)
+        }
         assertTrue(gatt.discoverServices())
     }
     @Test fun aggregateDeviceCanStartReportingAfterInitializationAndExplicitTrainingStart()=runBlocking {

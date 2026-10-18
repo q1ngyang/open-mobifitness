@@ -21,7 +21,8 @@ object AppLog {
     private val queue=Channel<Command>(256)
     private var store: BoundedLogStore?=null
     private var prefs: android.content.SharedPreferences?=null
-    private val lastPacket=mutableMapOf<String,Long>()
+    private val dropped=java.util.concurrent.atomic.AtomicLong()
+    private val packetSequence=java.util.concurrent.atomic.AtomicLong()
     fun initialize(context: Context) {
         store=BoundedLogStore(File(context.filesDir,"logs"))
         prefs=context.getSharedPreferences("preferences",Context.MODE_PRIVATE)
@@ -40,17 +41,13 @@ object AppLog {
     }
     private fun clean(value: String)=value.replace(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}"),"[address]").take(1800)
     private fun entry(type: String,detail: String)=JSONObject().put("at",Instant.now().toString()).put("event",type).put("detail",clean(detail)).toString()
-    fun event(type: String,detail: String="") { queue.trySend(Command.Append(entry(type,detail))) }
+    fun event(type: String,detail: String="") { if(queue.trySend(Command.Append(entry(type,detail))).isFailure) dropped.incrementAndGet() }
     private fun frames(t: Throwable)=t.javaClass.simpleName+"\n"+t.stackTrace.take(14).joinToString("\n")
     fun exception(type: String,error: Throwable)=event(type,frames(error))
     fun packet(direction: String,characteristic: String,bytes: ByteArray) {
         if(prefs?.getBoolean("packet_logs",true)!=true) return
         val key="$direction:$characteristic"; val now=android.os.SystemClock.elapsedRealtime()
-        synchronized(lastPacket) {
-            if(direction=="rx" && now-(lastPacket[key] ?: 0)<200) return
-            lastPacket[key]=now
-        }
-        event("packet","$key len=${bytes.size} ${bytes.take(64).joinToString("") { "%02x".format(it) }}")
+        event("packet","seq=${packetSequence.incrementAndGet()} monoMs=$now $key len=${bytes.size} ${bytes.take(64).joinToString("") { "%02x".format(it) }}${if(bytes.size>64) " truncated" else ""}")
     }
     suspend fun clear() {
         val result=CompletableDeferred<Unit>(); queue.send(Command.Clear(result)); result.await()
@@ -63,6 +60,7 @@ object AppLog {
                 appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
                 appendLine("Android: ${Build.VERSION.SDK_INT}; manufacturer=${Build.MANUFACTURER}; model=${Build.MODEL}")
                 appendLine("Protocol trace enabled: ${c.display.packets.value}; simulated: ${c.state.value.demo}")
+                appendLine("Packet sequence: ${packetSequence.get()}; queue drops: ${dropped.get()}; bounded ring may discard oldest records")
                 listOf("equipment" to c.ble.state.value,"heart" to c.heart.state.value).forEach { (role,state) ->
                     appendLine("$role: ${state.phase} ${state.protocol} ${state.machine} range=${state.range} writable=${state.writable}")
                     appendLine("  subscriptions=${state.subscriptions} received=${state.receivedPackets} parsed=${state.parsedPackets} dataReceived=${state.dataReceived}")

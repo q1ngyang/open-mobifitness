@@ -17,6 +17,7 @@ class MobiFtmsSession(private val name: String) {
     fun metadata(characteristic: String,data: ByteArray) {
         fun le(offset: Int)=(data[offset].toInt() and 255) or ((data[offset+1].toInt() and 255) shl 8)
         when(characteristic) {
+            "2a19" -> if(data.size==1 && (data[0].toInt() and 255) in 0..100) details=details.copy(battery=data[0].toInt() and 255)
             "2ad4" -> if(data.size>=4) details=details.copy(speed=MobiAxis(details.speed?.mode ?: 3,
                 (le(0)*0.01).roundToInt().toDouble(),(le(2)*0.01).roundToInt().toDouble()))
             "2ad5" -> if(data.size>=4) details=details.copy(incline=MobiAxis(details.incline?.mode ?: 2,
@@ -44,8 +45,8 @@ class MobiFtmsSession(private val name: String) {
     fun receive(characteristic: String,data: ByteArray): Metrics? {
         val m=Protocols.ftmsCompatibleData(characteristic,data,name,handlerValues=true) ?: return null
         machine=when(characteristic) { "2ace" -> Machine.ELLIPTICAL; "2ad2" -> Machine.BIKE; "2ad1" -> Machine.ROWER; else -> Machine.TREADMILL }
-        m.resistance?.takeIf { it>0 && (range?.contains(it)!=false) }?.let { actualResistance=it.toInt() }
-        cadence=m.cadence ?: cadence
+        m.resistance?.takeIf { it>=0 && (range?.contains(it)!=false) }?.let { actualResistance=it.toInt() }
+        cadence=if(MetricId.CADENCE in m.invalidated) null else m.cadence ?: cadence
         val calculated=when(machine) {
             Machine.BIKE,Machine.ELLIPTICAL -> calculationResistance.power(cadence,range ?: ResistanceRange(1.0,24.0),false).also { energyPower=it }
             Machine.ROWER -> m.speedMps?.let { AlternateCalculations.rowingPower(it) }.also {

@@ -126,6 +126,7 @@ private val lightColors=lightColorScheme(
                 }
             }
         }
+        if(state.completionPending) PlanCompletionDialog(controller,state,link)
         val finished by controller.finishedSession.collectAsStateWithLifecycle()
         if(finished!=null) Dialog(onDismissRequest=activity::closeCompletedReport,properties=DialogProperties(usePlatformDefaultWidth=false)) {
             BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp),contentAlignment=Alignment.Center) {

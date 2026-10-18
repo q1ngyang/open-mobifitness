@@ -64,22 +64,53 @@ class TelemetryTotals(initial: Metrics = Metrics()) {
     private var lastJumps=initial.jumpCount
     private var lastRepetitions=initial.repetitions
     private var lastInterruptions=initial.jumpInterruptions
-    fun rebase() { lastDistance=null; lastEnergy=null; lastStrokes=null; lastSteps=null; lastJumps=null; lastRepetitions=null; lastInterruptions=null }
+    private var lastDuration=initial.deviceDurationSec
+    private var lastMotionMs=initial.cumulativeMotionMs
+    private val counterAges=mutableMapOf<MetricId,Double>()
+    fun rebase() { lastDistance=null; lastEnergy=null; lastStrokes=null; lastSteps=null; lastJumps=null; lastRepetitions=null; lastInterruptions=null; lastDuration=null; lastMotionMs=null; counterAges.clear() }
+    fun restore(session: Session, last: Metrics) {
+        distanceM=session.distanceM; caloriesKcal=session.caloriesKcal
+        strokes=last.strokes; steps=last.stepCount; jumps=last.jumpCount; repetitions=last.repetitions; jumpInterruptions=last.jumpInterruptions
+        distanceEstimated=session.distanceEstimated; caloriesEstimated=session.caloriesEstimated; energyModel=session.energyModel
+        rebase()
+    }
     fun update(m: Metrics,elapsedMs: Long,active: Boolean,machine: Machine,protocol: Protocol,weightKg: Double,met: Double,legacyWatts: Double?=null,legacyRowingRate: Double?=null) {
-        val distanceDelta=m.distanceM?.let { raw -> lastDistance?.let { (raw-it).coerceAtLeast(0.0) } ?: 0.0 }
-        val energyDelta=m.caloriesKcal?.let { raw -> lastEnergy?.let { (raw-it).coerceAtLeast(0.0) } ?: 0.0 }
-        val strokeDelta=m.strokes?.let { raw -> lastStrokes?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
-        val stepDelta=m.stepCount?.let { raw -> lastSteps?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
-        val jumpDelta=m.jumpCount?.let { raw -> lastJumps?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
-        val repetitionDelta=m.repetitions?.let { raw -> lastRepetitions?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
-        val interruptionDelta=m.jumpInterruptions?.let { raw -> lastInterruptions?.let { (raw-it).coerceAtLeast(0) } ?: 0 }
+        val seconds=elapsedMs.coerceIn(0,5000)/1000.0
+        // A device timer reset is stronger evidence than a near-boundary count.
+        if(m.deviceDurationSec!=null && lastDuration!=null && m.deviceDurationSec<lastDuration!! &&
+            counterDelta(lastDuration!!.toLong(),m.deviceDurationSec.toLong(),65536,(seconds+1).toLong())==0L) rebase()
+        lastDuration=m.deviceDurationSec ?: lastDuration
+        fun delta(id: MetricId,raw: Double?,previous: Double?,perSecond: Double): Double? {
+            val age=((counterAges[id] ?: 0.0)+seconds).coerceAtMost(86400.0)
+            counterAges[id]=age
+            if(raw==null) return null
+            if(previous==null) { counterAges[id]=0.0; return 0.0 }
+            if(raw==previous) return 0.0
+            counterAges[id]=0.0
+            // Permit batched reports using time since the last change, but do not
+            // turn a one-frame counter spike into an enormous saved workout.
+            val bound=perSecond*(age+1)
+            if(raw>previous) return (raw-previous).takeIf { it<=bound } ?: 0.0
+            val modulus=m.counterModuli[id]
+            val wrapped=if(modulus!=null) modulus-previous+raw else 0.0
+            return if(modulus!=null && previous in (modulus-bound)..modulus && raw in 0.0..bound && wrapped>0 && wrapped<=bound) wrapped else 0.0
+        }
+        val distanceDelta=delta(MetricId.DISTANCE,m.distanceM,lastDistance,100.0)
+        val energyDelta=delta(MetricId.CALORIES,m.caloriesKcal,lastEnergy,10.0)
+        val strokeDelta=delta(MetricId.STROKES,m.strokes?.toDouble(),lastStrokes?.toDouble(),5.0)?.toInt()
+        val stepDelta=delta(MetricId.STEP_RATE,m.stepCount?.toDouble(),lastSteps?.toDouble(),10.0)?.toInt()
+        val jumpDelta=delta(MetricId.JUMPS,m.jumpCount?.toDouble(),lastJumps?.toDouble(),10.0)?.toInt()
+        val repetitionDelta=delta(MetricId.REPETITIONS,m.repetitions?.toDouble(),lastRepetitions?.toDouble(),5.0)?.toInt()
+        val interruptionDelta=delta(MetricId.JUMP_INTERRUPTS,m.jumpInterruptions?.toDouble(),lastInterruptions?.toDouble(),10.0)?.toInt()
         lastDistance=m.distanceM; lastEnergy=m.caloriesKcal; lastStrokes=m.strokes; lastSteps=m.stepCount
         lastJumps=m.jumpCount; lastRepetitions=m.repetitions; lastInterruptions=m.jumpInterruptions
+        val observedMotionMs=m.cumulativeMotionMs?.let { (it-(lastMotionMs ?: it)).coerceAtLeast(0) }
+        lastMotionMs=m.cumulativeMotionMs
         if(!active) return
         // A current sample cannot explain a long suspension gap; do not extrapolate it.
-        val interval=elapsedMs.coerceIn(0,5000)
+        val interval=(observedMotionMs ?: elapsedMs).coerceIn(0,elapsedMs.coerceIn(0,5000))
         val virtual=if(protocol in setOf(Protocol.V1,Protocol.V2,Protocol.HUANTONG)) Estimates.legacySpeed(m.cadence,machine) else null
-        if(distanceDelta!=null) distanceM=(distanceM ?: 0.0)+distanceDelta
+        if(distanceDelta!=null) { distanceM=(distanceM ?: 0.0)+distanceDelta; distanceEstimated=distanceEstimated || m.distanceEstimated }
         else (m.speedMps ?: virtual)?.let { distanceM=(distanceM ?: 0.0)+it*interval/1000; distanceEstimated=true }
         if(energyDelta!=null) { caloriesKcal=(caloriesKcal ?: 0.0)+energyDelta; source("device") }
         else if(machine==Machine.ROWER && legacyRowingRate!=null && legacyRowingRate.isFinite() && legacyRowingRate>=0) {

@@ -27,16 +27,33 @@ data class Metrics(
     val powerEstimated: Boolean = false,
     val jumpCount: Int? = null, val continuousJumps: Int? = null, val jumpInterruptions: Int? = null,
     val repetitions: Int? = null, val loadKg: Double? = null, val deviceDurationSec: Int? = null,
-    val dumbbellFewActions: Int? = null, val dumbbellActionNumber: Int? = null
+    val dumbbellFewActions: Int? = null, val dumbbellActionNumber: Int? = null,
+    val distanceEstimated: Boolean = false,
+    val invalidated: Set<MetricId> = emptySet(),
+    val counterModuli: Map<MetricId,Double> = emptyMap(),
+    val cumulativeMotionMs: Long? = null
 ) {
-    fun merge(new: Metrics) = Metrics(new.cadence ?: cadence, new.resistance ?: resistance, new.speedMps ?: speedMps,
+    fun merge(new: Metrics): Metrics {
+        val merged=Metrics(new.cadence ?: cadence, new.resistance ?: resistance, new.speedMps ?: speedMps,
         new.distanceM ?: distanceM, new.heartBpm ?: heartBpm, if(new.powerEstimated) new.powerW else new.powerW ?: powerW, new.strokes ?: strokes,
         new.caloriesKcal ?: caloriesKcal,new.inclinePercent ?: inclinePercent,new.strideM ?: strideM,
         new.forceN ?: forceN,new.stepRate ?: stepRate,new.stepCount ?: stepCount,new.targetCadence ?: targetCadence,
         if(new.powerW!=null || new.powerEstimated) new.powerEstimated else powerEstimated,
         new.jumpCount ?: jumpCount,new.continuousJumps ?: continuousJumps,new.jumpInterruptions ?: jumpInterruptions,
         new.repetitions ?: repetitions,new.loadKg ?: loadKg,new.deviceDurationSec ?: deviceDurationSec,
-        new.dumbbellFewActions ?: dumbbellFewActions,new.dumbbellActionNumber ?: dumbbellActionNumber)
+        new.dumbbellFewActions ?: dumbbellFewActions,new.dumbbellActionNumber ?: dumbbellActionNumber,
+        if(new.distanceM!=null) new.distanceEstimated else distanceEstimated)
+        return merged.copy(cadence=merged.cadence.takeUnless { MetricId.CADENCE in new.invalidated },
+            resistance=merged.resistance.takeUnless { MetricId.RESISTANCE in new.invalidated },
+            inclinePercent=merged.inclinePercent.takeUnless { MetricId.INCLINE in new.invalidated },
+            speedMps=merged.speedMps.takeUnless { MetricId.SPEED in new.invalidated },
+            powerW=merged.powerW.takeUnless { MetricId.POWER in new.invalidated },
+            stepRate=merged.stepRate.takeUnless { MetricId.STEP_RATE in new.invalidated },
+            strideM=merged.strideM.takeUnless { MetricId.STRIDE in new.invalidated },
+            forceN=merged.forceN.takeUnless { MetricId.FORCE in new.invalidated },
+            heartBpm=merged.heartBpm.takeUnless { MetricId.HEART in new.invalidated },counterModuli=counterModuli+new.counterModuli,
+            cumulativeMotionMs=new.cumulativeMotionMs ?: cumulativeMotionMs)
+    }
 }
 data class Session(
     val id: String = UUID.randomUUID().toString(), val start: String = Instant.now().toString(),
@@ -48,7 +65,8 @@ data class Session(
     val workoutId: String = "", val workoutTitle: String = "", val archived: Boolean = false, val energyModel: String = "",
     val ownerUserId: String?=null, val startedUserId: String?=null, val startedUserName: String="",
     val weightSource: String="", val metSource: String="", val workoutSnapshot: String="",
-    val capabilitySnapshot: String="", val identityVersion: Int=0, val ownerHistory: String="", val enteredStageIds: String=""
+    val capabilitySnapshot: String="", val identityVersion: Int=0, val ownerHistory: String="", val enteredStageIds: String="",
+    val planCompletedMs: Long?=null, val completionPending: Boolean=false
 )
 data class Sample(val sessionId: String, val elapsedMs: Long, val metrics: Metrics)
 enum class Condition { TIME, DISTANCE, STROKES }
@@ -104,6 +122,9 @@ class TrainingEngine(val workout: Workout) {
     private var startDistance: Double? = null
     private var startStrokes: Int? = null
     var done = false; private set
+    /** Exact deadline when every remaining stage uses time; sensor stages have no predicted end. */
+    fun completionDeadlineMs(): Long? = if(done || workout.steps.drop(index).any { it.condition!=Condition.TIME }) null
+        else startMs+workout.steps.drop(index).sumOf { (it.target*1000).toLong() }
     fun remainingMs(elapsedMs: Long): Long? = when {
         done -> 0L
         workout.steps[index].condition!=Condition.TIME -> null

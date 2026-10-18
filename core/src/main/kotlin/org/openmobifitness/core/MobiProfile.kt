@@ -1,5 +1,7 @@
 package org.openmobifitness.core
 
+import kotlin.math.roundToInt
+
 data class MobiProfile(val machine: Machine, val kind: Int, val subtype: Int, val name: String,
                        val resistanceMode: Int, val range: ResistanceRange?) {
     val canReadResistance get() = resistanceMode == 2 || resistanceMode == 3
@@ -38,7 +40,7 @@ object MobiProfiles {
             else -> 0 to 24
         }
         val name = when(kind) {
-            9 -> listOf("water", "magnetic", "mini-water", "air", "dynamic-air", "standard-magnetic", "upright-water").getOrNull(subtype)
+            9 -> listOf("water", "magnetic", "mini-water", "air", "dynamic-air", "standard-magnetic", "upright-water", "MRH3208", "MRH3204", "MRH1105A", "MRH3202").getOrNull(subtype)
             10 -> mapOf(1 to "small-magnetic",18 to "large-magnetic",19 to "MBH3204",20 to "MBH3203",21 to "MBH3205",22 to "MBH3206",23 to "MBH3201",24 to "MBH3208",25 to "MBH2201",32 to "spin-bike",33 to "MBH3207")[subtype]
             11 -> mapOf(1 to "small-magnetic",17 to "0B11",18 to "MEH3205",19 to "MEH3204",20 to "MEH3201",21 to "front-drive",22 to "MEH3206")[subtype]
             12 -> mapOf(0 to "powered-climber",1 to "unpowered-treadmill",17 to "Yiwei",18 to "MTH0202_5",19 to "MTH0201",20 to "MTH0203",21 to "incline-treadmill")[subtype]
@@ -85,7 +87,7 @@ object MobiCommands {
      */
     fun ftmsResistance(level: Double): ByteArray {
         require(level.isFinite() && level in 0.0..25.5)
-        return byteArrayOf(4,(level*10).toInt().toByte())
+        return byteArrayOf(4,(level*10).roundToInt().toByte())
     }
     fun ftmsSpeed(tenthsKmh: Int): ByteArray {
         require(tenthsKmh in 0..6553)

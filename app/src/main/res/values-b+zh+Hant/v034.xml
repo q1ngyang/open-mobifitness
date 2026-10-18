@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_finished">訓練計畫已完成</string>
+    <string name="plan_finished_subtitle">%1$s · %2$d / %2$d 階段</string>
+    <string name="plan_choice_help">紀錄已暫停，請選擇接下來的操作。</string>
+    <string name="plan_view_details">結束並查看詳情</string>
+    <string name="plan_continue_manual">繼續運動 · 手動控制</string>
+    <string name="plan_continue">繼續運動</string>
+    <string name="plan_same_record">繼續運動仍計入本次紀錄。</string>
+    <string name="plan_pause_equipment">暫停紀錄不會停止器材。</string>
+    <string name="plan_saving">正在儲存…</string>
+    <string name="plan_save_error">儲存失敗，紀錄已暫停。請重試或繼續運動。</string>
+    <string name="manual_continuation">正在繼續運動</string>
+    <string name="plan_time">計畫時間</string>
+    <string name="manual_time">追加時間</string>
+    <string name="fold_title">展開 / 收起</string>
+    <string name="fold_action">展開 / 收起器材</string>
+    <string name="fold_confirm">切換器材展開／收起狀態？</string>
+    <string name="fold_help">請先離開器材，確認周圍空間無人和障礙物。操作期間請保持連線。</string>
+    <string name="fold_ready">已收到器材狀態</string>
+    <string name="fold_unknown">等待器材狀態</string>
+    <string name="fold_pending">指令已傳送 · 等待器材回報</string>
+    <string name="fold_timeout">尚未收到完成回報，請重新讀取狀態後再操作。</string>
+    <string name="fold_blocked">結束運動並停止器材後可操作。</string>
+    <string name="fold_refresh">重新讀取狀態</string>
+    <string name="fold_failed">指令未確認，請重新讀取器材狀態。</string>
+</resources>

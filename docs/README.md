@@ -12,7 +12,7 @@
 | 训练方案、档位与估算数据 / Plans, resistance and estimates | [训练说明 / Workouts](TRAINING.md) |
 | 手机和平板的样子 / Phone and tablet views | [界面展示 / Screenshots](SCREENSHOTS.md) |
 | 数据保存、权限和网络 / Storage, permissions and network use | [隐私说明 / Privacy](PRIVACY.md) |
-| 最新版本 / Latest release | [v0.3.3](releases/v0.3.3.md) |
+| 最新版本 / Latest release | [v0.3.4](releases/v0.3.4.md) · [验证 / Validation](V034_VALIDATION.md) |
 | 多用户、器材训练与升级 / Profiles, plans and upgrading | [v0.3.0 使用变化 / Feature guide](V030_GUIDE.md) |
 | 上一版本 / Previous release | [v0.3.2](releases/v0.3.2.md) |
 
@@ -26,6 +26,7 @@
 - [品牌与素材许可 / Branding and asset credits](BRANDING.md)
 
 - [协议差分验证 / Protocol verification](PROTOCOL_VERIFICATION.md)：官方 DEX、型号能力、指标分组与本地测试边界 / Original DEX, model capabilities, metric groups and local test limits.
+- [REA 蓝牙与算法复核 / REA audit](REA_AUDIT.md)：三方 APK 差分、Issue #1 同类遗漏、展开／收起与零档位规则补查 / Three-APK differential execution, Issue #1 follow-up, folding and zero-resistance rules.
 
 - [v0.1.1 V1 椭圆机兼容性复核](V011_COMPATIBILITY_REVIEW.md)
 

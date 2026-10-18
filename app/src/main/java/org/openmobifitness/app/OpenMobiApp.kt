@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.openmobifitness.app.ble.*
@@ -37,10 +38,12 @@ data class ExerciseState(
     val jumpCount: Int? = null, val repetitions: Int? = null, val jumpInterruptions: Int? = null,
     val controlOnly: Boolean = false, val starting: Boolean = false,
     val frequencyHint: RangePosition=RangePosition.UNAVAILABLE, val heartHint: RangePosition=RangePosition.UNAVAILABLE,
-    val hintsMuted: Boolean=false, val hintEvent: Long=0
+    val hintsMuted: Boolean=false, val hintEvent: Long=0, val finishing: Boolean=false
 ) {
     val mode: UseMode get()=when { session!=null -> if(paused) UseMode.PAUSED else UseMode.RECORDING; controlOnly -> UseMode.CONTROL_ONLY; else -> UseMode.IDLE }
     val inUse: Boolean get()=mode!=UseMode.IDLE
+    val completionPending get()=session?.completionPending==true
+    val continuingManually get()=session?.planCompletedMs!=null && !completionPending
 }
 class Controller(val app: Application,
     val scope: CoroutineScope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate),
@@ -83,7 +86,7 @@ class Controller(val app: Application,
     private var observedConnection=ble.connectionId
     var serviceStarted=false
     init {
-        scope.launch { try { repo.load(); reloadPreferences(); if(finishedSession.value!=null && repo.history.session(finishedSession.value!!)==null) dismissResult(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
+        scope.launch { try { repo.load(); reloadPreferences(); restoreCompletion(); if(finishedSession.value!=null && repo.history.session(finishedSession.value!!)==null) dismissResult(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
         if(tickAutomatically) scope.launch {
             delay(1000)
             while(isActive) {
@@ -94,6 +97,28 @@ class Controller(val app: Application,
                 delay((1000-(clock()-startedAt)).coerceAtLeast(1))
             }
         }
+    }
+    private suspend fun restoreCompletion() {
+        val (session,last)=repo.pendingCompletion() ?: return
+        session.ownerUserId?.let { prepareUser(it) }
+        val plan=runCatching { Exchange.parse(session.workoutSnapshot).workouts.single() }.getOrNull()
+        totals=TelemetryTotals().apply { restore(session,last) }
+        lastTick=clock()
+        state.value=state.value.copy(session=session,selected=plan,paused=true,automatic=false,done=true,
+            stage=plan?.steps?.lastIndex ?: 0,progress=1f,remainingMs=0,strokeCount=last.strokes,
+            demo=session.demo && BuildConfig.DEBUG,demoMachine=session.machine)
+        dismissResult()
+    }
+    fun foldAllowed(): Boolean {
+        val link=ble.state.value
+        val m=ble.freshMetrics(clock())
+        return !state.value.inUse && !state.value.starting && pendingStart.value==null && !repo.maintenance.value &&
+            link.phase=="ready" && link.deviceDetails.supportFold && link.deviceDetails.foldedState in 0..1 &&
+            !link.deviceDetails.emergencyStop && link.deviceDetails.errorCode in listOf(null,0) &&
+            (m.speedMps ?: 0.0)==0.0 && (m.cadence ?: 0.0)==0.0 && (m.stepRate ?: 0.0)==0.0 && !ble.hardwareRunning()
+    }
+    fun foldEquipment(expected: Int,connection: Long)=scope.launch {
+        ble.fold(expected,connection,::foldAllowed)
     }
     fun error(id: Int?,row: Int?=null) { if(id!=null) org.openmobifitness.app.data.AppLog.event("ui_error",app.resources.getResourceEntryName(id)); state.value=state.value.copy(error=id,errorRow=row) }
     fun dismissResult() { finishedSession.value=null; prefs.edit().remove("finished_detail_id").apply() }
@@ -170,7 +195,7 @@ class Controller(val app: Application,
     fun range() = if(state.value.demo) if(state.value.demoMachine in setOf(Machine.ELLIPTICAL,Machine.BIKE)) ResistanceRange(1.0,24.0) else null else ble.state.value.range
     fun controlResistance() = if(state.value.demo) demoResistance else ble.state.value.metrics.resistance ?: ble.state.value.commandedResistance
     fun displayMachine() = if(state.value.demo) state.value.demoMachine else ble.state.value.machine.takeIf { it!=Machine.UNKNOWN } ?: state.value.session?.machine ?: Machine.UNKNOWN
-    fun canStart() = state.value.ready && (state.value.demo || ble.state.value.phase=="ready") &&
+    fun canStart() = state.value.ready && ble.state.value.foldPhase=="idle" && (state.value.demo || ble.state.value.phase=="ready") &&
         (state.value.session==null || state.value.session?.machine==displayMachine())
     private fun invalidateControl() {
         useGeneration++
@@ -226,7 +251,7 @@ class Controller(val app: Application,
     } }
     private fun capabilitySnapshot(): String {
         val link=ble.state.value; val range=range()
-        return JSONObject().put("version",1).put("machine",displayMachine().name).put("model",link.model).put("protocol",if(state.value.demo) "DEMO" else link.protocol.name).put("evidence","driver-v0.3.0")
+        return JSONObject().put("version",1).put("machine",displayMachine().name).put("model",link.model).put("protocol",if(state.value.demo) "DEMO" else link.protocol.name).put("evidence","driver-v0.3.4")
             .put("resistanceWrite",if((state.value.demo || link.writable) && range!=null) "supported" else "unknown")
             .put("speedWrite","unsupported").put("inclineWrite","unsupported")
             .put("resistanceFeedback",if(link.protocol==Protocol.HUANTONG) "unsupported" else if(range!=null && link.resistanceFeedback) "supported" else "unknown")
@@ -238,14 +263,21 @@ class Controller(val app: Application,
         if(state.value.session!=null || state.value.starting || !canStart()) { error(R.string.connect_first); return }
         val user=currentUser.value?.takeIf { it.available } ?: return
         if(state.value.selected?.let { !WorkoutPolicy.compatible(it,displayMachine(),user.id) }==true) { error(R.string.workout_machine_changed); return }
-        if(state.value.selected?.steps?.any { (it.condition==Condition.DISTANCE && state.value.metrics.distanceM==null) || (it.condition==Condition.STROKES && state.value.metrics.strokes==null) }==true) {
-            error(R.string.sensor_required); return
-        }
         if(!state.value.inUse) state.value=state.value.copy(hintsMuted=false)
         invalidateControl()
         state.value=state.value.copy(starting=true)
         try {
+        val connection=ble.connectionId
         if(!state.value.demo && !ble.beginLiveUse()) { error(R.string.control_unavailable); return }
+        fun targetAvailable(m: Metrics)=state.value.selected?.steps?.none {
+            (it.condition==Condition.DISTANCE && m.distanceM==null) || (it.condition==Condition.STROKES && m.strokes==null)
+        }!=false
+        if(!state.value.demo && !targetAvailable(ble.state.value.metrics)) {
+            val arrived=withTimeoutOrNull(8000) { ble.state.first { targetAvailable(it.metrics) || it.phase!="ready" } }
+            if(arrived==null || !targetAvailable(arrived.metrics)) { error(R.string.sensor_required); return }
+        } else if(state.value.demo && !targetAvailable(state.value.metrics)) { error(R.string.sensor_required); return }
+        if(connection!=ble.connectionId || !canStart()) { error(R.string.connection_lost); return }
+        if(!state.value.demo) state.value=state.value.copy(metrics=ble.freshMetrics(clock()))
         dismissResult()
         state.value.selected?.let { plan -> state.value=state.value.copy(selected=plan.copy(steps=plan.steps.mapIndexed { i,step -> if(step.id.isEmpty()) step.copy(id=UUID.nameUUIDFromBytes("${plan.id}/$i".toByteArray()).toString()) else step })) }
         val s=Session(device=if(state.value.demo) "OpenMOBI Demo" else ble.state.value.name,
@@ -266,7 +298,7 @@ class Controller(val app: Application,
     fun pauseResume() = changePause(state.value.session?.id,false)
     fun pauseForServiceLoss(sessionId: String) = changePause(sessionId,true)
     private fun changePause(sessionId: String?,pauseOnly: Boolean) = scope.launch { sessionLock.withLock {
-        if(sessionId==null || state.value.session?.id!=sessionId || (pauseOnly && state.value.paused)) return@withLock
+        if(sessionId==null || state.value.session?.id!=sessionId || state.value.completionPending || state.value.finishing || (pauseOnly && state.value.paused)) return@withLock
         if(state.value.session?.machine!=displayMachine()) { error(R.string.workout_machine_changed); return@withLock }
         if(state.value.paused && !canStart()) { error(R.string.connect_first); return@withLock }
         invalidateControl()
@@ -284,14 +316,31 @@ class Controller(val app: Application,
     fun finish() = scope.launch { sessionLock.withLock {
         val stored=state.value.session ?: return@withLock
         invalidateControl()
+        state.value=state.value.copy(finishing=true)
         val s=if(state.value.paused) stored else stored.copy(elapsedMs=stored.elapsedMs+(clock()-lastTick).coerceAtLeast(0))
-        try { repo.save(s.copy(end=Instant.now().toString(),status=if(state.value.done) "completed" else "stopped")) }
-        catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); return@withLock }
+        try { repo.save(s.copy(end=Instant.now().toString(),status=if(state.value.done) "completed" else "stopped",completionPending=false)) }
+        catch(e: Exception) { state.value=state.value.copy(paused=true,finishing=false,error=R.string.storage_failed); return@withLock }
         org.openmobifitness.app.data.AppLog.event("session_finish","duration_ms=${s.elapsedMs}")
         prefs.edit().putString("finished_detail_id",s.id).apply()
         // A completed recording ends this use, while the existing Bluetooth links remain available.
-        state.value=state.value.copy(session=null,controlOnly=false,selected=null,pendingResistance=null,automatic=false,paused=false,done=false,stage=0,progress=0f,remainingMs=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null,frequencyHint=RangePosition.UNAVAILABLE,heartHint=RangePosition.UNAVAILABLE,error=null,errorRow=null); engine=null
+        state.value=state.value.copy(session=null,finishing=false,controlOnly=false,selected=null,pendingResistance=null,automatic=false,paused=false,done=false,stage=0,progress=0f,remainingMs=null,strokeCount=null,jumpCount=null,repetitions=null,jumpInterruptions=null,frequencyHint=RangePosition.UNAVAILABLE,heartHint=RangePosition.UNAVAILABLE,error=null,errorRow=null); engine=null
         finishedSession.value=s.id
+    } }
+    fun continueManually()=scope.launch { sessionLock.withLock {
+        val old=state.value
+        val session=old.session ?: return@withLock
+        if(!session.completionPending || old.finishing) return@withLock
+        if(!canStart()) { error(R.string.connect_first); return@withLock }
+        state.value=old.copy(finishing=true)
+        try {
+            if(!old.demo && !ble.beginLiveUse()) { error(R.string.control_unavailable); return@withLock }
+            if(!canStart()) { error(R.string.connection_lost); return@withLock }
+            val continued=session.copy(completionPending=false)
+            repo.save(continued)
+            invalidateControl(); engine=null; totals.rebase(); lastTick=clock()
+            state.value=state.value.copy(session=continued,paused=false,automatic=false,done=true,remainingMs=null,error=null)
+        } catch(e: Exception) { error(R.string.storage_failed) }
+        finally { state.value=state.value.copy(finishing=false) }
     } }
     fun automaticControl(enabled: Boolean) {
         if(state.value.session==null || (enabled && (state.value.selected==null || state.value.done))) return
@@ -302,12 +351,12 @@ class Controller(val app: Application,
     fun resumeAutomatic() = automaticControl(true)
     fun adjust(delta: Int) {
         val range=range() ?: return
-        val current=state.value.pendingResistance ?: ble.state.value.requested ?: controlResistance() ?: return
+        val current=state.value.pendingResistance ?: ble.state.value.requested ?: controlResistance() ?: range.min
         adjustTo(range.next(current,delta))
     }
     fun adjustTo(value: Double) {
         val range=range() ?: return
-        if(!value.isFinite() || !state.value.inUse || state.value.starting) return
+        if(!value.isFinite() || !state.value.inUse || state.value.starting || state.value.completionPending || state.value.finishing) return
         if(!state.value.demo && (ble.state.value.phase!="ready" || ble.state.value.busy)) return
         val target=range.next(value,0)
         val connection=ble.connectionId; val generation=useGeneration; val control=ble.controlGeneration; val demo=state.value.demo
@@ -337,15 +386,15 @@ class Controller(val app: Application,
             if(link.phase=="ready" && link.address.isNotBlank()) local.remember(SavedDevice(link.address,link.name,link.machine,isHeart))
         }
         if(!old.demo && old.inUse && ble.state.value.phase=="ready") ble.activeSecond()
+        val deadline=if(!old.paused) engine?.completionDeadlineMs() else null
+        val activeDelta=if(current!=null && deadline!=null) delta.coerceAtMost((deadline-current.elapsedMs).coerceAtLeast(0)) else delta
+        val sampleAt=now-(delta-activeDelta)
         var metrics=if(old.demo) {
-            val sample=DemoTelemetry.sample(old,delta,demoResistance,demoStrokes)
+            val sample=DemoTelemetry.sample(old,activeDelta,demoResistance,demoStrokes)
             demoStrokes=sample.second
             sample.first
         } else {
-            val link=ble.state.value
-            link.metrics.copy(cadence=link.metrics.cadence.takeIf { now-link.motionAt<5000 },speedMps=link.metrics.speedMps.takeIf { now-link.motionAt<5000 },
-                powerW=link.metrics.powerW.takeIf { now-link.motionAt<5000 },stepRate=link.metrics.stepRate.takeIf { now-link.motionAt<5000 },forceN=link.metrics.forceN.takeIf { now-link.motionAt<5000 },heartBpm=heart.state.value.metrics.heartBpm.takeIf { now-heart.state.value.heartAt<10000 }
-                    ?: link.metrics.heartBpm.takeIf { now-link.heartAt<10000 })
+            ble.freshMetrics(now).let { it.copy(heartBpm=heart.freshMetrics(now).heartBpm ?: it.heartBpm) }
         }
         state.value=state.value.copy(metrics=metrics)
         if(ble.state.value.phase=="ready" && state.value.error==R.string.connection_lost) state.value=state.value.copy(error=null)
@@ -355,24 +404,31 @@ class Controller(val app: Application,
             if(!old.paused) state.value=state.value.copy(paused=true,error=R.string.connection_lost)
             updateHints(now,metrics); return
         }
-        totals.update(metrics,delta,!old.paused,current.machine,current.protocol,current.weightKg ?: 70.0,current.met ?: 5.0,if(metrics.cadence!=null) ble.legacyEnergyPower() else null,if(metrics.cadence!=null) ble.legacyEnergyRate() else null)
+        if(sampleAt<now && !old.demo) metrics=ble.metricsAt(sampleAt).let { it.copy(heartBpm=heart.metricsAt(sampleAt).heartBpm ?: it.heartBpm) }
+        totals.update(metrics,activeDelta,!old.paused,current.machine,current.protocol,current.weightKg ?: 70.0,current.met ?: 5.0,if(metrics.cadence!=null) ble.legacyEnergyPower() else null,if(metrics.cadence!=null) ble.legacyEnergyRate() else null)
         if(old.paused) { updateHints(now,metrics); return }
-        var session=current.copy(elapsedMs=current.elapsedMs+delta,distanceM=totals.distanceM ?: current.distanceM,
+        var session=current.copy(elapsedMs=current.elapsedMs+activeDelta,distanceM=totals.distanceM ?: current.distanceM,
             caloriesKcal=totals.caloriesKcal,energyModel=totals.energyModel,caloriesEstimated=totals.caloriesEstimated,distanceEstimated=totals.distanceEstimated)
         val training=engine
         val previousStage=training?.index
         training?.tick(session.elapsedMs,totals.distanceM,totals.strokes)
+        val completed=training?.done==true && !old.done
+        if(completed) {
+            invalidateControl()
+            session=session.copy(planCompletedMs=session.elapsedMs,completionPending=true)
+            state.value=state.value.copy(paused=true,automatic=false,pendingResistance=null)
+        }
         if(training!=null) session=session.copy(enteredStageIds=training.workout.steps.take(training.index+1).joinToString(";") { it.id })
         if(training?.index!=previousStage) org.openmobifitness.app.data.AppLog.event("stage","${training?.index}")
         state.value=state.value.copy(session=session,strokeCount=totals.strokes,jumpCount=totals.jumps,repetitions=totals.repetitions,jumpInterruptions=totals.jumpInterruptions,stage=training?.index ?: 0,
             progress=training?.progress(session.elapsedMs,totals.distanceM,totals.strokes)?.toFloat() ?: 0f,
-            remainingMs=training?.remainingMs(session.elapsedMs),done=training?.done ?: false)
+            remainingMs=training?.remainingMs(session.elapsedMs),done=training?.done ?: old.done)
         updateHints(now,metrics)
         try { repo.save(session,Sample(session.id,session.elapsedMs,metrics.copy(distanceM=totals.distanceM,strokes=totals.strokes,caloriesKcal=totals.caloriesKcal,stepCount=totals.steps,jumpCount=totals.jumps,repetitions=totals.repetitions,jumpInterruptions=totals.jumpInterruptions))) }
         catch(e: Exception) { state.value=state.value.copy(paused=true,error=R.string.storage_failed); org.openmobifitness.app.data.AppLog.exception("recording",e); return }
         if(training!=null && !training.done && state.value.automatic && now-lastAuto>=2000) {
             val percent=training.workout.steps[training.index].resistancePercent
-            val range=range(); val actual=controlResistance()
+            val range=range(); val actual=controlResistance() ?: range?.min
             if(percent!=null && range!=null && actual!=null && (old.demo || ble.state.value.requested==null)) {
                 val target=range.percent(percent)
                 if(kotlin.math.abs(target-actual)>=range.increment*0.5) {

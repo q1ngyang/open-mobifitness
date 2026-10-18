@@ -80,6 +80,7 @@ class WorkoutService : Service() {
         val connection=if(link.phase!="disconnected") link else accessory
         val title=when {
             s.inUse && !s.demo && link.phase=="disconnected" -> R.string.notification_disconnected
+            s.completionPending -> R.string.plan_finished
             s.controlOnly -> R.string.control_only
             s.session!=null -> if(s.paused) R.string.notification_paused else R.string.notification_active
             connection.phase=="ready" -> R.string.notification_ready
@@ -97,7 +98,7 @@ class WorkoutService : Service() {
             .setUsesChronometer(ticking).setWhen(if(ticking) System.currentTimeMillis()-(s.session?.elapsedMs ?: 0L) else System.currentTimeMillis())
             .apply {
                 if(s.inUse && !s.demo && link.phase=="disconnected") addAction(0,c.getString(R.string.reconnect),PendingIntent.getService(this@WorkoutService,3,Intent(this@WorkoutService,WorkoutService::class.java).setAction(RECONNECT),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-                else if(s.session!=null && (s.demo || link.phase=="ready")) addAction(0,c.getString(if(s.paused) R.string.notification_resume else R.string.pause_short),toggle)
+                else if(s.session!=null && !s.completionPending && (s.demo || link.phase=="ready")) addAction(0,c.getString(if(s.paused) R.string.notification_resume else R.string.pause_short),toggle)
                 if(s.controlOnly) addAction(0,c.getString(R.string.disconnect),PendingIntent.getService(this@WorkoutService,4,Intent(this@WorkoutService,WorkoutService::class.java).setAction(DISCONNECT),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
                 addAction(0,c.getString(R.string.notification_open),content)
             }.build()

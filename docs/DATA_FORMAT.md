@@ -16,7 +16,7 @@ UTF-8（导出含 BOM），逗号分隔，按 CSV 规则转义双引号，导出
 
 | 文件 | 当前版本 | 说明 |
 | --- | --- | --- |
-| `sessions.csv` | 6 | 每次训练的摘要和估算来源 |
+| `sessions.csv` | 7 | 每次训练的摘要和估算来源 |
 | `samples.csv` | 6 | 有效训练时间上的采样，通常约 1 Hz |
 | `workouts.csv` | 2 | 每行一个训练阶段 |
 | `manifest.txt` | 8 | 内容为 `OpenMOBI backup 8\n` |
@@ -24,14 +24,16 @@ UTF-8（导出含 BOM），逗号分隔，按 CSV 规则转义双引号，导出
 
 v8 ZIP 使用 `sessions/0.csv`、`samples/0.csv`、`workouts/0.csv` 等从 0 连续编号的 CSV 分块；各块使用上述相同表头及 CSV 版本。导出分页读取，导入先流式复制到应用私有暂存目录，用独立数据库完成校验，再以事务合并。文件路径只作白名单标识，不能指定解压目标。
 
-继续支持备份 v1–v7、会话 v1/v2/v4/v5、采样 v1/v2/v3 和方案 v1。Room v8 从 v1–v7 迁移：旧方案和偏好进入稳定的原有用户，旧记录保持未分配。旧提示与目标桨频仅归档，不再驱动训练。用户偏好写入有持久日志，启动时幂等恢复。旧文件缺少 owner 字段不会清空本机已更正的归属。
+继续支持备份 v1–v7、会话 v1/v2/v4/v5/v6、采样 v1/v2/v3 和方案 v1。Room v9 从 v1–v8 迁移：旧方案和偏好进入稳定的原有用户，旧记录保持未分配。旧提示与目标桨频仅归档，不再驱动训练。用户偏好写入有持久日志，启动时幂等恢复。旧文件缺少 owner 字段不会清空本机已更正的归属。
+
+`plan_completed_ms` 保存计划结束时的有效时长，不能大于 `elapsed_ms`；`completion_pending` 只允许用于有方案快照、尚未结束的 active 会话。继续运动后保留计划时长，但清除待选择标记。迁移旧记录时两字段默认为空／false。
 
 ### 字段
 
 `sessions.csv`：
 
 ```csv
-schema,session_id,start_utc,end_utc,time_zone,device,machine,protocol,elapsed_ms,distance_m,simulated,status,calories_kcal,calories_estimated,distance_estimated,weight_kg,met,workout_id,workout_title,archived,energy_model,owner_user_id,started_user_id,started_user_name,weight_source,met_source,workout_snapshot,capability_snapshot,identity_version,owner_history,entered_stage_ids
+schema,session_id,start_utc,end_utc,time_zone,device,machine,protocol,elapsed_ms,distance_m,simulated,status,calories_kcal,calories_estimated,distance_estimated,weight_kg,met,workout_id,workout_title,archived,energy_model,owner_user_id,started_user_id,started_user_name,weight_source,met_source,workout_snapshot,capability_snapshot,identity_version,owner_history,entered_stage_ids,plan_completed_ms,completion_pending
 ```
 
 `samples.csv`：
@@ -62,7 +64,7 @@ schema,user_id,name,weight_kg,met,met_source,avatar,created_at,removed_at,delete
 
 - 训练 ID 为 UUID，开始／结束时间为 ISO 8601 UTC，时区使用 IANA 名称。有效时长不含暂停；距离与桨数是本次有效训练的累计值。
 - 器材类型：ELLIPTICAL / BIKE / ROWER / TREADMILL / HEART / UNKNOWN / JUMP_ROPE / DUMBBELL；协议：V1 / V2 / FTMS / HUANTONG / DEMO / UNKNOWN。
-- 状态为 active / completed / interrupted / stopped。恢复或导入活动记录会标为 interrupted，不会自动开始运动。
+- 状态为 active / completed / interrupted / stopped。普通活动记录恢复或导入后标为 interrupted，不会自动开始运动；本机待选择的计划完成状态恢复为暂停，导入仍清除 completion_pending。
 - `energy_model` 为 device / legacy-v1 / legacy-mobi / legacy-rowing / met / mixed，旧记录可能为空。估算标记为 true/false。
 - `archived` 仅用于兼容旧数据；当前界面没有归档操作，默认包含所有标记的记录。
 - `cadence_rpm` 为历史字段名，划船机表示桨频，部分跑步机表示步频、跳绳表示跳频，请结合器材类型解读。
@@ -99,7 +101,7 @@ UTF-8 with a BOM on export, comma-separated, CSV quote escaping, CRLF on export 
 
 | File | Current schema | Contents |
 | --- | --- | --- |
-| `sessions.csv` | 6 | Workout summaries and estimate sources |
+| `sessions.csv` | 7 | Workout summaries and estimate sources |
 | `samples.csv` | 6 | Samples on active workout time, usually around 1 Hz |
 | `workouts.csv` | 2 | One stage per row |
 | `manifest.txt` | 8 | Literal `OpenMOBI backup 8\n` |
@@ -107,11 +109,11 @@ UTF-8 with a BOM on export, comma-separated, CSV quote escaping, CRLF on export 
 
 Version 8 ZIPs use sequential chunks such as `sessions/0.csv`, `samples/0.csv` and `workouts/0.csv`, retaining the CSV schemas above. Export reads database pages; import streams to private temporary files and validates in a separate database before merging transactionally. Entry paths are allowlisted identifiers, never extraction destinations.
 
-Backups 1–7, sessions 1/2/4/5, samples 1/2/3 and workouts 1 remain readable. Room 8 migrates versions 1–7: old plans and personal settings move to a stable legacy profile; old sessions remain unassigned. Old hints are archived, not activated. Interrupted preference commits recover from a durable journal. A legacy file without ownership cannot erase a corrected local owner. The CSV headers above apply in every language.
+Backups 1–7, sessions 1/2/4/5/6, samples 1/2/3 and workouts 1 remain readable. Room 9 migrates versions 1–8: old plans and personal settings move to a stable legacy profile; old sessions remain unassigned. Old hints are archived, not activated. Interrupted preference commits recover from a durable journal. A legacy file without ownership cannot erase a corrected local owner. The CSV headers above apply in every language.
 
 - Session IDs are UUIDs; start/end use ISO 8601 UTC and IANA time-zone names. Active duration excludes pauses. Distance/strokes are relative to this workout's active time.
 - Machines: ELLIPTICAL / BIKE / ROWER / TREADMILL / HEART / UNKNOWN / JUMP_ROPE / DUMBBELL. Protocols: V1 / V2 / FTMS / HUANTONG / DEMO / UNKNOWN.
-- Status: active / completed / interrupted / stopped. Recovered/imported active records become interrupted; they never start a workout automatically.
+- Status: active / completed / interrupted / stopped. Ordinary recovered/imported active records become interrupted. A local pending plan-completion choice reopens paused; imports clear that pending flag. Neither starts a workout automatically.
 - `energy_model`: device / legacy-v1 / legacy-mobi / legacy-rowing / met / mixed, or empty for older data. Estimate flags are true/false.
 - `archived` preserves legacy round trips only. There is no archive action in the current UI; normal queries include every flag value.
 - The historical `cadence_rpm` name also represents rowing cadence, step rate on some treadmills, or jump-rope frequency. Interpret it with the machine type.
@@ -137,3 +139,8 @@ Averages are time-weighted, with each sample covering at most the preceding five
 Preference schema 2 separates personal settings from optional shared language, identity policy, diagnostics and saved devices. Personal favorites, quick levels, appearance, units, metric choices and relative floating positions are always included with their profile. Legacy schema 1 groups remain readable; personal values migrate to the original profile and old hints are archived. Permissions, Bluetooth pairing and absolute display coordinates are excluded. Saved devices still require manual connection.
 
 Reports retain every applicable metric with valid data. Zero is valid where supported; missing data uses `—`, and inapplicable CSV fields are empty. Rowing pace uses matching valid time and speed-integrated distance; fastest pace is the minimum. Sparse samples preserve chart gaps.
+
+
+### v0.3.4 completion metadata
+
+Session CSV schema 7 adds `plan_completed_ms` and `completion_pending`; older session schemas remain readable. Room schema 9 migrates existing databases, defaulting these fields to null/false. The plan duration cannot exceed active elapsed time. A pending choice requires an active session without an end timestamp and with a workout snapshot. Local pending completions reopen paused; imports clear the pending flag and interrupt active sessions. The ZIP container remains version 8.

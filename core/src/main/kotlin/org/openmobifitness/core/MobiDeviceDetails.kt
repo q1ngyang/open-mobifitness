@@ -19,5 +19,8 @@ data class MobiDeviceDetails(
     val voiceCommand: Int? = null,
     val errorCode: Int? = null,
     val emergencyStop: Boolean = false,
-    val battery: Int? = null
+    val battery: Int? = null,
+    val uploadMode: Int? = null,
+    val hardwareCode: Int? = null,
+    val signalAcquisitionScale: Int? = null
 )

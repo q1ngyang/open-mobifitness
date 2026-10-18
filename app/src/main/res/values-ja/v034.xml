@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_finished">トレーニングプラン完了</string>
+    <string name="plan_finished_subtitle">%1$s · %2$d / %2$d ステージ</string>
+    <string name="plan_choice_help">記録を一時停止しました。次の操作を選んでください。</string>
+    <string name="plan_view_details">終了して詳細を見る</string>
+    <string name="plan_continue_manual">続ける · 手動操作</string>
+    <string name="plan_continue">運動を続ける</string>
+    <string name="plan_same_record">続けた運動は同じ記録に含まれます。</string>
+    <string name="plan_pause_equipment">記録を一時停止しても機器は停止しません。</string>
+    <string name="plan_saving">保存中…</string>
+    <string name="plan_save_error">保存できませんでした。記録は一時停止中です。再試行するか運動を続けてください。</string>
+    <string name="manual_continuation">手動で運動を継続中</string>
+    <string name="plan_time">プランの時間</string>
+    <string name="manual_time">追加の時間</string>
+    <string name="fold_title">展開 / 折りたたみ</string>
+    <string name="fold_action">機器を展開 / 折りたたむ</string>
+    <string name="fold_confirm">機器の展開状態を切り替えますか？</string>
+    <string name="fold_help">機器から降り、周囲に人や障害物がないことを確認してください。操作中は接続を維持してください。</string>
+    <string name="fold_ready">機器の状態を受信しました</string>
+    <string name="fold_unknown">機器の状態を待っています</string>
+    <string name="fold_pending">送信済み · 機器の応答待ち</string>
+    <string name="fold_timeout">完了の応答がありません。再操作の前に状態を読み取ってください。</string>
+    <string name="fold_blocked">運動を終了し、機器を停止すると操作できます。</string>
+    <string name="fold_refresh">状態を再取得</string>
+    <string name="fold_failed">指令を確認できませんでした。機器の状態を再取得してください。</string>
+</resources>

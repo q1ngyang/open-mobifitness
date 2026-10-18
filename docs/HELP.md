@@ -55,3 +55,10 @@ For layout issues, attach a screenshot and mention orientation, split screen and
 Review attachments before posting. Diagnostic logs do not contain your full history, but Bluetooth packets may include live movement and heart-rate readings. Hide personal details in screenshots. GitHub requires an account to submit; you can save your description and attachments first.
 
 User hardware feedback currently covers V1 ellipticals only. Logs and model information help confirm support for other equipment; see [compatibility](COMPATIBILITY.md#english).
+
+
+## v0.3.4 协议日志 / Protocol trace
+
+报文增加递增序号和单调时钟时间，移除旧的 5 Hz 采样限制，便于分析密集划船脉冲和相邻状态。导出头部包含队列丢弃计数；日志仍为有界环形缓冲，旧报文可能被覆盖，不能把它当作无限、无损抓包。
+
+Packets now include sequence numbers and monotonic timestamps without the former 5 Hz sampling limit. The export header reports queue drops. Retention remains a bounded ring: older packets can be overwritten, so this is not an unlimited lossless capture.

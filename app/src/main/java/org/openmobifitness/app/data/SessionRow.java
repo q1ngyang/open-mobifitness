@@ -17,4 +17,6 @@ public class SessionRow {
  @androidx.room.ColumnInfo(defaultValue="NULL") public String ownerUserId,startedUserId;
  @NonNull @androidx.room.ColumnInfo(defaultValue="''") public String startedUserName="",weightSource="",metSource="",workoutSnapshot="",capabilitySnapshot="",ownerHistory="",enteredStageIds="";
  @androidx.room.ColumnInfo(defaultValue="0") public int identityVersion;
+ @androidx.room.ColumnInfo(defaultValue="NULL") public Long planCompletedMs;
+ @androidx.room.ColumnInfo(defaultValue="0") public boolean completionPending;
 }

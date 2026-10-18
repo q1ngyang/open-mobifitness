@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_finished">Trainingsplan abgeschlossen</string>
+    <string name="plan_finished_subtitle">%1$s · %2$d / %2$d Phasen</string>
+    <string name="plan_choice_help">Die Aufzeichnung pausiert. Wie möchtest du fortfahren?</string>
+    <string name="plan_view_details">Beenden und Details ansehen</string>
+    <string name="plan_continue_manual">Weiter · Manuelle Steuerung</string>
+    <string name="plan_continue">Training fortsetzen</string>
+    <string name="plan_same_record">Weiteres Training bleibt in dieser Aufzeichnung.</string>
+    <string name="plan_pause_equipment">Das Pausieren der Aufzeichnung hält das Gerät nicht an.</string>
+    <string name="plan_saving">Wird gespeichert…</string>
+    <string name="plan_save_error">Speichern fehlgeschlagen. Die Aufzeichnung pausiert. Erneut versuchen oder fortsetzen.</string>
+    <string name="manual_continuation">Manuelles Training läuft</string>
+    <string name="plan_time">Planzeit</string>
+    <string name="manual_time">Zusätzliche Zeit</string>
+    <string name="fold_title">Auf- / Zusammenklappen</string>
+    <string name="fold_action">Gerät auf- / zusammenklappen</string>
+    <string name="fold_confirm">Position des Geräts ändern?</string>
+    <string name="fold_help">Steige vom Gerät und halte den Bereich frei von Personen und Hindernissen. Bleibe während des Vorgangs verbunden.</string>
+    <string name="fold_ready">Gerätestatus empfangen</string>
+    <string name="fold_unknown">Warten auf Gerätestatus</string>
+    <string name="fold_pending">Befehl gesendet · Warten auf Rückmeldung</string>
+    <string name="fold_timeout">Keine Abschlussmeldung. Lies vor einem weiteren Versuch den Status erneut.</string>
+    <string name="fold_blocked">Nach dem Trainingsende und Anhalten des Geräts verfügbar.</string>
+    <string name="fold_refresh">Status erneut lesen</string>
+    <string name="fold_failed">Befehl nicht bestätigt. Lies den Gerätestatus erneut.</string>
+</resources>

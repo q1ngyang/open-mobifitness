@@ -6,7 +6,7 @@ package org.openmobifitness.core
 object MetricCatalog {
     private val common = listOf(MetricId.TIME, MetricId.DISTANCE, MetricId.CALORIES, MetricId.HEART)
     fun forMachine(machine: Machine): List<MetricId> = (if(machine in setOf(Machine.JUMP_ROPE,Machine.DUMBBELL)) common-MetricId.DISTANCE else common) + when (machine) {
-        Machine.ELLIPTICAL -> listOf(MetricId.CADENCE, MetricId.RESISTANCE, MetricId.POWER, MetricId.SPEED, MetricId.AVERAGE_SPEED)
+        Machine.ELLIPTICAL -> listOf(MetricId.CADENCE, MetricId.RESISTANCE, MetricId.POWER, MetricId.SPEED, MetricId.AVERAGE_SPEED, MetricId.INCLINE)
         Machine.BIKE -> listOf(MetricId.CADENCE, MetricId.RESISTANCE, MetricId.POWER, MetricId.SPEED, MetricId.AVERAGE_SPEED)
         Machine.ROWER -> listOf(MetricId.STROKE_RATE, MetricId.STROKES, MetricId.RESISTANCE, MetricId.POWER, MetricId.FORCE, MetricId.PACE, MetricId.SPEED, MetricId.AVERAGE_SPEED, MetricId.TARGET_CADENCE)
         Machine.TREADMILL -> listOf(MetricId.SPEED, MetricId.AVERAGE_SPEED, MetricId.INCLINE, MetricId.STEP_RATE, MetricId.STRIDE, MetricId.POWER, MetricId.FORCE)
