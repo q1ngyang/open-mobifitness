@@ -361,4 +361,5 @@
     <string name="finish_compact">종료</string>
     <string name="invalid_presets">이 기구가 지원하는 단계를 중복 없이 최대 4개까지 쉼표로 구분해 입력하세요.</string>
     <string name="invalid_hint_bounds">0 이상의 숫자를 입력하고 하한을 상한 이하로 설정하세요. 사용하려면 한쪽 이상 입력하세요.</string>
+    <string name="connection_background_unavailable">백그라운드 연결 서비스가 중지되었습니다. 앱을 다시 열고 기기를 연결해 주세요.</string>
 </resources>

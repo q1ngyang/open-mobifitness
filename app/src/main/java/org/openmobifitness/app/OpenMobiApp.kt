@@ -51,8 +51,9 @@ class Controller(val app: Application,
     tickAutomatically: Boolean = true
 ) {
     val repo=Repository(app)
-    val ble=BleClient(app,scope)
-    val heart=BleClient(app,scope,role="heart")
+    private val scanBudget=ScanBudget()
+    val ble=BleClient(app,scope,scanBudget=scanBudget)
+    val heart=BleClient(app,scope,role="heart",scanBudget=scanBudget)
     val state=MutableStateFlow(ExerciseState())
     val finishedSession=MutableStateFlow(app.getSharedPreferences("preferences",Context.MODE_PRIVATE).getString("finished_detail_id",null))
     val prefs=repo.profilePreferences
@@ -85,6 +86,15 @@ class Controller(val app: Application,
     private var useGeneration=0L
     private var observedConnection=ble.connectionId
     var serviceStarted=false
+    var connectionServiceStatus="stopped"
+    val hasBluetoothConnection get()=ble.state.value.phase!="disconnected" || heart.state.value.phase!="disconnected"
+    /** Losing the owning service must not leave a live, unprotected GATT client. */
+    fun connectionServiceLost() {
+        state.value.session?.id?.let(::pauseForServiceLoss)
+        ble.stopScan(); heart.stopScan()
+        disconnectEquipment(); heart.disconnect()
+        state.value=state.value.copy(controlOnly=false,error=R.string.connection_background_unavailable)
+    }
     init {
         scope.launch { try { repo.load(); reloadPreferences(); restoreCompletion(); if(finishedSession.value!=null && repo.history.session(finishedSession.value!!)==null) dismissResult(); state.value=state.value.copy(ready=true) } catch(e: Exception) { error(R.string.storage_failed) } }
         if(tickAutomatically) scope.launch {

@@ -361,4 +361,5 @@
     <string name="finish_compact">Finish</string>
     <string name="invalid_presets">Enter up to four distinct levels supported by this device, separated by commas.</string>
     <string name="invalid_hint_bounds">Use non-negative numbers with the lower limit no greater than the upper. Set at least one limit to enable.</string>
+    <string name="connection_background_unavailable">Background connection service stopped. Reopen the app and reconnect.</string>
 </resources>

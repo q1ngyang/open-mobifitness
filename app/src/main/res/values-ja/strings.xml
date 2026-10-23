@@ -361,4 +361,5 @@
     <string name="finish_compact">終了</string>
     <string name="invalid_presets">この機器が対応する段階を、重複せず最大4つ、カンマで区切って入力してください。</string>
     <string name="invalid_hint_bounds">0以上の数値を入力し、下限を上限以下にしてください。有効にするには少なくとも一方を入力してください。</string>
+    <string name="connection_background_unavailable">バックグラウンド接続サービスが停止しました。アプリを開き直して再接続してください。</string>
 </resources>

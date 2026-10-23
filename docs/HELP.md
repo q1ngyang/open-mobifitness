@@ -62,3 +62,10 @@ User hardware feedback currently covers V1 ellipticals only. Logs and model info
 报文增加递增序号和单调时钟时间，移除旧的 5 Hz 采样限制，便于分析密集划船脉冲和相邻状态。导出头部包含队列丢弃计数；日志仍为有界环形缓冲，旧报文可能被覆盖，不能把它当作无限、无损抓包。
 
 Packets now include sequence numbers and monotonic timestamps without the former 5 Hz sampling limit. The export header reports queue drops. Retention remains a bounded ring: older packets can be overwritten, so this is not an unlimited lossless capture.
+
+
+## v0.3.5 连接诊断 / Connection diagnostics
+
+重新连接时会依次显示查找、连接、服务发现和准备数据；连接失败后可再次尝试。诊断包含两条连接的扫描统计、阶段、失败原因，以及应用前后台、服务、锁屏和省电状态。静止器材可能暂时没有运动数据，这与连接失败不同。
+
+Reconnection displays search, connection, service discovery and data preparation stages. Failed attempts can be retried. Diagnostics include both links, scan counters, stages and failure reasons, plus app visibility, service, screen-lock and power state. Quiet equipment may legitimately wait for movement data.

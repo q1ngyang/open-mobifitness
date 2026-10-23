@@ -246,4 +246,25 @@ class ConnectionRecoveryTest {
         assertEquals(1,client.scanTrace.reports);assertEquals(0,client.scanTrace.accepted);assertTrue(client.found.value.isEmpty())
         advertise();assertEquals(2,client.scanTrace.reports);assertEquals(1,client.scanTrace.accepted);assertEquals(2,client.scanTrace.uniqueDevices)
     }
+    @Test fun reconnectUsesAnAddressFilterEvenWithoutANameOrServiceAdvertisement() {
+        client.connect(target)
+        val scan=shadowOf(adapter.bluetoothLeScanner).activeScans.single()
+        assertEquals(target.address,scan.scanFilters().single().deviceAddress)
+        advertise(name="")
+        assertEquals("connecting",client.state.value.phase)
+        assertEquals(target.name,client.state.value.name)
+    }
+    @Test fun equipmentAndHeartShareOneScanQuotaAndPlatformCooldown() {
+        val budget=ScanBudget()
+        val equipment=BleClient(RuntimeEnvironment.getApplication(),scope,scanBudget=budget,clock={scheduler.currentTime+1})
+        val heart=BleClient(RuntimeEnvironment.getApplication(),scope,role="heart",scanBudget=budget,clock={scheduler.currentTime+1})
+        try {
+            repeat(2) { equipment.scan();equipment.stopScan();heart.scan();heart.stopScan() }
+            heart.scan();assertEquals("scan_rate_limit",heart.scanError.value);assertFalse(heart.scanning.value)
+            advance(30_000);equipment.scan()
+            ReflectionHelpers.getField<ScanCallback>(equipment,"scanCallback").onScanFailed(6)
+            heart.scan();assertEquals("scan_rate_limit",heart.scanError.value)
+            advance(30_000);heart.scan();assertTrue(heart.scanning.value)
+        } finally { equipment.stopScan();heart.stopScan();equipment.disconnect();heart.disconnect() }
+    }
 }

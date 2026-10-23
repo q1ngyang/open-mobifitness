@@ -95,3 +95,10 @@ Move gently for a few seconds, check cadence/resistance feedback, then try one r
 | Heart rate / 180D | 8/16-bit heart rate on a separate BLE connection; stale values disappear after 10 seconds |
 
 Automatic resistance changes by at most one equipment increment every two seconds. Devices with resistance feedback display the confirmed level and report missing confirmation. Write-only HuanTong/AT-R devices display a commanded level; it is not recorded as measured feedback. Distance/stroke-based stages require valid cumulative readings. See [workout notes](TRAINING.md#english) for metric sources.
+
+
+## v0.3.5 共用连接层 / Shared connection layer
+
+v0.3.5 对六类器材和心率带执行连接生命周期审阅，修复重新发现、后台保护及订阅失败处理。17 种组合的合成回归与已有小米 V1 椭圆机连接日志见[连接验证](V035_VALIDATION.md)。本轮没有新增型号的实机验证，不改变上表的硬件证据范围。
+
+v0.3.5 reviews the shared connection lifecycle for six equipment families and heart-rate straps, fixing rediscovery, background protection and subscription failure handling. See [connection validation](V035_VALIDATION.md#english) for 17 synthetic combinations and existing Xiaomi V1 elliptical logs. This round adds no model-specific hardware validation and does not expand the hardware evidence in the table above.

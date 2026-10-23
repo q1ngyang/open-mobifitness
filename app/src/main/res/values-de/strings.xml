@@ -361,4 +361,5 @@
     <string name="finish_compact">Ende</string>
     <string name="invalid_presets">Bis zu vier unterschiedliche, vom Gerät unterstützte Stufen eingeben, mit Kommas getrennt.</string>
     <string name="invalid_hint_bounds">Nichtnegative Zahlen eingeben: Untergrenze höchstens gleich Obergrenze. Zum Aktivieren mindestens eine Grenze setzen.</string>
+    <string name="connection_background_unavailable">Der Hintergrundverbindungsdienst wurde beendet. Öffne die App erneut und verbinde das Gerät.</string>
 </resources>

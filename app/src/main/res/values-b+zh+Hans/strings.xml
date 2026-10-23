@@ -361,4 +361,5 @@
     <string name="finish_compact">结束保存</string>
     <string name="invalid_presets">请输入最多四个互不重复、此器材支持的档位，并用逗号分隔。</string>
     <string name="invalid_hint_bounds">请输入非负数，下限不能大于上限。启用时至少填写一侧。</string>
+    <string name="connection_background_unavailable">后台连接服务已停止，请重新打开应用并连接设备。</string>
 </resources>

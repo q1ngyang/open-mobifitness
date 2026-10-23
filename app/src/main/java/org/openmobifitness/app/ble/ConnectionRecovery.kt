@@ -20,6 +20,19 @@ data class ScanTrace(
 val LinkState.connectionPending: Boolean
     get()=phase in setOf("searching","connecting","discovering","initializing")
 
+/** Android limits scan starts per application, including the separate heart-rate client. */
+class ScanBudget {
+    private val starts=ArrayDeque<Long>()
+    private var blockedUntil=0L
+    @Synchronized fun take(now: Long): Boolean {
+        while(starts.isNotEmpty() && now-starts.first()>=30_000) starts.removeFirst()
+        if(now<blockedUntil || starts.size>=4) return false
+        starts.addLast(now)
+        return true
+    }
+    @Synchronized fun throttled(now: Long) { blockedUntil=now+30_000 }
+}
+
 /** Remembering a disconnected address must not hide a fresh advertisement. */
 fun nearbyDevices(found: List<FoundDevice>, equipment: LinkState, heart: LinkState): List<FoundDevice> =
     found.filter { device ->

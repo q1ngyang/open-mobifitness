@@ -2,6 +2,9 @@ package org.openmobifitness.app.service
 
 import android.app.*
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.IBinder
@@ -11,7 +14,10 @@ import android.provider.Settings
 import android.view.*
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.openmobifitness.app.*
 import org.openmobifitness.app.data.AppLog
 import kotlin.math.abs
@@ -32,24 +38,44 @@ class WorkoutService : Service() {
     private val createdAt=SystemClock.elapsedRealtime()
     private var lastNotificationKey: List<String>?=null
     private var idleStopRequested=false
+    private var foreground=false
+    private val powerReceiver=object: BroadcastReceiver() {
+        override fun onReceive(context: Context?,intent: Intent?) { logState("power:${intent?.action}") }
+    }
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onCreate() {
-        super.onCreate(); controller.serviceStarted=true
+        super.onCreate(); controller.connectionServiceStatus="starting"
         savedX=dp(12); savedY=dp(64)
         val localized=localized()
-        wakeLock=getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"OpenMOBI:training").apply { setReferenceCounted(false) }
+        wakeLock=getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"OpenMOBI:connection").apply { setReferenceCounted(false) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel("training",localized.getString(R.string.notification_channel),NotificationManager.IMPORTANCE_LOW))
+        ContextCompat.registerReceiver(this,powerReceiver,IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_USER_PRESENT)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED); addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
+        },ContextCompat.RECEIVER_NOT_EXPORTED)
+        logState("created")
+        serviceScope.launch {
+            combine(controller.ble.state,controller.heart.state) { equipment,heart -> equipment.phase to heart.phase }
+                .distinctUntilChanged().collect { updateWakeLock(); logState("links") }
+        }
         serviceScope.launch { while(isActive) { refresh(); delay(1000) } }
     }
     override fun onStartCommand(intent: Intent?,flags: Int,startId: Int): Int {
-        if(!controller.state.value.demo) {
+        idleStopRequested=false
+        if(!controller.state.value.demo || controller.hasBluetoothConnection) {
             try {
                 val current=notification()
                 ServiceCompat.startForeground(this,7,current,ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+                foreground=true
                 lastNotificationKey=notificationKey(current)
             }
-            catch(e: Exception) { controller.error(R.string.permission_help); stopSelf(); return START_NOT_STICKY }
+            catch(e: Exception) {
+                AppLog.exception("connection_service_start",e)
+                controller.connectionServiceLost(); stopSelf(); return START_NOT_STICKY
+            }
         }
+        controller.serviceStarted=true
+        updateWakeLock(); logState("started:${intent?.action ?: "connect"}")
         when(intent?.action) {
             SHOW -> { if(panel==null) { expanded=false; showPanel() } }
             HIDE -> hidePanel()
@@ -60,6 +86,21 @@ class WorkoutService : Service() {
             RESET_POSITION -> { savedX=dp(12); savedY=dp(64); restorePosition=true; if(panel!=null) { hidePanel(); showPanel() } }
         }
         return START_NOT_STICKY // Never reconnect or replay a control after process death.
+    }
+    private fun logState(event: String) {
+        controller.connectionServiceStatus="foreground=$foreground wake=${wakeLock?.isHeld==true} equipment=${controller.ble.state.value.phase} heart=${controller.heart.state.value.phase}"
+        AppLog.event("connection_service","$event monoMs=${SystemClock.elapsedRealtime()} ${controller.connectionServiceStatus} ${AppLog.powerState(this)}")
+    }
+    private fun updateWakeLock() {
+        // The connection, not a particular workout or equipment type, owns live
+        // callbacks and protocol timers. Include setup, idle viewing and heart-only use.
+        val needsWake=foreground && controller.hasBluetoothConnection
+        if(needsWake && (wakeLock?.isHeld!=true || SystemClock.elapsedRealtime()-renewedAt>600_000)) {
+            wakeLock?.acquire(900_000); renewedAt=SystemClock.elapsedRealtime()
+            logState("wake_acquired")
+        } else if(!needsWake && wakeLock?.isHeld==true) {
+            wakeLock?.release(); logState("wake_released")
+        }
     }
     private fun startFromService() = controller.scope.launch {
         controller.start().join()
@@ -206,10 +247,7 @@ class WorkoutService : Service() {
             }
         }
         if(!s.inUse && !s.starting && controller.ble.state.value.phase=="disconnected" && controller.heart.state.value.phase=="disconnected" && SystemClock.elapsedRealtime()-createdAt>10_000) { stopIfIdle(); return }
-        val needsWake=s.inUse && !s.demo && controller.ble.state.value.phase=="ready"
-        if(needsWake && (wakeLock?.isHeld!=true || SystemClock.elapsedRealtime()-renewedAt>600_000)) {
-            wakeLock?.acquire(900_000); renewedAt=SystemClock.elapsedRealtime()
-        } else if(!needsWake && wakeLock?.isHeld==true) wakeLock?.release()
+        updateWakeLock()
         if(!s.inUse || !controller.display.floatingEnabled.value) hidePanel()
         panel?.let { view ->
             val model=c.overlayPresentation(controller,expanded)
@@ -227,7 +265,7 @@ class WorkoutService : Service() {
                 }
             }
         }
-        if(!s.demo) {
+        if(foreground) {
             val current=notification(); val key=notificationKey(current)
             // Keep native controls stable for touch and accessibility. SystemUI
             // advances the active chronometer; state/action changes still update.
@@ -239,20 +277,24 @@ class WorkoutService : Service() {
     }
     private fun hidePanel() { panel?.let { runCatching { wm.removeView(it) } }; panel=null; parameters=null }
     private fun stopIfIdle() {
-        // Android can deliver destruction after the user starts the next record.
-        // An intentional idle shutdown must never pause or disconnect that new use.
-        if(controller.state.value.inUse || controller.state.value.starting) return
+        // Both connections own the service, including a saved record's still-live
+        // equipment link and a heart-rate strap connected without a workout.
+        if(controller.state.value.inUse || controller.state.value.starting || controller.hasBluetoothConnection ||
+            controller.ble.scanning.value || controller.heart.scanning.value) return
         idleStopRequested=true
         stopSelf()
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); restorePosition=true; if(panel!=null) { hidePanel(); showPanel() } }
     override fun onDestroy() {
-        hidePanel(); serviceScope.cancel(); if(wakeLock?.isHeld==true) wakeLock?.release()
+        logState("destroyed:idle=$idleStopRequested")
+        hidePanel(); serviceScope.cancel(); unregisterReceiver(powerReceiver)
+        if(wakeLock?.isHeld==true) wakeLock?.release()
+        foreground=false
         controller.serviceStarted=false
+        controller.connectionServiceStatus="stopped wake=false"
         tone?.release(); tone=null
-        if(!idleStopRequested) {
-            if(controller.state.value.controlOnly) controller.exitControl()
-            controller.state.value.session?.id?.let(controller::pauseForServiceLoss)
+        if(controller.hasBluetoothConnection || controller.state.value.inUse || controller.state.value.starting) {
+            controller.connectionServiceLost()
         }
         super.onDestroy()
     }

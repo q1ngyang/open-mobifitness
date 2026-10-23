@@ -361,4 +361,5 @@
     <string name="finish_compact">結束儲存</string>
     <string name="invalid_presets">請輸入最多四個互不重複、此器材支援的檔位，並以逗號分隔。</string>
     <string name="invalid_hint_bounds">請輸入非負數，下限不能大於上限。啟用時至少填寫一側。</string>
+    <string name="connection_background_unavailable">背景連線服務已停止，請重新開啟應用程式並連接裝置。</string>
 </resources>

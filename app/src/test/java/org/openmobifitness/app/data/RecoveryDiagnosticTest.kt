@@ -36,6 +36,7 @@ class RecoveryDiagnosticTest {
             val report=withTimeout(5000) { AppLog.report(c) }
             assertTrue(report.startsWith("OpenMOBI diagnostic report 5"))
             assertTrue(report.contains("package=${BuildConfig.APPLICATION_ID}"))
+            for(part in listOf("Connection service: started=false", "interactive=", "locked=", "idle=", "powerSave=")) assertTrue(part,report.contains(part))
             for(part in listOf("role=equipment attempt=1", "role=heart", "scan=ScanTrace", "scan_error:6", "connect_request:", "connection_failed:reason=bluetooth_unavailable", "monoMs=")) assertTrue(part,report.contains(part))
             assertFalse(report.contains("00:11:22:33:44:55"));assertFalse(report.contains("MB-EP-private"))
             assertTrue(report.toByteArray().size<128*1024)

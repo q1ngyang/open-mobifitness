@@ -10,8 +10,8 @@ android {
         applicationId = "org.openmobifitness.app"
         minSdk = 29
         targetSdk = 37
-        versionCode = 14
-        versionName = "0.3.4"
+        versionCode = 15
+        versionName = "0.3.5"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         javaCompileOptions { annotationProcessorOptions { arguments["room.schemaLocation"] = "$projectDir/schemas" } }

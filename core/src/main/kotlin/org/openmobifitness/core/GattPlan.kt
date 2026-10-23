@@ -11,6 +11,16 @@ data class GattStep(val action: GattAction, val endpoint: GattEndpoint? = null, 
 object GattPlan {
     // BleGattMangerQueue delays each operation's completion by 300 ms before dequeuing the next.
     const val OPERATION_GAP_MS = 300L
+    /** Battery, resistance/load feedback, fold/status and embedded heart-rate notifications do not replace
+     * the equipment's measurement stream when deciding whether setup succeeded. */
+    fun isMeasurement(protocol: Protocol, e: GattEndpoint): Boolean = when(protocol) {
+        Protocol.V1 -> e.service in setOf("ffe0","fff0","ffc0") && e.characteristic in setOf("ffe4","ffe1","ffea","fff4","ffeb")
+        Protocol.HUANTONG -> e.service=="fff0" && e.characteristic=="fff1" ||
+            e.service in setOf("ffe0","fff0","ffc0") && e.characteristic in setOf("ffe4","fff4","ffe1")
+        Protocol.V2 -> e.service=="8800" && e.characteristic in setOf("8811","8813","8814")
+        Protocol.FTMS -> e.service=="1826" && e.characteristic in setOf("2acd","2ace","2ad1","2ad2")
+        else -> e.service=="180d" && e.characteristic=="2a37"
+    }
     fun initialization(protocol: Protocol, name: String, endpoints: List<GattEndpoint>): List<GattStep> = buildList {
         add(GattStep(GattAction.MTU))
         if(protocol==Protocol.FTMS && MobiProfiles.officialFtms(name)) endpoints.firstOrNull { it.service=="1826" && it.characteristic=="2ad9" }?.let {

@@ -44,6 +44,7 @@ internal fun connectionFailure(reason: String)=when {
     reason=="scan_rate_limit" || reason=="scan_error:6"->R.string.ble_scan_rate_limit
     reason.startsWith("scan_error:")->R.string.ble_scan_failed
     reason=="connection_cancelled"->R.string.ble_connection_cancelled
+    reason=="subscription_failed"->R.string.subscription_failed
     reason.endsWith("_timeout")->R.string.ble_connection_timeout
     else->R.string.ble_connection_failed
 }

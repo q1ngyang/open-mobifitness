@@ -30,7 +30,8 @@ data class LinkState(
 class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS,private val foldFeedbackTimeoutMs: Long=15000,
     private val role: String="equipment", private val timeouts: ConnectionTimeouts=ConnectionTimeouts(),
     private val connectionDispatcher: CoroutineDispatcher=Dispatchers.IO,
-    private val clock: ()->Long = { SystemClock.elapsedRealtime() }
+    private val clock: ()->Long = { SystemClock.elapsedRealtime() },
+    private val scanBudget: ScanBudget=ScanBudget()
 ) {
     val state = MutableStateFlow(LinkState())
     val found = MutableStateFlow<List<FoundDevice>>(emptyList())
@@ -51,8 +52,6 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     private var activeScanner: BluetoothLeScanner? = null
     private var recoveryScan=false
     private var scanNumber=0L
-    private val scanStarts=ArrayDeque<Long>()
-    private var scanBlockedUntil=0L
     private val scanSeen=mutableSetOf<String>()
     private val discovered=linkedMapOf<String,Pair<Long,BluetoothDevice>>()
     private var disconnectedAt=Long.MIN_VALUE
@@ -130,9 +129,8 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         stopScanInternal("replaced")
         found.value=emptyList(); scanError.value=null; scanSeen.clear()
         val now=clock()
-        while(scanStarts.isNotEmpty() && now-scanStarts.first()>=30_000) scanStarts.removeFirst()
         scanTrace=ScanTrace(id=++scanNumber,purpose=if(forConnection) "reconnect" else "browse",startedAt=now)
-        if(now<scanBlockedUntil || scanStarts.size>=4) {
+        if(available() && !scanBudget.take(now)) {
             scanError.value="scan_rate_limit";scanTrace=scanTrace.copy(endedAt=now,outcome="rate_limit")
             log("scan_blocked:rate_limit id=$scanNumber");return false
         }
@@ -149,7 +147,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 if(owner !== scanCallback) return@launch
                 val recover=recoveryScan
                 scanError.value="scan_error:$errorCode"
-                if(errorCode==6) scanBlockedUntil=clock()+30_000
+                if(errorCode==6) scanBudget.throttled(clock())
                 log("scan_error:$errorCode id=${scanTrace.id}")
                 stopScanInternal("error:$errorCode")
                 if(recover) openSavedTarget("scan_failed")
@@ -162,9 +160,11 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             val scanner=requireNotNull(adapter?.bluetoothLeScanner)
             activeScanner=scanner;scanning.value=true
             scanTrace=scanTrace.copy(active=true,outcome="running")
-            scanStarts.addLast(now)
             log("scan_start:id=$scanNumber purpose=${scanTrace.purpose} target=${forConnection}")
-            scanner.startScan(null,ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),callback)
+            // Unfiltered scans are suspended on screen-off by Android. Recovery has
+            // an exact target and must also work from the notification/lock screen.
+            val filters=if(forConnection) listOf(ScanFilter.Builder().setDeviceAddress(requireNotNull(request).device.address).build()) else null
+            scanner.startScan(filters,ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),callback)
             if(scanCallback===callback) scanJob=scope.launch {
                 delay(if(forConnection) timeouts.scanMs else 12_000)
                 if(scanCallback===callback) {
@@ -410,22 +410,32 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         override fun onDescriptorWrite(g: BluetoothGatt,d: BluetoothGattDescriptor,status: Int) { scope.launch { if(g===gatt) complete("notify:${d.characteristic.uuid}",status) } }
         override fun onMtuChanged(g: BluetoothGatt,mtu: Int,status: Int) { scope.launch { if(g===gatt) complete("mtu",status) } }
     }
-    private suspend fun operation(key: String,optional: Boolean=false,start: (BluetoothGatt)->Boolean): Boolean = operations.withLock {
-        val current=gatt ?: return@withLock false
-        operationEndedAt?.let { delay((it+operationGapMs-SystemClock.elapsedRealtime()).coerceAtLeast(0)) }
-        if(current!==gatt) return@withLock false
-        val result=CompletableDeferred<Boolean>(); pending=result; pendingKey=key
-        val started=clock();log("gatt_operation:begin key=$key")
-        try {
-            if(!start(current)) { log("gatt_rejected:$key"); return@withLock false }
-            withTimeout(6000) { result.await() }.also { if(!it) log("gatt_failed:$key") }
-        } catch(e: TimeoutCancellationException) { if(optional) log("gatt_timeout:$key") else if(gatt===current) fail("gatt_timeout:$key"); false }
-        catch(e: CancellationException) { if(gatt===current) fail("gatt_cancelled:$key"); throw e }
-        catch(e: SecurityException) { if(gatt===current) fail("permission_revoked"); false }
-        finally {
-            log("gatt_operation:end key=$key durationMs=${clock()-started} current=${current===gatt}")
-            if(current===gatt) operationEndedAt=SystemClock.elapsedRealtime()
-            if(pending===result) { pending=null; pendingKey=null }
+    private suspend fun operation(key: String,optional: Boolean=false,start: (BluetoothGatt)->Boolean): Boolean {
+        // Bind before waiting for the queue: a queued read/write must never migrate
+        // to a replacement connection (even when it has the same UUIDs).
+        val current=gatt ?: return false
+        return operations.withLock {
+            if(current!==gatt) return@withLock false
+            operationEndedAt?.let { delay((it+operationGapMs-SystemClock.elapsedRealtime()).coerceAtLeast(0)) }
+            if(current!==gatt) return@withLock false
+            val result=CompletableDeferred<Boolean>(); pending=result; pendingKey=key
+            val started=clock();log("gatt_operation:begin key=$key")
+            try {
+                if(!start(current)) { log("gatt_rejected:$key"); return@withLock false }
+                withTimeout(6000) { result.await() }.also { if(!it) log("gatt_failed:$key") }
+            } catch(e: TimeoutCancellationException) { if(optional) log("gatt_timeout:$key") else if(gatt===current) fail("gatt_timeout:$key"); false }
+            catch(e: CancellationException) { if(gatt===current) fail("gatt_cancelled:$key"); throw e }
+            catch(e: SecurityException) { if(gatt===current) fail("permission_revoked"); false }
+            catch(e: Exception) {
+                log("gatt_exception:$key:${e.javaClass.simpleName}")
+                if(gatt===current) fail("gatt_operation_failed")
+                false
+            }
+            finally {
+                log("gatt_operation:end key=$key durationMs=${clock()-started} current=${current===gatt}")
+                if(current===gatt) operationEndedAt=SystemClock.elapsedRealtime()
+                if(pending===result) { pending=null; pendingKey=null }
+            }
         }
     }
     private fun characteristic(service: String,which: String) = gatt?.getService(uuid(service))?.getCharacteristic(uuid(which))
@@ -472,6 +482,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             state.value=state.value.copy(machine=when { "2ace" in chars -> Machine.ELLIPTICAL; "2ad2" in chars -> Machine.BIKE; "2ad1" in chars -> Machine.ROWER; "2acd" in chars -> Machine.TREADMILL; else -> Machine.UNKNOWN })
         }
         var subscriptions=0
+        var measurementSubscriptions=0
         var huantongSubscribed=false
         val delayed=mutableListOf<GattStep>()
         suspend fun execute(step: GattStep) {
@@ -484,7 +495,10 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 GattAction.READ -> read(c)
                 GattAction.NOTIFY -> {
                     val success=subscribe(c)
-                    if(success) subscriptions++
+                    if(success) {
+                        subscriptions++
+                        if(GattPlan.isMeasurement(protocol,endpoint)) measurementSubscriptions++
+                    }
                     if(endpoint.service=="1826" && endpoint.characteristic=="2ad9") controlNotify=success
                     if(protocol==Protocol.HUANTONG && endpoint.service=="fff0" && endpoint.characteristic=="fff1" && success && g===gatt) {
                         huantongSubscribed=true
@@ -520,6 +534,11 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 }
             }
         }
+        if(measurementSubscriptions==0) {
+            log("initialization:no_measurement_subscription total=$subscriptions")
+            finishFailure("subscription_failed")
+            return
+        }
         updateCapabilities()
         initialized=true
         queryFoldState()
@@ -531,7 +550,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             phase=if(state.value.dataReceived || canStartReporting) "ready" else if(subscriptions>0) "awaiting_data" else "subscription_failed",
             subscriptions=subscriptions,failure=if(subscriptions==0) "subscription_failed" else null)
         log("connection_result:phase=${state.value.phase}")
-        log("initialization:subscriptions=$subscriptions data=${state.value.dataReceived} phase=${state.value.phase}")
+        log("initialization:subscriptions=$subscriptions measurements=$measurementSubscriptions data=${state.value.dataReceived} phase=${state.value.phase}")
         dataWatchdog=scope.launch {
             delay(10_000)
             if(g===gatt && !state.value.dataReceived) log("no_sensor_data:received=${state.value.receivedPackets} parsed=${state.value.parsedPackets}")

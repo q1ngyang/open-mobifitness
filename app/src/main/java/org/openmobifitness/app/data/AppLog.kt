@@ -42,6 +42,11 @@ object AppLog {
     private fun clean(value: String)=value.replace(Regex("(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}"),"[address]").take(1800)
     private fun entry(type: String,detail: String)=JSONObject().put("at",Instant.now().toString()).put("event",type).put("detail",clean(detail)).toString()
     fun event(type: String,detail: String="") { if(queue.trySend(Command.Append(entry(type,detail))).isFailure) dropped.incrementAndGet() }
+    fun powerState(context: Context): String=runCatching {
+        val power=context.getSystemService(android.os.PowerManager::class.java)
+        val lock=context.getSystemService(android.app.KeyguardManager::class.java)
+        "interactive=${power.isInteractive} locked=${lock.isKeyguardLocked} idle=${power.isDeviceIdleMode} powerSave=${power.isPowerSaveMode} batteryExempt=${power.isIgnoringBatteryOptimizations(context.packageName)}"
+    }.getOrElse { "powerStateUnavailable=${it.javaClass.simpleName}" }
     private fun frames(t: Throwable)=t.javaClass.simpleName+"\n"+t.stackTrace.take(14).joinToString("\n")
     fun exception(type: String,error: Throwable)=event(type,frames(error))
     fun packet(direction: String,characteristic: String,bytes: ByteArray) {
@@ -61,6 +66,7 @@ object AppLog {
                 appendLine("Exported: ${Instant.now()}; monoMs=${android.os.SystemClock.elapsedRealtime()}")
                 appendLine("Android: ${Build.VERSION.SDK_INT}; manufacturer=${Build.MANUFACTURER}; model=${Build.MODEL}")
                 appendLine("Protocol trace enabled: ${c.display.packets.value}; simulated: ${c.state.value.demo}")
+                appendLine("Connection service: started=${c.serviceStarted} ${c.connectionServiceStatus}; ${powerState(c.app)}")
                 appendLine("Packet sequence: ${packetSequence.get()}; queue drops: ${dropped.get()}; bounded ring may discard oldest records")
                 listOf("equipment" to c.ble,"heart" to c.heart).forEach { (role,client) ->
                     val state=client.state.value

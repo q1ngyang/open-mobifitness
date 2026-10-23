@@ -97,6 +97,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); if(intent.getBooleanExtra("training",false)) { page.value=0; focusTraining.value=true } else if(intent.getBooleanExtra("devices",false)) { page.value=2; focusTraining.value=false }; intent.removeExtra("training"); intent.removeExtra("devices"); metricScope.value=runCatching { DisplayScope.valueOf(intent.getStringExtra("metrics_scope") ?: "") }.getOrNull() }
     override fun onResume() {
         super.onResume()
+        org.openmobifitness.app.data.AppLog.event("activity","foreground monoMs=${android.os.SystemClock.elapsedRealtime()} ${org.openmobifitness.app.data.AppLog.powerState(this)}")
         if(intent.getBooleanExtra("reconnect",false)) { intent.removeExtra("reconnect"); reconnect() }
         externalNavigation=false
         overlayAllowed.value=Settings.canDrawOverlays(this)
@@ -106,6 +107,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onStop() {
         super.onStop()
+        org.openmobifitness.app.data.AppLog.event("activity","background rotating=$isChangingConfigurations monoMs=${android.os.SystemClock.elapsedRealtime()} ${org.openmobifitness.app.data.AppLog.powerState(this)}")
         // Do not draw over our own permission/file flows, rotations, or the lock screen.
         if(!isChangingConfigurations && !externalNavigation && controller.state.value.inUse &&
             controller.display.floatingEnabled.value && controller.display.autoFloating.value &&
@@ -130,20 +132,26 @@ class MainActivity : ComponentActivity() {
         val address=controller.prefs.getString("last_address",null) ?: return
         connect(FoundDevice(address,controller.prefs.getString("last_name","") ?: "",0))
     }
-    fun ensureService() {
+    fun ensureService(): Boolean {
         val intent=Intent(this,WorkoutService::class.java)
         try {
-            if(controller.state.value.demo) startService(intent) else ContextCompat.startForegroundService(this,intent)
+            if(controller.state.value.demo && !controller.hasBluetoothConnection) startService(intent) else ContextCompat.startForegroundService(this,intent)
             if(Build.VERSION.SDK_INT>=33 && !controller.state.value.demo && !controller.prefs.getBoolean("notifications_requested",false) && ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
                 controller.prefs.edit().putBoolean("notifications_requested",true).apply()
                 notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-        } catch(e: Exception) { controller.error(R.string.permission_help) }
+            return true
+        } catch(e: Exception) {
+            org.openmobifitness.app.data.AppLog.exception("connection_service_request",e)
+            controller.connectionServiceLost()
+            return false
+        }
     }
-    fun startTraining() { if(!controller.canStart()) { controller.error(if(controller.ble.state.value.phase=="awaiting_data") R.string.waiting_data_help else R.string.connect_first); page.value=2 } else { ensureService(); controller.start(); page.value=0; focusTraining.value=true } }
+    fun startTraining() { if(!controller.canStart()) { controller.error(if(controller.ble.state.value.phase=="awaiting_data") R.string.waiting_data_help else R.string.connect_first); page.value=2 } else if(ensureService()) { controller.start(); page.value=0; focusTraining.value=true } }
     fun startControl() {
         if(!controller.canStart()) { controller.error(R.string.connect_first); page.value=2; return }
-        ensureService(); controller.enterControl(); page.value=0; focusTraining.value=true
+        if(!ensureService()) return
+        controller.enterControl(); page.value=0; focusTraining.value=true
     }
     fun exitControl() { controller.exitControl(); focusTraining.value=false; page.value=0; stopIdleService() }
     fun closeCompletedReport() {

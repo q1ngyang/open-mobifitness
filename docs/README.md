@@ -12,7 +12,7 @@
 | 训练方案、档位与估算数据 / Plans, resistance and estimates | [训练说明 / Workouts](TRAINING.md) |
 | 手机和平板的样子 / Phone and tablet views | [界面展示 / Screenshots](SCREENSHOTS.md) |
 | 数据保存、权限和网络 / Storage, permissions and network use | [隐私说明 / Privacy](PRIVACY.md) |
-| 最新版本 / Latest release | [v0.3.4](releases/v0.3.4.md) · [验证 / Validation](V034_VALIDATION.md) |
+| 最新版本 / Latest release | [v0.3.5](releases/v0.3.5.md) · [验证 / Validation](V035_VALIDATION.md) |
 | 多用户、器材训练与升级 / Profiles, plans and upgrading | [v0.3.0 使用变化 / Feature guide](V030_GUIDE.md) |
 | 上一版本 / Previous release | [v0.3.2](releases/v0.3.2.md) |
 

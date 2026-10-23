@@ -25,9 +25,13 @@ class BleClientTest {
     // Robolectric supplies readIncomingCharacteristic but doesn't implement the Android read entry point.
     @Implements(BluetoothGatt::class)
     class ReadableGatt : ShadowBluetoothGatt() {
-        @Implementation fun readCharacteristic(c: BluetoothGattCharacteristic)=readIncomingCharacteristic(c)
+        @Implementation fun readCharacteristic(c: BluetoothGattCharacteristic): Boolean { readCalls++;return readIncomingCharacteristic(c) }
         @Implementation override fun requestMtu(mtu: Int): Boolean = acceptMtu && super.requestMtu(mtu)
-        companion object { var acceptMtu=true }
+        @Implementation override fun writeCharacteristic(c: BluetoothGattCharacteristic,bytes: ByteArray,type: Int): Int {
+            if(throwWrite) throw IllegalStateException("test stack failure")
+            return super.writeCharacteristic(c,bytes,type)
+        }
+        companion object { var acceptMtu=true;var readCalls=0;var throwWrite=false }
     }
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Unconfined)
     private lateinit var client: BleClient
@@ -51,7 +55,7 @@ class BleClientTest {
         assertTrue(gatt.discoverServices())
     }
     private fun frame(resistance: Int=3)=byteArrayOf(0xab.toByte(),4,0,11,17,80,9,0,0,1,0xf4.toByte(),0,0,resistance.toByte(),125)
-    @After fun cleanup() { if(::client.isInitialized) client.disconnect(); scope.cancel(); ReadableGatt.acceptMtu=true }
+    @After fun cleanup() { if(::client.isInitialized) client.disconnect(); scope.cancel(); ReadableGatt.acceptMtu=true;ReadableGatt.throwWrite=false;ReadableGatt.readCalls=0 }
 
     @Test fun v011EllipticalWorksWhenMtuNegotiationIsRejectedAndDiscoveryDeadlineIsReleased()=runBlocking {
         ReadableGatt.acceptMtu=false
@@ -206,13 +210,23 @@ class BleClientTest {
     }
     @Test fun missingCccdIsVisibleAndCannotPretendToBeConnectedWithData() {
         setupGatt(descriptor=false)
-        assertEquals("subscription_failed",client.state.value.phase)
+        assertEquals("disconnected",client.state.value.phase)
+        assertEquals("subscription_failed",client.state.value.failure)
+        assertTrue(shadowOf(gatt).isClosed)
         assertTrue(client.state.value.diagnostic.contains("notify_missing_cccd:ffe4"))
         assertFalse(client.state.value.writable)
     }
-    @Test fun rejectedNotificationAndMalformedPayloadAreDiagnosable() {
+    @Test fun rejectedNotificationClosesGattAndIgnoresLateData() {
         setupGatt(allow=false)
-        assertEquals("subscription_failed",client.state.value.phase)
+        assertEquals("disconnected",client.state.value.phase)
+        assertEquals("subscription_failed",client.state.value.failure)
+        assertTrue(shadowOf(gatt).isClosed)
+        callback.onCharacteristicChanged(gatt,notify,frame())
+        assertEquals(0,client.state.value.receivedPackets)
+        assertFalse(client.state.value.dataReceived)
+    }
+    @Test fun malformedPayloadOnASubscribedConnectionIsDiagnosable() {
+        setupGatt()
         callback.onCharacteristicChanged(gatt,notify,byteArrayOf(1,2,3))
         assertEquals(1,client.state.value.receivedPackets)
         assertEquals(0,client.state.value.parsedPackets)
@@ -241,6 +255,29 @@ class BleClientTest {
         assertArrayEquals(written,shadowOf(gatt).latestWrittenBytes)
         assertNull(client.state.value.requested)
         assertEquals(3.0,client.state.value.metrics.resistance!!,0.0)
+    }
+    @Test fun queuedFoldReadCannotRunOnAReplacementGatt()=runBlocking {
+        setupModern(Protocol.V2,fold=true)
+        val old=gatt
+        val queue=ReflectionHelpers.getField<kotlinx.coroutines.sync.Mutex>(client,"operations")
+        queue.lock()
+        client.refreshFoldState()
+        // The real read is queued behind another operation, before acquiring GATT.
+        val next=ShadowBluetoothGatt.newInstance(old.device)
+        ReflectionHelpers.setField(client,"gatt",next)
+        val reads=ReadableGatt.readCalls
+        queue.unlock()
+        assertEquals("Queued old read must not reach the replacement transport",reads,ReadableGatt.readCalls)
+        old.close()
+    }
+    @Test fun runtimeGattExceptionEndsTheConnectionInsteadOfLeavingControlBusy()=runBlocking {
+        setupGatt();callback.onCharacteristicChanged(gatt,notify,frame())
+        ReflectionHelpers.setField(client,"lastWrite",-1000L)
+        ReadableGatt.throwWrite=true
+        assertFalse(client.resistance(4.0))
+        assertEquals("gatt_operation_failed",client.state.value.failure)
+        assertEquals("disconnected",client.state.value.phase)
+        assertFalse(client.state.value.busy);assertTrue(shadowOf(gatt).isClosed)
     }
     @Test fun legacyReadOnlyModelReportsResistanceWithoutOfferingControl()=runBlocking {
         setupGatt()
