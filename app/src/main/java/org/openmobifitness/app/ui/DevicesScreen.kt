@@ -80,7 +80,8 @@ internal fun connectionFailure(reason: String)=when {
                             if(link.connectionPending) Text(stringResource(R.string.ble_connection_pending_help),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                             else {
                             CapabilityLine(stringResource(R.string.motion_data),stringResource(if(fresh) R.string.receiving_data else R.string.waiting_motion),fresh)
-                            CapabilityLine(stringResource(R.string.resistance_control),stringResource(if(link.controlTimedOut) R.string.feedback_timeout else if(link.writable && link.range!=null) R.string.control_available else R.string.read_only),link.writable && link.range!=null && !link.controlTimedOut)
+                            CapabilityLine(stringResource(R.string.resistance_control),stringResource(if(link.writable && link.range!=null) R.string.control_available else R.string.read_only),link.writable && link.range!=null)
+                            ResistanceStatus(link,state.pendingResistance)
                             if(link.metrics.heartBpm!=null && link.heartAt>0 && now-link.heartAt<10000) CapabilityLine(stringResource(R.string.heart_rate),stringResource(R.string.heart_from_equipment,link.metrics.heartBpm!!),true)
                             EquipmentFold(c,state,link,now)
                             }

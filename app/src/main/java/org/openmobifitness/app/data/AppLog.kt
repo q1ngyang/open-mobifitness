@@ -75,6 +75,7 @@ object AppLog {
                     appendLine("$role: ${state.phase} ${state.protocol} ${state.machine} range=${state.range} writable=${state.writable}")
                     appendLine("  subscriptions=${state.subscriptions} received=${state.receivedPackets} parsed=${state.parsedPackets} dataReceived=${state.dataReceived}")
                     appendLine("  lastPacketAgeMs=${state.lastReceiveAt.takeIf { it>0 }?.let { android.os.SystemClock.elapsedRealtime()-it }} controlFeedbackTimedOut=${state.controlTimedOut}")
+                    appendLine("  resistanceControl=${state.resistanceControl} resistanceRevision=${state.resistanceRevision}")
                 }
                 // Always include both connection/scan summaries before the bounded detail tail.
                 listOf(c.ble,c.heart).forEach { client ->

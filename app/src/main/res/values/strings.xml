@@ -41,7 +41,7 @@
     <string name="duration">Active time</string>
     <string name="increase">Increase resistance</string>
     <string name="decrease">Decrease resistance</string>
-    <string name="control_pending">Requested %1$s · awaiting device feedback</string>
+    <string name="control_pending">Sent target %1$s · awaiting device feedback</string>
     <string name="control_unavailable">Resistance control awaits a supported range and device data.</string>
     <string name="auto">Automatic stages</string>
     <string name="manual">Manual control</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">Display</string>
     <string name="resistance_slider">Slide to set resistance</string>
     <string name="slider_target">Target %1$s · %2$d%%</string>
-    <string name="control_no_feedback">No resistance confirmation received. Check the equipment and export diagnostics.</string>
+    <string name="control_no_feedback">Watch the device reading. If the level remains unconfirmed, export diagnostics.</string>
     <string name="awaiting_data">Connected · waiting for data</string>
     <string name="waiting_data_help">Connected, but no valid sensor data yet. Wake the equipment and pedal briefly. If readings stay empty, enable protocol logging and export diagnostics.</string>
     <string name="subscription_failed">Sensor notifications unavailable · reconnect or export diagnostics</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">Remaining in stage</string>
     <string name="stage_level">Level %1$s · %2$d%%</string>
     <string name="free_training_help">Set your resistance and move at your own pace.</string>
-    <string name="resistance_feedback_help">The number is confirmed by the equipment. The slider shows your requested level while waiting for feedback.</string>
+    <string name="resistance_feedback_help">The number is a device reading, not proof of mechanical resistance. The slider retains your latest unconfirmed target; late matching readings clear the notice.</string>
     <string name="floating_enabled">Enable floating panel</string>
     <string name="auto_floating">Float automatically</string>
     <string name="auto_floating_help">Show the small panel when you go home or switch apps during a workout. Requires display-over-other-apps permission.</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">Enter up to four distinct levels supported by this device, separated by commas.</string>
     <string name="invalid_hint_bounds">Use non-negative numbers with the lower limit no greater than the upper. Set at least one limit to enable.</string>
     <string name="connection_background_unavailable">Background connection service stopped. Reopen the app and reconnect.</string>
+    <string name="control_sending">Sending target %1$s</string>
+    <string name="control_unconfirmed">Target %1$s · level not yet confirmed</string>
+    <string name="control_reading_matches">Device reading matches target %1$s</string>
+    <string name="control_write_only">Set level %1$s · this device does not report resistance</string>
+    <string name="control_send_failed">Resistance send or protocol operation failed. Check the connection and retry.</string>
+    <string name="control_pedal_hint">If safe, try pedaling gently and watch the device reading. If still unconfirmed, export diagnostics.</string>
 </resources>

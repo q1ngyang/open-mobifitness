@@ -41,7 +41,7 @@
     <string name="duration">운동 시간</string>
     <string name="increase">저항 증가</string>
     <string name="decrease">저항 감소</string>
-    <string name="control_pending">%1$s 요청 · 기기 응답 대기</string>
+    <string name="control_pending">목표 %1$s 전송됨 · 기기 응답 대기</string>
     <string name="control_unavailable">지원 저항 범위와 기기 데이터 수신 후 조절할 수 있습니다.</string>
     <string name="auto">자동 단계 조절</string>
     <string name="manual">수동 조절 중</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">표시 설정</string>
     <string name="resistance_slider">슬라이더로 저항 조절</string>
     <string name="slider_target">목표 %1$s · %2$d%%</string>
-    <string name="control_no_feedback">저항 확인을 받지 못했습니다. 기기를 확인하고 진단 로그를 내보내세요.</string>
+    <string name="control_no_feedback">기기 값을 확인하세요. 저항이 계속 확인되지 않으면 진단 로그를 내보내세요.</string>
     <string name="awaiting_data">연결됨 · 데이터 대기 중</string>
     <string name="waiting_data_help">연결되었지만 유효한 운동 데이터가 없습니다. 기기를 깨우고 잠시 페달을 밟으세요. 계속 비어 있으면 프로토콜 기록을 켜고 진단을 내보내세요.</string>
     <string name="subscription_failed">센서 알림 등록 실패 · 재연결하거나 진단 내보내기</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">단계 남은 시간</string>
     <string name="stage_level">레벨 %1$s · %2$d%%</string>
     <string name="free_training_help">자신의 속도로 운동하며 언제든지 저항을 조절하세요.</string>
-    <string name="resistance_feedback_help">숫자는 기기에서 확인한 저항입니다. 응답을 기다리는 동안 슬라이더는 요청한 저항을 표시합니다.</string>
+    <string name="resistance_feedback_help">표시된 숫자는 기기 측정값이며 실제 기계 저항의 검증을 의미하지 않습니다. 슬라이더는 최신 미확인 목표를 유지하며, 늦게 일치하는 값을 수신하면 안내가 사라집니다.</string>
     <string name="floating_enabled">플로팅 패널 사용</string>
     <string name="auto_floating">자동 플로팅 패널</string>
     <string name="auto_floating_help">운동 중 홈으로 돌아가거나 앱을 전환하면 작은 패널을 표시합니다. 다른 앱 위에 표시 권한이 필요합니다.</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">이 기구가 지원하는 단계를 중복 없이 최대 4개까지 쉼표로 구분해 입력하세요.</string>
     <string name="invalid_hint_bounds">0 이상의 숫자를 입력하고 하한을 상한 이하로 설정하세요. 사용하려면 한쪽 이상 입력하세요.</string>
     <string name="connection_background_unavailable">백그라운드 연결 서비스가 중지되었습니다. 앱을 다시 열고 기기를 연결해 주세요.</string>
+    <string name="control_sending">목표 %1$s 전송 중</string>
+    <string name="control_unconfirmed">목표 %1$s · 아직 저항 확인 없음</string>
+    <string name="control_reading_matches">기기 측정값이 목표 %1$s와 일치</string>
+    <string name="control_write_only">설정 저항 %1$s · 이 기기는 저항을 보고하지 않음</string>
+    <string name="control_send_failed">저항 전송 또는 프로토콜 작업에 실패했습니다. 연결을 확인하고 다시 시도하세요.</string>
+    <string name="control_pedal_hint">안전한 경우 가볍게 페달을 밟고 기기 값을 확인하세요. 계속 확인되지 않으면 진단 로그를 내보내세요.</string>
 </resources>

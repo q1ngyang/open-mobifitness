@@ -9,6 +9,8 @@ import org.junit.Assert.*
 import org.junit.runner.RunWith
 import org.openmobifitness.app.ble.BleClient
 import org.openmobifitness.app.ble.LinkState
+import org.openmobifitness.app.ble.ResistanceControl
+import org.openmobifitness.app.ble.ResistanceSend
 import org.openmobifitness.core.*
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -48,14 +50,14 @@ class ZeroResistanceRegressionTest {
             receive("8812",byteArrayOf(12))
             val before=ble.state.value
             // Seed pending intent only; this test does not pretend a physical write succeeded.
-            ble.state.value=before.copy(requested=0.0)
+            ble.state.value=before.copy(resistanceControl=ResistanceControl(1,0.0,send=ResistanceSend.SENT))
             ShadowSystemClock.advanceBy(Duration.ofSeconds(1))
             receive("8812",byteArrayOf(0))
             assertEquals(0.0,ble.state.value.metrics.resistance!!,0.0)
             assertTrue(ble.state.value.resistanceAt>before.resistanceAt)
             assertNull(ble.state.value.requested)
             // A positive feedback value follows the ordinary confirmation path.
-            ble.state.value=ble.state.value.copy(requested=1.0)
+            ble.state.value=ble.state.value.copy(resistanceControl=ResistanceControl(2,1.0,send=ResistanceSend.SENT))
             receive("8812",byteArrayOf(1))
             assertEquals(1.0,ble.state.value.metrics.resistance!!,0.0)
             assertNull(ble.state.value.requested)
@@ -89,7 +91,7 @@ class ZeroResistanceRegressionTest {
         ble.state.value=LinkState(name="Generic",phase="ready",protocol=Protocol.FTMS,machine=Machine.BIKE)
         receive("2ad6",byteArrayOf(0,0,240.toByte(),0,10,0))
         receive("2ad2",byteArrayOf(36,0,16,14,120,0,12,0))
-        ble.state.value=ble.state.value.copy(requested=0.0)
+        ble.state.value=ble.state.value.copy(resistanceControl=ResistanceControl(1,0.0,send=ResistanceSend.SENT))
         receive("2ad2",byteArrayOf(36,0,16,14,120,0,0,0))
         assertEquals(0.0,ble.state.value.metrics.resistance!!,0.0)
         assertNull(ble.state.value.requested)

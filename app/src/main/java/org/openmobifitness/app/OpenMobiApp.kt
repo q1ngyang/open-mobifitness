@@ -52,8 +52,8 @@ class Controller(val app: Application,
 ) {
     val repo=Repository(app)
     private val scanBudget=ScanBudget()
-    val ble=BleClient(app,scope,scanBudget=scanBudget)
-    val heart=BleClient(app,scope,role="heart",scanBudget=scanBudget)
+    val ble=BleClient(app,scope,clock=clock,scanBudget=scanBudget)
+    val heart=BleClient(app,scope,role="heart",clock=clock,scanBudget=scanBudget)
     val state=MutableStateFlow(ExerciseState())
     val finishedSession=MutableStateFlow(app.getSharedPreferences("preferences",Context.MODE_PRIVATE).getString("finished_detail_id",null))
     val prefs=repo.profilePreferences
@@ -79,6 +79,8 @@ class Controller(val app: Application,
     private var engine: TrainingEngine?=null
     private var lastTick=clock()
     private var lastAuto=0L
+    private data class AutoResistanceAttempt(val stage: Int,val target: Double,val feedbackRevision: Long)
+    private var lastAutoAttempt: AutoResistanceAttempt?=null
     private var totals=TelemetryTotals()
     private var demoStrokes=0.0
     private var demoResistance=1.0
@@ -211,6 +213,7 @@ class Controller(val app: Application,
         useGeneration++
         manualControl?.cancel(); manualControl=null
         ble.invalidateControls()
+        lastAutoAttempt=null
         state.value=state.value.copy(pendingResistance=null)
     }
     fun enterControl() = scope.launch { sessionLock.withLock {
@@ -361,7 +364,7 @@ class Controller(val app: Application,
     fun resumeAutomatic() = automaticControl(true)
     fun adjust(delta: Int) {
         val range=range() ?: return
-        val current=state.value.pendingResistance ?: ble.state.value.requested ?: controlResistance() ?: range.min
+        val current=state.value.pendingResistance ?: ble.state.value.resistanceControl?.unconfirmedTarget ?: controlResistance() ?: range.min
         adjustTo(range.next(current,delta))
     }
     fun adjustTo(value: Double) {
@@ -369,9 +372,9 @@ class Controller(val app: Application,
         if(!value.isFinite() || !state.value.inUse || state.value.starting || state.value.completionPending || state.value.finishing) return
         if(!state.value.demo && (ble.state.value.phase!="ready" || ble.state.value.busy)) return
         val target=range.next(value,0)
+        invalidateControl()
         val connection=ble.connectionId; val generation=useGeneration; val control=ble.controlGeneration; val demo=state.value.demo
-        manualControl?.cancel()
-        state.value=state.value.copy(automatic=false,pendingResistance=target)
+        state.value=state.value.copy(automatic=false,pendingResistance=target,error=null)
         manualControl=scope.launch {
             if(!demo) delay(ble.resistanceDelayMs())
             // A pending slider release must never outlive its connection or workout.
@@ -385,7 +388,13 @@ class Controller(val app: Application,
     private suspend fun setResistance(value: Double,control: Long=ble.controlGeneration,generation: Long=useGeneration) {
         if(generation!=useGeneration || !state.value.inUse) return
         if(state.value.demo) { demoResistance=value; state.value=state.value.copy(metrics=state.value.metrics.copy(resistance=value)) }
-        else if(!ble.resistance(value,control) && generation==useGeneration) error(R.string.control_unavailable)
+        else {
+            val sent=ble.resistance(value,control)
+            if(generation==useGeneration) {
+                if(!sent) error(R.string.control_send_failed)
+                else if(state.value.error==R.string.control_send_failed) error(null)
+            }
+        }
     }
     internal suspend fun tick() {
         val now=clock(); val delta=(now-lastTick).coerceAtLeast(0); lastTick=now
@@ -429,7 +438,11 @@ class Controller(val app: Application,
             state.value=state.value.copy(paused=true,automatic=false,pendingResistance=null)
         }
         if(training!=null) session=session.copy(enteredStageIds=training.workout.steps.take(training.index+1).joinToString(";") { it.id })
-        if(training?.index!=previousStage) org.openmobifitness.app.data.AppLog.event("stage","${training?.index}")
+        if(training?.index!=previousStage) {
+            // A new stage owns new intent; an old pending target must not hold it up.
+            if(state.value.automatic) { invalidateControl(); lastAuto=0 }
+            org.openmobifitness.app.data.AppLog.event("stage","${training?.index}")
+        }
         state.value=state.value.copy(session=session,strokeCount=totals.strokes,jumpCount=totals.jumps,repetitions=totals.repetitions,jumpInterruptions=totals.jumpInterruptions,stage=training?.index ?: 0,
             progress=training?.progress(session.elapsedMs,totals.distanceM,totals.strokes)?.toFloat() ?: 0f,
             remainingMs=training?.remainingMs(session.elapsedMs),done=training?.done ?: old.done)
@@ -439,11 +452,17 @@ class Controller(val app: Application,
         if(training!=null && !training.done && state.value.automatic && now-lastAuto>=2000) {
             val percent=training.workout.steps[training.index].resistancePercent
             val range=range(); val actual=controlResistance() ?: range?.min
-            if(percent!=null && range!=null && actual!=null && (old.demo || ble.state.value.requested==null)) {
+            if(percent!=null && range!=null && actual!=null && (old.demo || (!ble.state.value.busy && ble.state.value.requested==null))) {
                 val target=range.percent(percent)
                 if(kotlin.math.abs(target-actual)>=range.increment*0.5) {
-                    lastAuto=now
-                    setResistance(range.next(actual,if(target>actual) 1 else -1))
+                    val next=range.next(actual,if(target>actual) 1 else -1)
+                    val attempt=AutoResistanceAttempt(training.index,next,ble.state.value.resistanceRevision)
+                    // Expiring the brief pending window is not new evidence. Wait for
+                    // a fresh resistance field (or a new stage/manual action) to retry.
+                    if(old.demo || attempt!=lastAutoAttempt) {
+                        lastAuto=now; lastAutoAttempt=attempt
+                        setResistance(next)
+                    }
                 }
             }
         }

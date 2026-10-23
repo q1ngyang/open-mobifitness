@@ -17,15 +17,19 @@ data class FoundDevice(val address: String, val name: String, val rssi: Int, val
 data class LinkState(
     val name: String = "", val address: String = "", val phase: String = "disconnected", val protocol: Protocol = Protocol.UNKNOWN,
     val machine: Machine = Machine.UNKNOWN, val range: ResistanceRange? = null, val metrics: Metrics = Metrics(),
-    val motionAt: Long = 0, val resistanceAt: Long = 0, val heartAt: Long = 0, val requested: Double? = null,
+    val motionAt: Long = 0, val resistanceAt: Long = 0, val heartAt: Long = 0,
     val busy: Boolean = false, val writable: Boolean = false, val diagnostic: List<String> = emptyList(),
     val dataReceived: Boolean = false, val receivedPackets: Int = 0, val parsedPackets: Int = 0,
-    val subscriptions: Int = 0, val lastReceiveAt: Long = 0, val controlTimedOut: Boolean = false,
+    val subscriptions: Int = 0, val lastReceiveAt: Long = 0,
     val resistanceFeedback: Boolean = true, val commandedResistance: Double? = null,
     val model: String = "", val deviceDetails: MobiDeviceDetails = MobiDeviceDetails(),
     val metricTimes: MetricTimes = MetricTimes(), val foldPhase: String = "idle", val foldTarget: Int? = null,
-    val failure: String? = null
-)
+    val failure: String? = null,
+    val resistanceControl: ResistanceControl? = null, val resistanceRevision: Long = 0
+) {
+    val requested: Double? get() = resistanceControl?.pending
+    val controlTimedOut: Boolean get() = resistanceControl?.phase == ResistancePhase.UNCONFIRMED
+}
 @SuppressLint("MissingPermission") // Entry points are gated by runtime permission checks; revoked permissions are caught.
 class BleClient(private val context: Context, private val scope: CoroutineScope,private val operationGapMs: Long=GattPlan.OPERATION_GAP_MS,private val foldFeedbackTimeoutMs: Long=15000,
     private val role: String="equipment", private val timeouts: ConnectionTimeouts=ConnectionTimeouts(),
@@ -41,6 +45,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     private var connectionJob: Job? = null
     private var dataWatchdog: Job? = null
     private var feedbackJob: Job? = null
+    private var resistanceRequestNumber = 0L
     private var foldJob: Job? = null
     private val recentMetrics=ArrayDeque<Pair<Long,LinkState>>()
     private var periodicJob: Job? = null
@@ -110,7 +115,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     fun invalidateControls() {
         controlGeneration++
         feedbackJob?.cancel()
-        state.value=state.value.copy(requested=null,controlTimedOut=false)
+        state.value=state.value.copy(resistanceControl=null)
     }
     fun clearUserContext() { invalidateControls(); resetTrainingCalculations(); recentMetrics.clear(); state.value=state.value.copy(metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,heartAt=0) }
     /** Start required live reporting once. App recording/pause does not own this lifecycle. */
@@ -329,7 +334,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         initialized=false; foldStateQueried=false
         operationEndedAt=null
         callbackKinds.clear(); rejectedFrames.clear()
-        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,resistanceAt=0,heartAt=0,requested=null,busy=false,writable=false,dataReceived=false,controlTimedOut=false,commandedResistance=null,deviceDetails=MobiDeviceDetails(),foldPhase="idle",foldTarget=null)
+        state.value=state.value.copy(phase="disconnected",range=null,metrics=Metrics(),metricTimes=MetricTimes(),motionAt=0,resistanceAt=0,heartAt=0,resistanceControl=null,resistanceRevision=0,busy=false,writable=false,dataReceived=false,commandedResistance=null,deviceDetails=MobiDeviceDetails(),foldPhase="idle",foldTarget=null)
     }
     private fun finishFailure(reason: String) {
         log("connection_failed:reason=$reason")
@@ -416,7 +421,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         val current=gatt ?: return false
         return operations.withLock {
             if(current!==gatt) return@withLock false
-            operationEndedAt?.let { delay((it+operationGapMs-SystemClock.elapsedRealtime()).coerceAtLeast(0)) }
+            operationEndedAt?.let { delay((it+operationGapMs-clock()).coerceAtLeast(0)) }
             if(current!==gatt) return@withLock false
             val result=CompletableDeferred<Boolean>(); pending=result; pendingKey=key
             val started=clock();log("gatt_operation:begin key=$key")
@@ -433,7 +438,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             }
             finally {
                 log("gatt_operation:end key=$key durationMs=${clock()-started} current=${current===gatt}")
-                if(current===gatt) operationEndedAt=SystemClock.elapsedRealtime()
+                if(current===gatt) operationEndedAt=clock()
                 if(pending===result) { pending=null; pendingKey=null }
             }
         }
@@ -507,14 +512,14 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 else -> Unit
             }
         }
-        val initializedAt=SystemClock.elapsedRealtime()
+        val initializedAt=clock()
         for(step in GattPlan.initialization(protocol,state.value.name,endpoints)) {
             if(step.delayMs>0) delayed+=step else execute(step)
             if(g!==gatt) return
         }
         // MB-HW delays only FFE4, not the other characteristic operations.
         for(step in delayed) {
-            delay((initializedAt+step.delayMs-SystemClock.elapsedRealtime()).coerceAtLeast(0))
+            delay((initializedAt+step.delayMs-clock()).coerceAtLeast(0))
             execute(step)
             if(g!==gatt) return
         }
@@ -523,14 +528,14 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             huantongInitialized=write("fff0","fff2",MobiCommands.huantongWeight(userWeightKg))
             if(g!==gatt) return
             if(huantongInitialized) periodicJob=scope.launch {
-                var next=SystemClock.elapsedRealtime()+1000
+                var next=clock()+1000
                 while(isActive && g===gatt) {
-                    delay((next-SystemClock.elapsedRealtime()).coerceAtLeast(0))
+                    delay((next-clock()).coerceAtLeast(0))
                     if(g!==gatt) break
                     if(!write("fff0","fff2",MobiCommands.huantongResistance(huantongLevel))) log("huantong_periodic_failed")
                     next+=1000
                     // Do not replay missed setpoints after a delayed transport callback.
-                    if(next<=SystemClock.elapsedRealtime()) next=SystemClock.elapsedRealtime()+1000
+                    if(next<=clock()) next=clock()+1000
                 }
             }
         }
@@ -623,7 +628,7 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
         true
     }
     private fun receive(id: UUID,data: ByteArray) {
-        val short=id.short(); val now=SystemClock.elapsedRealtime()
+        val short=id.short(); val now=clock()
         if(short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8801","8802","8803","8804","8805","8806","8901","8902","2a19","2ad1","2ad2","2ace","2acd","2ad9","2ada","fff1"))
             org.openmobifitness.app.data.AppLog.packet("rx",short,data)
         val sensor=short in setOf("ffe1","ffe4","ffea","ffeb","fff4","8811","8812","8813","8814","2ad1","2ad2","2ace","2acd","2a37","fff1")
@@ -684,24 +689,29 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
             "2ada" -> {
                 mobiFtms?.metadata(short,data)
                 if(data.firstOrNull()?.let { it.toInt() and 255 } in setOf(2,3,4)) lastTrainingStatus=null
-                if(data.firstOrNull()?.let { it.toInt() and 255 }==0xff) { granted=false; state.value=state.value.copy(writable=false); log("control_lost") }
+                if(data.firstOrNull()?.let { it.toInt() and 255 }==0xff) { granted=false; invalidateControls(); state.value=state.value.copy(writable=false); log("control_lost") }
             }
             "2ad3","2ad7","2ad8" -> org.openmobifitness.app.data.AppLog.packet("rx",short,data)
             "2a24","2a26" -> log("$short:${data.toString(Charsets.UTF_8).filter { !it.isISOControl() }.take(80)}")
         }
         mobiFtms?.let { state.value=state.value.copy(deviceDetails=it.details) }
         if(short in setOf("2acc","2ad6")) updateCapabilities()
-        metrics?.validated()?.let { next ->
+        metrics?.validated()?.let { parsed ->
+            val next=parsed.copy(resistance=parsed.resistance?.takeIf { state.value.range?.contains(it)!=false })
             val valid=next.copy(powerEstimated=false,distanceEstimated=false,invalidated=emptySet(),counterModuli=emptyMap())!=Metrics()
-            val confirmed=next.resistance?.let { measured -> state.value.requested?.let { kotlin.math.abs(it-measured)<0.05 } }==true
-            if(confirmed) { feedbackJob?.cancel(); log("control_feedback:${next.resistance}") }
+            val control=state.value.resistanceControl
+            val updated=if(next.resistance!=null && control?.expectsFeedback==true && control.send!=ResistanceSend.FAILED)
+                control.copy(reading=next.resistance) else control
+            if(updated?.phase==ResistancePhase.MATCHED && control?.phase!=ResistancePhase.MATCHED)
+                log("control_feedback:${next.resistance} request=${updated.id}")
             state.value=state.value.copy(metrics=state.value.metrics.merge(next),metricTimes=state.value.metricTimes.update(next,now),motionAt=if(motion && valid) now else state.value.motionAt,
             resistanceAt=if(next.resistance!=null) now else state.value.resistanceAt,
+            resistanceRevision=state.value.resistanceRevision+if(next.resistance!=null) 1 else 0,
             heartAt=if(next.heartBpm!=null) now else state.value.heartAt,
             dataReceived=state.value.dataReceived || valid,
             parsedPackets=state.value.parsedPackets+if(sensor && valid) 1 else 0,
             phase=if(valid && state.value.phase in setOf("awaiting_data","subscription_failed")) "ready" else state.value.phase,
-            requested=if(confirmed) null else state.value.requested,controlTimedOut=if(confirmed) false else state.value.controlTimedOut)
+            resistanceControl=updated)
             recentMetrics.addLast(now to state.value.copy(diagnostic=emptyList()))
             while(recentMetrics.size>512 || (recentMetrics.size>1 && recentMetrics.first().first<now-30000)) recentMetrics.removeFirst()
         }
@@ -719,11 +729,14 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
     }
     private suspend fun controlResistance(value: Double,generation: Long): Boolean {
         val s=state.value; val range=s.range ?: return false
-        if(s.phase!="ready" || !s.writable || s.busy || s.machine==Machine.TREADMILL || !range.contains(value) || SystemClock.elapsedRealtime()-lastWrite<700) return false
+        if(s.phase!="ready" || !s.writable || s.busy || s.machine==Machine.TREADMILL || !range.contains(value) || clock()-lastWrite<700) return false
         val connection=gatt
-        val valid={ gatt===connection && generation==controlGeneration }
+        val connectionNumber=connectionId
+        val request=ResistanceControl(++resistanceRequestNumber,value,s.resistanceFeedback)
+        val valid={ gatt===connection && connectionId==connectionNumber && generation==controlGeneration && state.value.resistanceControl?.id==request.id }
         feedbackJob?.cancel()
-        state.value=s.copy(busy=true,requested=value,controlTimedOut=false); lastWrite=SystemClock.elapsedRealtime()
+        state.value=s.copy(busy=true,resistanceControl=request); lastWrite=clock()
+        log("control_sending:request=${request.id} target=$value generation=$generation")
         return try {
             val ok=when(s.protocol) {
                 Protocol.V2 -> {
@@ -751,22 +764,26 @@ class BleClient(private val context: Context, private val scope: CoroutineScope,
                 else -> false
             }
             if(!valid()) return false
-            if(!ok) { log("control_failed"); state.value=state.value.copy(requested=null) }
-            else if(!state.value.resistanceFeedback) {
+            // A reading can arrive before the write callback. Keep it, but a failed
+            // write/protocol operation always wins over a coincidentally matching value.
+            state.value=state.value.copy(resistanceControl=state.value.resistanceControl?.copy(send=if(ok) ResistanceSend.SENT else ResistanceSend.FAILED))
+            if(!ok) log("control_failed:request=${request.id}")
+            else if(!request.expectsFeedback) {
                 mobi?.commandedResistance(value.toInt())
-                state.value=state.value.copy(requested=null,commandedResistance=value)
+                state.value=state.value.copy(commandedResistance=value)
             }
-            else if(state.value.requested!=null) feedbackJob=scope.launch {
+            else feedbackJob=scope.launch {
                 delay(5000)
-                if(valid() && state.value.requested==value) {
-                    log("control_feedback_timeout:requested=$value")
-                    state.value=state.value.copy(requested=null,controlTimedOut=true)
+                if(valid()) {
+                    state.value=state.value.copy(resistanceControl=state.value.resistanceControl?.copy(windowExpired=true))
+                    if(state.value.controlTimedOut) log("control_feedback_unconfirmed:request=${request.id} target=$value")
                 }
             }
+            if(ok) log("control_sent:request=${request.id} state=${state.value.resistanceControl?.phase}")
             ok
         } finally { if(gatt===connection) state.value=state.value.copy(busy=false) }
     }
-    fun resistanceDelayMs()=(700-(SystemClock.elapsedRealtime()-lastWrite)).coerceAtLeast(0)
+    fun resistanceDelayMs()=(700-(clock()-lastWrite)).coerceAtLeast(0)
     suspend fun trainingStatus(status: Int): Boolean {
         val connection=connectionId
         return controls.withLock { if(connection==connectionId) controlTrainingStatus(status) else false }

@@ -41,7 +41,7 @@
     <string name="duration">运动时长</string>
     <string name="increase">增加阻力</string>
     <string name="decrease">降低阻力</string>
-    <string name="control_pending">已请求 %1$s · 等待设备反馈</string>
+    <string name="control_pending">已发送目标 %1$s · 等待设备反馈</string>
     <string name="control_unavailable">识别到可控档位及设备数据后，可调节阻力。</string>
     <string name="auto">自动分段调阻</string>
     <string name="manual">手动调节中</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">显示设置</string>
     <string name="resistance_slider">滑动调节阻力</string>
     <string name="slider_target">目标 %1$s 档 · %2$d%%</string>
-    <string name="control_no_feedback">未收到档位确认，请检查器材并导出诊断日志。</string>
+    <string name="control_no_feedback">请观察设备读数；若档位仍未确认，请导出诊断日志。</string>
     <string name="awaiting_data">已连接 · 等待器材数据</string>
     <string name="waiting_data_help">蓝牙已连接，尚未收到有效运动数据。请唤醒器材并轻踩片刻；仍无读数时开启协议报文记录并导出诊断日志。</string>
     <string name="subscription_failed">器材数据订阅失败 · 请重连或导出诊断</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">本阶段剩余</string>
     <string name="stage_level">%1$s 档 · %2$d%%</string>
     <string name="free_training_help">按自己的节奏运动，随时调整阻力。</string>
-    <string name="resistance_feedback_help">档位数字来自器材确认；等待反馈时，滑块显示请求的目标档位。</string>
+    <string name="resistance_feedback_help">显示的数字来自设备读数，不代表已验证机械阻力。滑块保留最新未确认目标；收到迟到的匹配读数后，未确认提示会消除。</string>
     <string name="floating_enabled">启用悬浮窗</string>
     <string name="auto_floating">自动悬浮窗</string>
     <string name="auto_floating_help">运动期间返回桌面或切换应用时，自动显示小窗。需授予「显示在其他应用上层」权限。</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">请输入最多四个互不重复、此器材支持的档位，并用逗号分隔。</string>
     <string name="invalid_hint_bounds">请输入非负数，下限不能大于上限。启用时至少填写一侧。</string>
     <string name="connection_background_unavailable">后台连接服务已停止，请重新打开应用并连接设备。</string>
+    <string name="control_sending">正在发送目标 %1$s</string>
+    <string name="control_unconfirmed">目标 %1$s · 尚未收到档位确认</string>
+    <string name="control_reading_matches">设备读数与目标 %1$s 一致</string>
+    <string name="control_write_only">已设定档位 %1$s · 此设备不回报阻力</string>
+    <string name="control_send_failed">调阻发送或协议操作失败，请检查连接并重试。</string>
+    <string name="control_pedal_hint">在安全的情况下，可尝试轻踩并观察设备读数；若仍未确认，请导出诊断日志。</string>
 </resources>

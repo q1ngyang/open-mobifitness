@@ -41,7 +41,7 @@
     <string name="duration">運動時間</string>
     <string name="increase">負荷を上げる</string>
     <string name="decrease">負荷を下げる</string>
-    <string name="control_pending">%1$s を要求・応答待ち</string>
+    <string name="control_pending">目標 %1$s を送信済み・機器の応答待ち</string>
     <string name="control_unavailable">対応する負荷範囲とデータの受信後に操作できます。</string>
     <string name="auto">自動負荷調整</string>
     <string name="manual">手動操作中</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">表示設定</string>
     <string name="resistance_slider">スライドで負荷を調整</string>
     <string name="slider_target">目標 %1$s · %2$d%%</string>
-    <string name="control_no_feedback">負荷の確認がありません。機器を確認し診断ログを保存してください。</string>
+    <string name="control_no_feedback">機器の値を確認してください。負荷を確認できない場合は診断ログを書き出してください。</string>
     <string name="awaiting_data">接続済み · データ待機中</string>
     <string name="waiting_data_help">接続済みですが有効な運動データがありません。機器を起動し少しこいでください。表示されなければ通信ログを有効にして診断を保存してください。</string>
     <string name="subscription_failed">データ通知の登録失敗 · 再接続または診断を保存</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">ステージ残り時間</string>
     <string name="stage_level">レベル %1$s · %2$d%%</string>
     <string name="free_training_help">自分のペースで運動し、いつでも負荷を調整できます。</string>
-    <string name="resistance_feedback_help">数値は機器が確認した負荷です。応答待ちの間、スライダーは要求した負荷を示します。</string>
+    <string name="resistance_feedback_help">表示値は機器の読取値で、機械的な負荷の検証を意味しません。スライダーは最新の未確認目標を保持し、遅れて一致する値を受信すると通知を解除します。</string>
     <string name="floating_enabled">フローティングパネルを有効にする</string>
     <string name="auto_floating">自動でフローティング表示</string>
     <string name="auto_floating_help">運動中にホームに戻るかアプリを切り替えると小型パネルを表示します。他のアプリの上に表示する権限が必要です。</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">この機器が対応する段階を、重複せず最大4つ、カンマで区切って入力してください。</string>
     <string name="invalid_hint_bounds">0以上の数値を入力し、下限を上限以下にしてください。有効にするには少なくとも一方を入力してください。</string>
     <string name="connection_background_unavailable">バックグラウンド接続サービスが停止しました。アプリを開き直して再接続してください。</string>
+    <string name="control_sending">目標 %1$s を送信中</string>
+    <string name="control_unconfirmed">目標 %1$s・負荷の確認はまだありません</string>
+    <string name="control_reading_matches">機器の読取値が目標 %1$s と一致</string>
+    <string name="control_write_only">設定負荷 %1$s・この機器は負荷を報告しません</string>
+    <string name="control_send_failed">負荷の送信またはプロトコル操作に失敗しました。接続を確認して再試行してください。</string>
+    <string name="control_pedal_hint">安全な場合は軽くペダルを踏み、機器の値を確認してください。確認できない場合は診断ログを書き出してください。</string>
 </resources>

@@ -41,7 +41,7 @@
     <string name="duration">Aktive Zeit</string>
     <string name="increase">Widerstand erhöhen</string>
     <string name="decrease">Widerstand verringern</string>
-    <string name="control_pending">%1$s angefordert · Rückmeldung ausstehend</string>
+    <string name="control_pending">Ziel %1$s gesendet · Geräterückmeldung ausstehend</string>
     <string name="control_unavailable">Steuerung erfordert einen unterstützten Bereich und Gerätedaten.</string>
     <string name="auto">Automatische Abschnitte</string>
     <string name="manual">Manuelle Steuerung</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">Anzeige</string>
     <string name="resistance_slider">Widerstand einstellen</string>
     <string name="slider_target">Ziel %1$s · %2$d%%</string>
-    <string name="control_no_feedback">Keine Widerstandsbestätigung. Gerät prüfen und Diagnose exportieren.</string>
+    <string name="control_no_feedback">Gerätewert beobachten. Bleibt die Stufe unbestätigt, Diagnose exportieren.</string>
     <string name="awaiting_data">Verbunden · Warte auf Daten</string>
     <string name="waiting_data_help">Verbunden, aber noch keine gültigen Sensordaten. Gerät aktivieren und kurz treten. Bleiben Werte leer, Protokollaufzeichnung aktivieren und Diagnose exportieren.</string>
     <string name="subscription_failed">Sensormeldungen fehlen · Neu verbinden oder Diagnose exportieren</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">Restzeit</string>
     <string name="stage_level">Stufe %1$s · %2$d%%</string>
     <string name="free_training_help">Bewege dich in deinem Tempo und passe den Widerstand jederzeit an.</string>
-    <string name="resistance_feedback_help">Die Zahl zeigt die vom Gerät bestätigte Stufe. Bis zur Rückmeldung zeigt der Regler die angeforderte Stufe.</string>
+    <string name="resistance_feedback_help">Die Zahl stammt vom Gerät und bestätigt nicht den mechanischen Widerstand. Der Regler behält das letzte unbestätigte Ziel. Ein verspäteter passender Wert hebt den Hinweis auf.</string>
     <string name="floating_enabled">Schwebendes Panel aktivieren</string>
     <string name="auto_floating">Automatisch einblenden</string>
     <string name="auto_floating_help">Zeigt beim Wechsel zum Startbildschirm oder zu einer anderen App das kleine Trainingspanel. Die Berechtigung für Einblendungen ist erforderlich.</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">Bis zu vier unterschiedliche, vom Gerät unterstützte Stufen eingeben, mit Kommas getrennt.</string>
     <string name="invalid_hint_bounds">Nichtnegative Zahlen eingeben: Untergrenze höchstens gleich Obergrenze. Zum Aktivieren mindestens eine Grenze setzen.</string>
     <string name="connection_background_unavailable">Der Hintergrundverbindungsdienst wurde beendet. Öffne die App erneut und verbinde das Gerät.</string>
+    <string name="control_sending">Ziel %1$s wird gesendet</string>
+    <string name="control_unconfirmed">Ziel %1$s · Stufe noch nicht bestätigt</string>
+    <string name="control_reading_matches">Gerätewert entspricht Ziel %1$s</string>
+    <string name="control_write_only">Stufe %1$s eingestellt · Gerät meldet keinen Widerstand</string>
+    <string name="control_send_failed">Senden oder Protokollvorgang fehlgeschlagen. Verbindung prüfen und erneut versuchen.</string>
+    <string name="control_pedal_hint">Wenn gefahrlos möglich, leicht treten und den Gerätewert beobachten. Bleibt die Bestätigung aus, Diagnose exportieren.</string>
 </resources>

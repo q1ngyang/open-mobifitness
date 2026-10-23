@@ -450,7 +450,7 @@ private fun workoutClock(ms: Long): String {
     val can = !state.starting && !state.completionPending && !state.finishing && (state.demo && range!=null || (link.writable && range != null && !link.busy && link.phase == "ready"))
     var sliding by remember { mutableStateOf<Float?>(null) }
     var help by remember { mutableStateOf(false) }
-    val pending = state.pendingResistance ?: link.requested
+    val pending = state.pendingResistance ?: link.resistanceControl?.unconfirmedTarget
     val automatic = state.automatic && state.selected != null && !state.done
     InstrumentPanel(modifier) {
         Column(Modifier.padding(horizontal = if (spacious) 18.dp else 12.dp, vertical = if (spacious) 10.dp else 4.dp), verticalArrangement = Arrangement.Top) {
@@ -508,8 +508,8 @@ private fun workoutClock(ms: Long): String {
                 }
             }
             }
-            if (link.controlTimedOut) Text(stringResource(R.string.control_no_feedback), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-            if (!can || pending != null) Text(if (pending != null) stringResource(R.string.control_pending, WorkoutService.number(pending)) else stringResource(R.string.control_unavailable), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ResistanceStatus(link,state.pendingResistance)
+            if (!can && link.resistanceControl==null && pending==null) Text(stringResource(R.string.control_unavailable), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             ResistancePresets(c,state,link,editPresets)
         }
     }

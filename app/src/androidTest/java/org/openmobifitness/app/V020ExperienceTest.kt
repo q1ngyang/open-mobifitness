@@ -362,7 +362,7 @@ class V020ExperienceTest {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.increase)).performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText(compose.activity.getString(R.string.control_unavailable)).assertExists()
         shot("state-01-missing-read-only")
-        link(base.copy(writable=true,metrics=Metrics(resistance=12.0),requested=16.0))
+        link(base.copy(writable=true,metrics=Metrics(resistance=12.0),resistanceControl=org.openmobifitness.app.ble.ResistanceControl(1,16.0,send=org.openmobifitness.app.ble.ResistanceSend.SENT)))
         compose.onNodeWithText(compose.activity.getString(R.string.control_pending,"16")).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(compose.activity.getString(R.string.resistance_level,"12")).assertExists()
         shot("state-02-actual-and-pending")
@@ -374,6 +374,39 @@ class V020ExperienceTest {
         compose.onNodeWithTag("pause").assertIsNotEnabled()
         shot("state-04-disconnected")
         assertNull(c.state.value.session)
+    }
+    @Test fun resistanceFeedbackStatesAgreeOnTrainingAndDevicesPages() {
+        compose.runOnUiThread { c.setDemo(false) }
+        Thread.sleep(1200) // Let the controller observe the fixture's connection generation.
+        val base=org.openmobifitness.app.ble.LinkState(name="MB-EP · synthetic UI",phase="ready",machine=Machine.ELLIPTICAL,
+            protocol=Protocol.V1,range=ResistanceRange(1.0,24.0),writable=true,metrics=Metrics(resistance=3.0))
+        val sending=org.openmobifitness.app.ble.ResistanceControl(1,7.0)
+        val sent=sending.copy(send=org.openmobifitness.app.ble.ResistanceSend.SENT)
+        val cases=listOf(
+            "sending" to (sending to R.string.control_sending),
+            "waiting" to (sent to R.string.control_pending),
+            "unconfirmed" to (sent.copy(windowExpired=true) to R.string.control_unconfirmed),
+            "matched" to (sent.copy(windowExpired=true,reading=7.0) to R.string.control_reading_matches),
+            "failed" to (sent.copy(send=org.openmobifitness.app.ble.ResistanceSend.FAILED) to R.string.control_send_failed)
+        )
+        for((scene,pair) in cases) {
+            val (control,label)=pair
+            compose.runOnUiThread {
+                c.ble.state.value=base.copy(resistanceControl=control,busy=scene=="sending",metrics=Metrics(resistance=control.reading ?: 3.0))
+                c.state.value=c.state.value.copy(demo=false,controlOnly=true,pendingResistance=null,error=null)
+                compose.activity.focusTraining.value=true
+            }
+            compose.onNodeWithTag("resistance-status").performScrollTo().assertIsDisplayed()
+                .assertTextEquals(compose.activity.getString(label,"7"))
+            if(scene=="unconfirmed") {
+                compose.onNodeWithContentDescription(compose.activity.getString(R.string.increase)).assertIsEnabled()
+                compose.onNodeWithText(compose.activity.getString(R.string.resistance_level,"3")).assertExists()
+            }
+            shot("issue2-training-$scene")
+            compose.runOnUiThread { compose.activity.focusTraining.value=false; compose.activity.page.value=2 }
+            compose.onNodeWithTag("resistance-status").assertIsDisplayed().assertTextEquals(compose.activity.getString(label,"7"))
+            shot("issue2-devices-$scene")
+        }
     }
     @Test fun editorActionsStayUsableWithTheKeyboardOpen() {
         compose.onNodeWithTag("hero-control").performScrollTo().performClick()

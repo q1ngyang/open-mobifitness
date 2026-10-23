@@ -41,7 +41,7 @@
     <string name="duration">運動時長</string>
     <string name="increase">增加阻力</string>
     <string name="decrease">降低阻力</string>
-    <string name="control_pending">已請求 %1$s · 等待裝置回報</string>
+    <string name="control_pending">已傳送目標 %1$s · 等待裝置回報</string>
     <string name="control_unavailable">識別可控檔位及裝置資料後，可調整阻力。</string>
     <string name="auto">自動分段調阻</string>
     <string name="manual">手動調整中</string>
@@ -164,7 +164,7 @@
     <string name="configure_display">顯示設定</string>
     <string name="resistance_slider">滑動調整阻力</string>
     <string name="slider_target">目標 %1$s 檔 · %2$d%%</string>
-    <string name="control_no_feedback">未收到檔位確認，請檢查器材並匯出診斷日誌。</string>
+    <string name="control_no_feedback">請觀察裝置讀數；若檔位仍未確認，請匯出診斷日誌。</string>
     <string name="awaiting_data">已連線 · 等待器材資料</string>
     <string name="waiting_data_help">藍牙已連線，尚未收到有效運動資料。請喚醒器材並輕踩片刻；仍無讀數時開啟通訊封包記錄並匯出診斷日誌。</string>
     <string name="subscription_failed">器材資料訂閱失敗 · 請重新連線或匯出診斷</string>
@@ -176,7 +176,7 @@
     <string name="stage_remaining">本階段剩餘</string>
     <string name="stage_level">%1$s 檔 · %2$d%%</string>
     <string name="free_training_help">按自己的節奏運動，隨時調整阻力。</string>
-    <string name="resistance_feedback_help">檔位數字來自器材確認；等待回饋時，滑桿顯示請求的目標檔位。</string>
+    <string name="resistance_feedback_help">顯示的數字來自裝置讀數，不代表已驗證機械阻力。滑桿保留最新未確認目標；收到延遲的相符讀數後，未確認提示會消除。</string>
     <string name="floating_enabled">啟用懸浮視窗</string>
     <string name="auto_floating">自動懸浮視窗</string>
     <string name="auto_floating_help">運動期間返回主畫面或切換應用程式時，自動顯示小視窗。需授予「顯示於其他應用程式上層」權限。</string>
@@ -362,4 +362,10 @@
     <string name="invalid_presets">請輸入最多四個互不重複、此器材支援的檔位，並以逗號分隔。</string>
     <string name="invalid_hint_bounds">請輸入非負數，下限不能大於上限。啟用時至少填寫一側。</string>
     <string name="connection_background_unavailable">背景連線服務已停止，請重新開啟應用程式並連接裝置。</string>
+    <string name="control_sending">正在傳送目標 %1$s</string>
+    <string name="control_unconfirmed">目標 %1$s · 尚未收到檔位確認</string>
+    <string name="control_reading_matches">裝置讀數與目標 %1$s 一致</string>
+    <string name="control_write_only">已設定檔位 %1$s · 此裝置不回報阻力</string>
+    <string name="control_send_failed">調阻傳送或通訊協定操作失敗，請檢查連線並重試。</string>
+    <string name="control_pedal_hint">在安全的情況下，可嘗試輕踩並觀察裝置讀數；若仍未確認，請匯出診斷日誌。</string>
 </resources>
