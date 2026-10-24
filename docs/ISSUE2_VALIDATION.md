@@ -1,6 +1,6 @@
 # Issue #2：调阻迟到反馈 / Late resistance feedback
 
-基线：v0.3.5，`0c3031d`。本次为可审阅修复与 Debug 复测包，不发布 Release、不关闭 [Issue #2](https://github.com/q1ngyang/open-mobifitness/issues/2)。没有新增实机测试，**硬件验收尚未完成**。
+基线：v0.3.5，`0c3031d`。修复最初以可审阅代码与 Debug 复测包交付，随后纳入 [v0.3.6](releases/v0.3.6.md)。[Issue #2](https://github.com/q1ngyang/open-mobifitness/issues/2) 保持开放；没有新增实机测试，**硬件验收尚未完成**。
 
 ## 行为与边界
 
@@ -55,7 +55,7 @@ python3 tools/check_resources.py
 ./tools/build.sh :core:test :app:testDebugUnitTest :app:testReleaseUnitTest :app:lintDebug :app:lintRelease :app:assembleDebug
 ```
 
-本次结果：
+初次修复交付的验证结果（v0.3.6 发行核验见[版本说明](releases/v0.3.6.md)）：
 
 | 检查 | 结果 |
 | --- | --- |
@@ -72,7 +72,7 @@ python3 tools/check_resources.py
 
 ## MB-EP 复测与日志
 
-Debug 包名为 `org.openmobifitness.app.debug`，与普通版共存。先结束并断开另一版的器材连接，再安装本次 Debug 包；保留既有数据，不用卸载重装掩盖签名不一致。此包仍基于 0.3.5（15），通过文件名和 SHA-256 区分本次构建。
+Debug 包名为 `org.openmobifitness.app.debug`，与普通版共存。先结束并断开另一版的器材连接，再安装 Debug 包；保留既有数据，不用卸载重装掩盖签名不一致。新一轮复测请使用 [v0.3.6 Debug 包](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.6/OpenMOBI-0.3.6-debug.apk)（版本代码 16）；上面的 0.3.5（15）文件名与校验值仅记录初次修复交付。
 
 1. 打开诊断中的协议跟踪，连接 MB-EP，核对识别范围为 1–24。进入“仅控制”，记录手机型号、Android 版本、器材型号和开始时间。
 2. **静止**：先用相邻档位操作，再在适合自己的情况下复现 18 → 7。每次保持约 20 秒，记录目标、App 设备读数及状态。若没有有效反馈，应显示尚未确认、保留最新目标、允许再次操作；不能显示成功、反复自行发指令或自动重连。
@@ -85,7 +85,7 @@ Debug 包名为 `org.openmobifitness.app.debug`，与普通版共存。先结束
 
 ## English
 
-Baseline: v0.3.5 (`0c3031d`). This delivery is reviewable source and a Debug retest build, with no Release publication or issue closure. **Hardware acceptance is pending.**
+Baseline: v0.3.5 (`0c3031d`). The fix was first delivered as reviewable source and a Debug retest build, then included in [v0.3.6](releases/v0.3.6.md#english). Issue #2 remains open. **Hardware acceptance is pending.**
 
 The fix separates transmission, the short feedback window, and the latest target. Five seconds after successful transmission, pending clears but the target survives for late comparison. A fresh valid resistance field can clear the unconfirmed notice; cached/merged values, absent fields, invalid zero readings and commanded values cannot. New requests replace prior intent. Local IDs, connection identity and control generations protect timers and lifecycle transitions, including repeated equal targets. V1 has no response sequence number: matching telemetry cannot establish exact response attribution or mechanical execution.
 
@@ -97,4 +97,4 @@ Both pages share status wording: sending, awaiting feedback, unconfirmed, matchi
 
 The regression suites use synthetic identities, minimal frames and virtual BLE time. They cover the issue's 3.942/10.701/15.352-second timing, invalid/missing feedback, overlapping requests, lifecycle invalidation, write/protocol failures, automatic-plan behavior and all five protocol families. All 541 tests passed, with no failures or skips. Both lint tasks passed with zero errors and 91 warnings plus one hint each. Resource checks and Debug assembly passed. Two API 34 UI runs (Chinese, German at 1.3 font scale) passed; 20 unobscured screenshots were individually inspected. An initial emulator system-service ANR obscured earlier images, which were excluded and rerun. Private original logs remain local. Run the commands above; detailed build evidence, `OpenMOBI-0.3.5-issue2-debug.apk` and `SHA256SUMS` are in `$DEV_TEMP_BASE/work/openmobi-issue2-fix-20261024/`.
 
-For MB-EP retesting, disconnect the regular app first, install the Debug build alongside it, enable protocol tracing, and use control-only mode. Test stationary changes, gentle pedaling, rapid different/equal targets, then short automatic stages and manual overrides. Wait roughly 20 seconds per stationary request; only a new matching valid reading should clear the notice. Export each group promptly with action times, requested levels, displayed readings and physical observations. Simulation does not validate Huawei P20 radio behavior, motors or mechanical resistance.
+The counts and local artifacts above describe the initial fix delivery; see the v0.3.6 notes for release verification. For new MB-EP retests, use [v0.3.6 Debug](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.6/OpenMOBI-0.3.6-debug.apk), version code 16. Disconnect the regular app first, install the Debug build alongside it, enable protocol tracing, and use control-only mode. Test stationary changes, gentle pedaling, rapid different/equal targets, then short automatic stages and manual overrides. Wait roughly 20 seconds per stationary request; only a new matching valid reading should clear the notice. Export each group promptly with action times, requested levels, displayed readings and physical observations. Simulation does not validate Huawei P20 radio behavior, motors or mechanical resistance.

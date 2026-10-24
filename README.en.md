@@ -8,9 +8,9 @@ OpenMOBI is an independent Android app for using Mobi fitness equipment after th
 
 ## Download
 
-**[Download v0.3.5 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.5/OpenMOBI-0.3.5.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.5.md#english)
+**[Download v0.3.6 — regular app](https://github.com/q1ngyang/open-mobifitness/releases/download/v0.3.6/OpenMOBI-0.3.6.apk)** · [All releases](https://github.com/q1ngyang/open-mobifitness/releases) · [Release notes](docs/releases/v0.3.6.md#english)
 
-**v0.3.5** fixes hidden disconnected devices, stalled reconnection and background connection gaps across six equipment families and heart-rate straps. [Profile and upgrade guide](docs/V030_GUIDE.md#english)
+**v0.3.6** fixes stale resistance warnings after late feedback and repeated automatic steps during feedback silence. Devices and Training now share feedback states. Mechanical resistance acceptance still requires hardware testing. [Fix and retest guide](docs/ISSUE2_VALIDATION.md#english)
 
 Requires Android 10 or later on a 64-bit phone or tablet. It can be installed alongside the original app.
 
