@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -109,8 +110,19 @@ import org.openmobifitness.core.*
             item {
                 val heading: @Composable (Modifier)->Unit = { modifier -> Text(stringResource(R.string.library),style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold,modifier=modifier) }
                 val create: @Composable ()->Unit = { if(machine in WorkoutPolicy.supported) FilledTonalButton(enabled=!c.identityLocked,onClick={ edit(Workout(title=resources.getString(R.string.new_workout),ownerUserId=ownerId,machine=machine,steps=listOf(Step(target=300.0,id=java.util.UUID.randomUUID().toString())))) },modifier=Modifier.testTag("new-plan")) { Icon(Icons.Default.Add,null,Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.new_workout)) } }
-                if(contentWidth/scale<340.dp) Column(verticalArrangement=Arrangement.spacedBy(8.dp)) { heading(Modifier.fillMaxWidth()); Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) { create() } }
-                else Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) { heading(Modifier.weight(1f)); create() }
+                // Fit the actual translated title and action instead of a fixed phone-width cutoff.
+                Layout(content={ heading(Modifier); create() },modifier=Modifier.fillMaxWidth()) { children,constraints ->
+                    val loose=constraints.copy(minWidth=0,minHeight=0)
+                    val title=children.first().measure(loose)
+                    val action=children.getOrNull(1)?.measure(loose)
+                    val stacked=action!=null && title.width+12.dp.roundToPx()+action.width>constraints.maxWidth
+                    val gap=8.dp.roundToPx()
+                    val height=if(stacked) title.height+gap+action!!.height else maxOf(title.height,action?.height ?: 0)
+                    layout(constraints.maxWidth,height) {
+                        title.placeRelative(0,if(stacked) 0 else (height-title.height)/2)
+                        action?.placeRelative(constraints.maxWidth-action.width,if(stacked) title.height+gap else (height-action.height)/2)
+                    }
+                }
             }
             item { Column {
                 val equipmentPicker: @Composable ()->Unit = { Box {
